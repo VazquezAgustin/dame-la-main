@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dame la Pasta</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+  PANTALLA 1: INICIO
+═══════════════════════════════════════════════════════════════ -->
+<div id="screen-inicio" class="screen active">
+  <h1 class="titulo-juego">Dame<br>la Pasta</h1>
+  <p class="subtitulo">El juego de trivia multijugador</p>
+
+  <div class="inicio-acciones">
+    <div class="tabs">
+      <button class="tab active" data-tab="crear">Crear sala</button>
+      <button class="tab" data-tab="unirse">Unirse</button>
+    </div>
+
+    <div id="tab-crear" class="tab-content active">
+      <div class="form-group">
+        <label>Tu nombre</label>
+        <input type="text" id="input-nombre-crear" placeholder="Ej: Agustín" maxlength="20" autocomplete="off">
+      </div>
+      <button class="btn btn-primario" id="btn-crear-sala">Crear sala</button>
+    </div>
+
+    <div id="tab-unirse" class="tab-content">
+      <div class="form-group">
+        <label>Código de sala</label>
+        <input type="text" id="input-codigo" placeholder="K7XP2M" maxlength="6"
+               autocomplete="off"
+               style="text-transform:uppercase;letter-spacing:0.2em;font-family:'Bebas Neue',cursive;font-size:1.6rem;text-align:center">
+      </div>
+      <div class="form-group">
+        <label>Tu nombre</label>
+        <input type="text" id="input-nombre-unirse" placeholder="Ej: Marcos" maxlength="20" autocomplete="off">
+      </div>
+      <button class="btn btn-primario" id="btn-unirse">Unirse</button>
+    </div>
+
+    <p class="error-msg" id="error-inicio"></p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+  PANTALLA 2: LOBBY
+═══════════════════════════════════════════════════════════════ -->
+<div id="screen-lobby" class="screen">
+  <div class="lobby-header">
+    <h2>CÓDIGO DE SALA</h2>
+    <div class="codigo-sala" id="lobby-codigo">------</div>
+    <button class="btn-copiar" id="btn-copiar-codigo">📋 Copiar</button>
+  </div>
+
+  <div class="jugadores-lista">
+    <h3>Jugadores en sala</h3>
+    <div id="lista-jugadores"></div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:340px">
+    <button class="btn btn-primario" id="btn-empezar" style="display:none;width:100%">
+      ¡Empezar partida!
+    </button>
+    <p class="esperando-msg" id="msg-esperando" style="display:none">
+      Esperando que el host inicie...
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+  PANTALLA 3: JUEGO
+═══════════════════════════════════════════════════════════════ -->
+<div id="screen-game" class="screen">
+  <div id="vista-tablero">
+    <div class="turno-indicador" id="turno-indicador"></div>
+    <div class="tablero-container" style="margin-top:10px">
+      <div class="tablero" id="tablero"></div>
+    </div>
+  </div>
+
+  <!-- Overlay pregunta -->
+  <div class="pregunta-overlay" id="pregunta-overlay">
+    <div class="pregunta-header">
+      <span class="pregunta-categoria" id="preg-categoria"></span>
+      <span class="pregunta-valor" id="preg-valor"></span>
+    </div>
+
+    <div class="timer-bar-container">
+      <div class="timer-bar" id="timer-bar"></div>
+    </div>
+
+    <div class="pregunta-texto" id="preg-texto"></div>
+
+    <div class="respuesta-box" id="respuesta-box">
+      <div class="respuesta-label">Respuesta correcta</div>
+      <div class="respuesta-texto" id="respuesta-texto"></div>
+    </div>
+
+    <div class="resultado-panel" id="resultado-panel">
+      <div class="resultado-icono" id="resultado-icono"></div>
+      <div class="resultado-texto" id="resultado-texto"></div>
+      <div class="resultado-puntos" id="resultado-puntos"></div>
+    </div>
+
+    <div class="buzzer-zone" id="buzzer-zone">
+      <div class="buzzer-estado" id="buzzer-estado"></div>
+      <button class="btn-buzzer" id="btn-buzzer">🔔 ¡PULSA!</button>
+      <button class="btn btn-primario" id="btn-revelar" style="display:none;width:min(340px,92vw)">
+        👁 Mostrar respuesta
+      </button>
+      <div class="acciones-host" id="acciones-host" style="display:none">
+        <div class="acciones-host-row">
+          <button class="btn btn-correcto" id="btn-correcto">✓ Correcto</button>
+          <button class="btn btn-incorrecto" id="btn-incorrecto">✗ Incorrecto</button>
+        </div>
+      </div>
+      <button class="btn btn-primario" id="btn-siguiente" style="display:none;width:min(340px,92vw)">
+        Siguiente ▶
+      </button>
+      <button class="btn btn-peligro" id="btn-skip" style="display:none;font-size:0.85rem;padding:10px 20px">
+        ⏭ Nadie respondió — siguiente
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+  PANTALLA 4: FINAL
+═══════════════════════════════════════════════════════════════ -->
+<div id="screen-finished" class="screen">
+  <div class="confetti-container" id="confetti-container"></div>
+  <div class="finished-titulo">¡Fin del juego!</div>
+  <div class="podio" id="podio"></div>
+  <button class="btn btn-primario" id="btn-jugar-nuevo" style="display:none;margin-top:8px">
+    🔄 Jugar de nuevo
+  </button>
+</div>
+
+<!-- Scorebar (fija abajo durante el juego) -->
+<div id="scorebar" style="display:none">
+  <div class="scorebar-collapsed">
+    <span style="font-size:1rem">🏆</span>
+    <div class="scorebar-players" id="scorebar-players"></div>
+    <span class="scorebar-toggle">▲</span>
+  </div>
+  <div class="scorebar-expanded" id="scorebar-expanded">
+    <h3>MARCADOR</h3>
+    <div id="scorebar-ranking"></div>
+  </div>
+</div>
+
+<!-- Flash de resultado -->
+<div class="flash-overlay" id="flash-overlay"></div>
+
+<script type="module" src="js/juego.js"></script>
+</body>
+</html>
