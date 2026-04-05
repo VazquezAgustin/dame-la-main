@@ -55,6 +55,83 @@ function clearIntervals() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// 🔊 SONIDOS — Web Audio API (sin dependencias)
+// ═══════════════════════════════════════════════════════════════
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playBuzzer() {
+  try {
+    const ctx  = getAudioCtx();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(900, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.18);
+    gain.gain.setValueAtTime(0.45, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.28);
+  } catch (_) {}
+}
+
+function playCorrect() {
+  try {
+    const ctx   = getAudioCtx();
+    const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
+    notes.forEach((freq, i) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      const t = ctx.currentTime + i * 0.13;
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.3, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+      osc.start(t); osc.stop(t + 0.28);
+    });
+  } catch (_) {}
+}
+
+function playIncorrect() {
+  try {
+    const ctx  = getAudioCtx();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sawtooth";
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(220, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.45);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.45);
+  } catch (_) {}
+}
+
+// Seguimiento de estado para no re-disparar sonidos en cada render
+let _lastBuzzerTs    = null;
+let _lastPhase       = null;
+
+function checkSoundTriggers(s) {
+  const phase    = s.questionPhase;
+  const buzzerTs = s.buzzer?.timestamp;
+
+  if (buzzerTs && buzzerTs !== _lastBuzzerTs) {
+    _lastBuzzerTs = buzzerTs;
+    playBuzzer();
+  }
+
+  if (phase === "judged" && _lastPhase !== "judged") {
+    if (s.questionResult?.correct) playCorrect();
+    else                           playIncorrect();
+  }
+
+  if (!s.currentQuestion) { _lastBuzzerTs = null; _lastPhase = null; }
+  else                    { _lastPhase = phase; }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // 🎨 RENDER — LOBBY
 // ═══════════════════════════════════════════════════════════════
 function renderLobby(s) {
@@ -408,6 +485,14 @@ function render(s) {
   state  = s;
   isHost = myPlayerId === s.hostId;
 
+  // Recuperar nombre si reconectamos sin sessionStorage
+  if (!myName && s.players?.[myPlayerId]?.name) {
+    myName = s.players[myPlayerId].name;
+    sessionStorage.setItem("myName", myName);
+  }
+
+  checkSoundTriggers(s);
+
   switch (s.status) {
     case "lobby":
       showScreen("screen-lobby");
@@ -660,9 +745,10 @@ document.getElementById("scorebar").addEventListener("click", () => {
 if (firebaseConfigurado) {
   const savedRoom = sessionStorage.getItem("roomCode");
   const savedName = sessionStorage.getItem("myName");
-  if (savedRoom && savedName) {
+  if (savedRoom) {
     roomCode = savedRoom;
-    myName   = savedName;
+    if (savedName) myName = savedName;
+    // Si myName está vacío, render() lo recupera de state.players al llegar el snapshot
     subscribeToRoom(roomCode);
   }
 }
