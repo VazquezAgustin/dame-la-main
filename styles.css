@@ -359,6 +359,15 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   width: 100%;
 }
 
+.answer-timer-count {
+  text-align: center;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 3.5rem;
+  line-height: 1;
+  margin-bottom: 4px;
+  transition: color 0.3s;
+}
+
 .pregunta-texto {
   flex: 1;
   display: flex;

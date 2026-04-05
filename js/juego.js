@@ -173,32 +173,62 @@ function renderQuestion(s) {
     resPanel.classList.remove("visible");
   }
 
-  renderTimer(q.openedAt, phase);
+  renderTimer(q.openedAt, phase, buzzer);
   renderBuzzerZone(s, phase, buzzer);
 }
 
-function renderTimer(openedAt, phase) {
+function renderTimer(openedAt, phase, buzzer) {
   clearIntervals();
-  const bar = document.getElementById("timer-bar");
+  const bar      = document.getElementById("timer-bar");
+  const countEl  = document.getElementById("answer-timer-count");
 
-  if (phase !== "waiting_buzz") {
-    bar.style.width      = "100%";
-    bar.style.background = "var(--primario-glow)";
-    bar.style.transition = "none";
-    return;
+  if (phase === "waiting_buzz") {
+    countEl.style.display = "none";
+    const TIMEOUT = 45000;
+    const tick = () => {
+      const elapsed = Date.now() - openedAt;
+      const pct     = Math.max(0, 100 - (elapsed / TIMEOUT) * 100);
+      bar.style.transition = "width 0.5s linear, background 0.5s";
+      bar.style.width      = pct + "%";
+      bar.style.background = pct < 20 ? "var(--incorrecto)" : pct < 50 ? "var(--acento)" : "var(--primario-glow)";
+      if (pct <= 0) clearIntervals();
+    };
+    tick();
+    timerInterval = setInterval(tick, 500);
+
+  } else if (phase === "waiting_answer" && buzzer?.timestamp) {
+    countEl.style.display = "block";
+    const ANSWER_TIMEOUT  = 30000;
+    let flashedOnExpiry   = false;
+
+    const tick = () => {
+      const elapsed   = Date.now() - buzzer.timestamp;
+      const remaining = Math.max(0, ANSWER_TIMEOUT - elapsed);
+      const pct       = (remaining / ANSWER_TIMEOUT) * 100;
+      const secs      = Math.ceil(remaining / 1000);
+
+      bar.style.transition = "width 0.5s linear, background 0.5s";
+      bar.style.width      = pct + "%";
+      bar.style.background = secs <= 5 ? "var(--incorrecto)" : secs <= 10 ? "var(--acento)" : "var(--primario-glow)";
+
+      countEl.textContent  = secs > 0 ? secs : "0";
+      countEl.style.color  = secs <= 5 ? "var(--incorrecto)" : secs <= 10 ? "var(--acento)" : "var(--texto)";
+
+      if (remaining <= 0 && !flashedOnExpiry) {
+        flashedOnExpiry = true;
+        clearIntervals();
+        triggerFlash("incorrecto");
+      }
+    };
+    tick();
+    timerInterval = setInterval(tick, 500);
+
+  } else {
+    countEl.style.display = "none";
+    bar.style.width       = "100%";
+    bar.style.background  = "var(--primario-glow)";
+    bar.style.transition  = "none";
   }
-
-  const TIMEOUT = 45000;
-  const tick = () => {
-    const elapsed = Date.now() - openedAt;
-    const pct     = Math.max(0, 100 - (elapsed / TIMEOUT) * 100);
-    bar.style.transition = "width 0.5s linear, background 0.5s";
-    bar.style.width      = pct + "%";
-    bar.style.background = pct < 20 ? "var(--incorrecto)" : pct < 50 ? "var(--acento)" : "var(--primario-glow)";
-    if (pct <= 0) clearIntervals();
-  };
-  tick();
-  timerInterval = setInterval(tick, 500);
 }
 
 function renderBuzzerZone(s, phase, buzzer) {
