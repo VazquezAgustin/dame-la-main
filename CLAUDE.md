@@ -341,7 +341,7 @@ async function pressBuzzer() {
 
 - Cuando `questionPhase === "answer_revealed"`, **solo el host** ve dos botones:
   - **✓ Correcto** — suma los puntos al respondedor
-  - **✗ Incorrecto** — el respondedor no suma ni resta (a diferencia del juego original, no se resta para mantener el juego ágil; ajustar si se prefiere restar)
+  - **✗ Incorrecto** — se resta el valor de la pregunta al puntaje del respondedor (igual que en el juego original)
 - El host toca uno → escribe `questionResult` y `questionPhase: "judged"`
 - Todos los dispositivos muestran el resultado: quién respondió, si fue correcto, y los puntos
 

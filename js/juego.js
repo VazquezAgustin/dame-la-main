@@ -61,13 +61,19 @@ function renderLobby(s) {
   const order   = s.playerOrder || [];
   const players = s.players || {};
   const lista   = document.getElementById("lista-jugadores");
-  lista.innerHTML = "";
+
+  // Eliminar jugadores que ya no están (caso borde)
+  lista.querySelectorAll(".jugador-item").forEach(el => {
+    if (!players[el.dataset.pid]) el.remove();
+  });
 
   order.forEach(pid => {
     const p = players[pid];
     if (!p) return;
+    if (document.querySelector(`[data-pid="${pid}"]`)) return; // ya existe, no reanimar
     const div = document.createElement("div");
     div.className = "jugador-item";
+    div.dataset.pid = pid;
     div.innerHTML = `
       <div class="jugador-avatar">${(p.name || "?")[0].toUpperCase()}</div>
       <span class="jugador-nombre">${p.name || "?"}${pid === myPlayerId ? ' <span style="color:var(--texto-secundario);font-size:0.78rem">(tú)</span>' : ''}</span>
