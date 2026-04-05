@@ -8,7 +8,7 @@ Réplica web del concurso "Dame la Pasta" de Ibai Llanos. Juego de trivia multij
 
 ## Stack técnico
 
-- **HTML + CSS + JS puro** — sin frameworks, sin build steps, un solo archivo `index.html`
+- **HTML + CSS + JS puro** — sin frameworks, sin build steps. El HTML está en `index.html`, los estilos en `styles.css`, y la lógica separada en módulos ES6 en `js/`
 - **Firebase Realtime Database** — backend gratuito para sincronización en tiempo real vía WebSockets (reemplazable via DAO)
 - **Firebase SDK** — cargado desde CDN como módulo ES6
 - **GitHub Pages** — repositorio `dame-la-pasta`, Pages habilitado desde rama `main`
@@ -19,8 +19,15 @@ Réplica web del concurso "Dame la Pasta" de Ibai Llanos. Juego de trivia multij
 
 ```
 dame-la-pasta/
-├── index.html        ← toda la app (HTML + CSS + JS embebido)
-└── README.md         ← instrucciones de configuración y hosting
+├── index.html                    ← estructura HTML y pantallas
+├── styles.css                    ← estilos globales
+├── js/
+│   ├── firebase.config.example.js  ← plantilla de credenciales (versionada)
+│   ├── firebase.config.js          ← credenciales reales (en .gitignore)
+│   ├── firebase.js                 ← DAO + implementación Firebase
+│   ├── juego.js                    ← lógica del juego, render y handlers
+│   └── preguntas.js                ← pool de categorías y banco de preguntas
+└── README.md
 ```
 
 ---
@@ -35,9 +42,11 @@ dame-la-pasta/
 
 ### Credenciales en el código
 
+Las credenciales viven en `js/firebase.config.js` (excluido del repo vía `.gitignore`). Copiar `js/firebase.config.example.js` como `js/firebase.config.js` y completar los valores:
+
 ```javascript
-// 🔧 REEMPLAZÁ ESTOS VALORES CON TU CONFIGURACIÓN DE FIREBASE
-const firebaseConfig = {
+// js/firebase.config.js
+export const firebaseConfig = {
   apiKey: "TU_API_KEY",
   authDomain: "tu-proyecto.firebaseapp.com",
   databaseURL: "https://tu-proyecto-default-rtdb.firebaseio.com",
@@ -66,21 +75,23 @@ const firebaseConfig = {
 
 ### Import del SDK
 
-```html
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import {
-    getDatabase,
-    ref,
-    set,
-    get,
-    onValue,
-    update,
-    runTransaction,
-    serverTimestamp,
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-</script>
+```javascript
+// js/firebase.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getDatabase,
+  ref,
+  set,
+  get,
+  onValue,
+  update,
+  runTransaction,
+  serverTimestamp,
+  onDisconnect,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 ```
+
+`serverTimestamp()` se usa en todos los campos `openedAt` para sincronizar los timers con el reloj del servidor en lugar del reloj local del cliente. `onDisconnect` se usa para marcar automáticamente `connected: false` cuando un jugador pierde la conexión.
 
 ---
 
@@ -544,13 +555,24 @@ const GameDAO = {
   revealAnswer: async (roomCode) => {},
 
   // El host juzga la respuesta.
-  judgeAnswer: async (roomCode, responderId, correct, pointsDelta) => {},
+  // category y value se pasan desde el estado local para evitar un get() extra.
+  judgeAnswer: async (roomCode, responderId, correct, pointsDelta, category, value) => {},
 
   // El host avanza al siguiente turno.
   nextTurn: async (roomCode, nextSelectorIndex, isGameOver) => {},
 
   // El host saltea una pregunta sin respuesta.
   skipQuestion: async (roomCode, nextSelectorIndex) => {},
+
+  // ── Presencia y host ──────────────────────────────────────────────
+
+  // Registra presencia del jugador: Firebase marcará connected=false automáticamente
+  // cuando el cliente pierda la conexión (usando onDisconnect).
+  setupPresence: async (roomCode, playerId) => {},
+
+  // Transfiere el rol de host a newHostId, solo si el hostId actual es currentHostId.
+  // Usa transacción para evitar condición de carrera entre clientes.
+  migrateHost: async (roomCode, currentHostId, newHostId) => {},
 
   // ── Tiempo real ───────────────────────────────────────────────────
 
@@ -608,7 +630,7 @@ GameDAO.startGame = async (roomCode) => {
 
 GameDAO.selectQuestion = async (roomCode, category, value) => {
   await update(roomRef(roomCode), {
-    currentQuestion: { category, value, openedAt: Date.now() },
+    currentQuestion: { category, value, openedAt: serverTimestamp() }, // timestamp del servidor
     buzzer: null,
     questionPhase: "waiting_buzz",
     questionResult: null,
@@ -623,7 +645,13 @@ GameDAO.pressBuzzer = async (roomCode, playerId) => {
     return { playerId, timestamp: Date.now() };
   });
   if (won) {
-    await update(roomRef(roomCode), { questionPhase: "waiting_answer" });
+    try {
+      await update(roomRef(roomCode), { questionPhase: "waiting_answer" });
+    } catch (e) {
+      // Si el update de fase falla, revertir el buzzer para no dejar el juego trabado
+      try { await set(ref(db, `rooms/${roomCode}/buzzer`), null); } catch (_) {}
+      throw e;
+    }
   }
   return won;
 };
@@ -632,14 +660,13 @@ GameDAO.revealAnswer = async (roomCode) => {
   await update(roomRef(roomCode), { questionPhase: "answer_revealed" });
 };
 
-GameDAO.judgeAnswer = async (roomCode, responderId, correct, pointsDelta) => {
-  const snap = await get(
-    ref(db, `rooms/${roomCode}/players/${responderId}/score`),
-  );
+// category y value vienen del estado local del caller — sin get() extra.
+GameDAO.judgeAnswer = async (roomCode, responderId, correct, pointsDelta, category, value) => {
+  const snap = await get(ref(db, `rooms/${roomCode}/players/${responderId}/score`));
   const currentScore = snap.val() || 0;
   await update(roomRef(roomCode), {
     [`players/${responderId}/score`]: currentScore + pointsDelta,
-    [`board/${(await get(ref(db, `rooms/${roomCode}/currentQuestion`))).val().category}/${(await get(ref(db, `rooms/${roomCode}/currentQuestion`))).val().value}`]: true,
+    [`board/${category}/${value}`]: true,
     questionResult: { responderId, correct, pointsDelta },
     questionPhase: "judged",
   });
@@ -669,11 +696,26 @@ GameDAO.skipQuestion = async (roomCode, nextSelectorIndex) => {
   });
 };
 
+// Registra presencia: Firebase ejecuta el set(false) automáticamente al desconectarse.
+GameDAO.setupPresence = async (roomCode, playerId) => {
+  const presenceRef = ref(db, `rooms/${roomCode}/players/${playerId}/connected`);
+  await onDisconnect(presenceRef).set(false);
+  await set(presenceRef, true);
+};
+
+// Migra el host solo si hostId sigue siendo currentHostId (evita doble migración).
+GameDAO.migrateHost = async (roomCode, currentHostId, newHostId) => {
+  await runTransaction(ref(db, `rooms/${roomCode}/hostId`), (hostId) => {
+    if (hostId !== currentHostId) return; // ya fue migrado
+    return newHostId;
+  });
+};
+
 GameDAO.subscribe = (roomCode, callback) => {
   const unsubscribe = onValue(roomRef(roomCode), (snap) => {
     callback(snap.val());
   });
-  return unsubscribe; // llamar a esto para cancelar la suscripción
+  return unsubscribe;
 };
 ```
 
@@ -861,8 +903,8 @@ function renderPlaying(s) {
 ## GitHub Pages — cómo hostear
 
 1. Crear repo en GitHub llamado `dame-la-pasta`
-2. Subir `index.html` y `README.md`
-3. Agregar las credenciales de Firebase en `index.html`
+2. Subir todos los archivos **excepto** `js/firebase.config.js`
+3. Crear `js/firebase.config.js` directamente en el servidor con las credenciales reales
 4. En GitHub: **Settings → Pages → Source: rama main → / (root)**
 5. URL: `https://[usuario].github.io/dame-la-pasta/`
 
@@ -870,9 +912,19 @@ function renderPlaying(s) {
 
 ## Notas finales
 
-- **Código comentado en español** con secciones claramente marcadas, especialmente el banco de preguntas con `/* 📝 EDITA AQUÍ LAS PREGUNTAS */`
+- **Código comentado en español** con secciones claramente marcadas
 - **Responsivo mobile-first**: el botón de buzzer tiene al menos 80px de alto para ser fácil de tocar
 - El tablero en mobile usa `overflow-x: auto` con las 6 columnas mostrándose en scroll horizontal
 - Si Firebase no está configurado, mostrar error claro: `"Falta configurar Firebase. Ver README."`
-- `sessionStorage` solo para `playerId` — nada más persiste entre páginas
+- `sessionStorage` solo para `playerId`, `roomCode` y `myName` — nada más persiste entre páginas
 - Las categorías del pool deben tener preguntas bien redactadas con respuestas cortas y verificables para facilitar el juicio del host
+- **No duplicar preguntas** entre `QUESTIONS` y `LIGHTNING_QUESTIONS` — ambas pueden aparecer en la misma partida
+
+## Comportamientos técnicos clave (juego.js)
+
+- **Dirty-check de renders**: `renderBoard` y `updateScorebar` comparan una key JSON del estado relevante antes de reconstruir el DOM. Solo re-renderizan si algo cambió. `renderQuestion` y `renderLightning` limpian `_lastBoardKey` para forzar re-render al volver al tablero.
+- **Presencia**: `GameDAO.setupPresence()` se llama al entrar a una sala. Firebase marca automáticamente `connected: false` cuando el cliente pierde conexión.
+- **Migración de host**: `checkHostMigration()` se ejecuta en cada ciclo de `render()`. Si detecta `players[hostId].connected === false`, todos los clientes intentan migrar el host via transacción. El guard `_hostMigrating` evita llamadas repetidas desde el mismo cliente.
+- **Timers sincronizados**: `openedAt` se guarda con `serverTimestamp()` en lugar de `Date.now()` del cliente. Todos los clientes calculan el tiempo transcurrido contra el mismo origen.
+- **Rollback del buzzer**: si `pressBuzzer` gana la transacción pero falla el update de `questionPhase`, revierte el buzzer a `null` para que el juego pueda continuar.
+- **Error recovery en handlers**: todos los handlers de acción (`handleBuzzer`, `handleRevelar`, `handleCorrecto`, `handleIncorrecto`, `handleSiguiente`, `handleSkip`) tienen try/catch que re-habilita los botones si Firebase falla.

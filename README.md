@@ -41,20 +41,23 @@ El juego requiere Firebase Realtime Database para sincronización en tiempo real
 4. Click en **Registrar app**
 5. Copiar el objeto `firebaseConfig` que aparece
 
-### 4. Pegar las credenciales en index.html
+### 4. Pegar las credenciales en js/firebase.config.js
 
-Abrí `index.html` y buscá esta sección (~línea 812):
+Copiá el archivo `js/firebase.config.example.js` como `js/firebase.config.js` y reemplazá los valores:
 
 ```javascript
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "TU_API_KEY",
   authDomain: "tu-proyecto.firebaseapp.com",
   databaseURL: "https://tu-proyecto-default-rtdb.firebaseio.com",
-  ...
+  projectId: "tu-proyecto",
+  storageBucket: "tu-proyecto.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:xxxxxxxxxxxx",
 };
 ```
 
-Reemplazá los valores con los de tu proyecto.
+`firebase.config.js` está en `.gitignore` para no exponer las credenciales.
 
 ### 5. Configurar reglas de seguridad
 
@@ -81,17 +84,22 @@ Click en **Publicar**.
 ## Publicar en GitHub Pages
 
 1. Crear repositorio en GitHub llamado `dame-la-pasta`
-2. Subir `index.html` y `README.md`
+2. Subir todos los archivos del proyecto (**sin** `js/firebase.config.js` — contiene credenciales privadas)
 3. Ir a **Settings → Pages → Source: rama main → / (root)**
 4. La URL será: `https://[tu-usuario].github.io/dame-la-pasta/`
+
+> **Nota:** `js/firebase.config.js` nunca debe subirse al repo. Configurá las credenciales directamente en el servidor o usá GitHub Secrets si usás CI/CD.
 
 ---
 
 ## Personalizar preguntas
 
-En `index.html`, buscá el comentario `/* 📝 EDITA AQUÍ LAS PREGUNTAS */`. Cada categoría tiene 5 preguntas con valores 200, 400, 600, 800 y 1000.
+Editá `js/preguntas.js`. Hay dos pools:
 
-Formato:
+- **`QUESTIONS`** — preguntas del tablero principal. Cada categoría tiene exactamente 5 preguntas (valores 200, 400, 600, 800, 1000).
+- **`LIGHTNING_QUESTIONS`** — preguntas del modo relámpago (respuesta rápida, sin valor fijo).
+
+Formato del tablero:
 ```javascript
 "Nombre Categoría": [
   { value: 200,  question: "¿Pregunta?", answer: "Respuesta" },
@@ -100,10 +108,29 @@ Formato:
 ],
 ```
 
+Asegurate de que no haya preguntas duplicadas entre `QUESTIONS` y `LIGHTNING_QUESTIONS` — pueden aparecer en la misma partida.
+
+---
+
+## Estructura del proyecto
+
+```
+dame-la-pasta/
+├── index.html                    ← estructura HTML y pantallas
+├── styles.css                    ← estilos globales
+├── js/
+│   ├── firebase.config.example.js  ← plantilla de credenciales (subir al repo)
+│   ├── firebase.config.js          ← credenciales reales (NO subir al repo)
+│   ├── firebase.js                 ← DAO + implementación Firebase
+│   ├── juego.js                    ← lógica del juego y render
+│   └── preguntas.js                ← pool de categorías y banco de preguntas
+└── README.md
+```
+
 ---
 
 ## Stack técnico
 
 - HTML + CSS + JS puro — sin frameworks, sin build steps
-- Firebase Realtime Database — sincronización en tiempo real
+- Firebase Realtime Database — sincronización en tiempo real (reemplazable vía DAO)
 - GitHub Pages — hosting gratuito
