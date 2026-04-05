@@ -24,8 +24,10 @@ export const CATEGORY_POOL = [
   "El Mundo del Deporte",
 ];
 
-export function pickRandomCategories(pool, count = 6) {
-  return [...pool].sort(() => Math.random() - 0.5).slice(0, count);
+export function pickRandomCategories(pool, count = 6, exclude = []) {
+  const available = pool.filter(cat => !exclude.includes(cat));
+  const source = available.length >= count ? available : pool;
+  return [...source].sort(() => Math.random() - 0.5).slice(0, count);
 }
 
 // ═══════════════════════════════════════════════════════════════

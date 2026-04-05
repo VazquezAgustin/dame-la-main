@@ -637,7 +637,10 @@ async function handleSkip() {
 
 async function handleJugarNuevo() {
   if (!isHost) return;
-  const categories = pickRandomCategories(CATEGORY_POOL);
+  const prevUsed = state.usedCategories || [];
+  const alreadyUsed = [...new Set([...prevUsed, ...(state.categories || [])])];
+  const categories = pickRandomCategories(CATEGORY_POOL, 6, alreadyUsed);
+  const nextUsed = alreadyUsed.length + 6 > CATEGORY_POOL.length ? categories : alreadyUsed;
   const board = {};
   categories.forEach(cat => {
     board[cat] = { "200": false, "400": false, "600": false, "800": false, "1000": false };
@@ -652,6 +655,7 @@ async function handleJugarNuevo() {
     hostId: myPlayerId,
     status: "lobby",
     categories,
+    usedCategories: nextUsed,
     board,
     players,
     playerOrder: state.playerOrder,
