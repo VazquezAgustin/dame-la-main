@@ -511,13 +511,15 @@ function renderEstimacion(s) {
       btnEnviar.addEventListener("click", handleEstimacionSubmit);
     }
 
-    // El host puede revelar en cualquier momento
+    // El host revela — bloqueado hasta que todos respondieron
     if (isHost) {
+      const allAnswered = respCount >= order.length;
       const btnEl = document.createElement("button");
       btnEl.className = "btn btn-primario";
       btnEl.id = "btn-estimacion-revelar";
       btnEl.style.cssText = "width:min(340px,92vw);margin-top:8px";
-      btnEl.textContent = "👁 Revelar respuestas";
+      btnEl.textContent = allAnswered ? "👁 Revelar respuestas" : `👁 Revelar (${respCount}/${order.length} respondieron)`;
+      btnEl.disabled = !allAnswered;
       btnEl.addEventListener("click", handleEstimacionRevelar);
       actionsEl.appendChild(btnEl);
     }
