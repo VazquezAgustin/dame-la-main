@@ -26,11 +26,17 @@ export const GameDAO = {
   judgeAnswer:           async () => {},
   nextTurn:              async () => {},
   skipQuestion:          async () => {},
-  startLightningMode:    async () => {},
-  lightningBeginQuestion:async () => {},
-  lightningJudge:        async () => {},
-  lightningAdvance:      async () => {},
-  setupPresence:         async () => {},
+  startLightningMode:        async () => {},
+  lightningBeginQuestion:    async () => {},
+  lightningJudge:            async () => {},
+  lightningAdvance:          async () => {},
+  startEstimacionMode:        async () => {},
+  startEstimacionCollecting:  async () => {},
+  submitEstimacion:           async () => {},
+  revealEstimaciones:         async () => {},
+  advanceEstimacionQuestion:  async () => {},
+  endEstimacionMode:          async () => {},
+  setupPresence:             async () => {},
   migrateHost:           async () => {},
   subscribe:             () => () => {},
 };
@@ -139,7 +145,7 @@ if (firebaseConfigurado) {
 
   // Activa el modo relámpago. Limpia el estado de pregunta actual,
   // opcionalmente marca una celda salteada, y guarda lightningMode.
-  GameDAO.startLightningMode = async (roomCode, lightningData, selectorIndexOnEntry, skipCell = null) => {
+  GameDAO.startLightningMode = async (roomCode, lightningData, selectorIndexOnEntry, skipCell = null, usedIndices = null) => {
     const updates = {
       currentQuestion: null,
       buzzer: null,
@@ -149,9 +155,8 @@ if (firebaseConfigurado) {
       lightningMode: lightningData,
       lightningUsed: true,
     };
-    if (skipCell) {
-      updates[`board/${skipCell.category}/${skipCell.value}`] = true;
-    }
+    if (skipCell)    updates[`board/${skipCell.category}/${skipCell.value}`] = true;
+    if (usedIndices) updates.lightningUsedIndices = usedIndices;
     await update(rRef(roomCode), updates);
   };
 
@@ -205,5 +210,68 @@ if (firebaseConfigurado) {
         "lightningMode/questionResult": null,
       });
     }
+  };
+
+  // ── Modo Estimación ───────────────────────────────────────────
+
+  // Activa el modo estimación. Opcionalmente marca una celda salteada.
+  GameDAO.startEstimacionMode = async (roomCode, estimacionData, skipCell = null, usedIndices = null) => {
+    const updates = {
+      currentQuestion: null,
+      buzzer: null,
+      questionPhase: null,
+      questionResult: null,
+      estimacionMode: estimacionData,
+      estimacionUsed: true,
+    };
+    if (skipCell)    updates[`board/${skipCell.category}/${skipCell.value}`] = true;
+    if (usedIndices) updates.estimacionUsedIndices = usedIndices;
+    await update(rRef(roomCode), updates);
+  };
+
+  // El host arranca la fase de recolección de respuestas.
+  GameDAO.startEstimacionCollecting = async (roomCode) => {
+    await update(rRef(roomCode), {
+      "estimacionMode/phase": "collecting",
+      "estimacionMode/openedAt": serverTimestamp(),
+    });
+  };
+
+  // Un jugador envía su estimación numérica.
+  GameDAO.submitEstimacion = async (roomCode, playerId, value) => {
+    await update(rRef(roomCode), {
+      [`estimacionMode/responses/${playerId}`]: value,
+    });
+  };
+
+  // El host revela todas las respuestas y asigna puntos al ganador.
+  GameDAO.revealEstimaciones = async (roomCode, winnerId, pointsDelta) => {
+    const updates = { "estimacionMode/phase": "revealed", "estimacionMode/winnerId": winnerId };
+    if (winnerId && pointsDelta > 0) {
+      const scoreSnap = await get(ref(db, `rooms/${roomCode}/players/${winnerId}/score`));
+      const currentScore = scoreSnap.val() || 0;
+      updates[`players/${winnerId}/score`] = currentScore + pointsDelta;
+    }
+    await update(rRef(roomCode), updates);
+  };
+
+  // El host avanza a la siguiente pregunta de estimación.
+  GameDAO.advanceEstimacionQuestion = async (roomCode, nextSlot) => {
+    await update(rRef(roomCode), {
+      "estimacionMode/currentSlot": nextSlot,
+      "estimacionMode/phase": "collecting",
+      "estimacionMode/openedAt": serverTimestamp(),
+      "estimacionMode/responses": null,
+      "estimacionMode/winnerId": null,
+    });
+  };
+
+  // El host cierra el modo estimación y avanza el turno.
+  GameDAO.endEstimacionMode = async (roomCode, nextSelectorIndex, isGameOver) => {
+    await update(rRef(roomCode), {
+      estimacionMode: null,
+      selectorIndex: nextSelectorIndex,
+      status: isGameOver ? "finished" : "playing",
+    });
   };
 }

@@ -1,5 +1,5 @@
 import { GameDAO, firebaseConfigurado } from "./firebase.js";
-import { CATEGORY_POOL, QUESTIONS, LIGHTNING_QUESTIONS, pickRandomCategories } from "./preguntas.js";
+import { CATEGORY_POOL, QUESTIONS, LIGHTNING_QUESTIONS, ESTIMATION_QUESTIONS, pickRandomCategories } from "./preguntas.js";
 
 // ═══════════════════════════════════════════════════════════════
 // 🎮 ESTADO GLOBAL
@@ -17,8 +17,9 @@ let isHost              = false;
 let unsubscribe         = null;
 let timerInterval       = null;
 let skipTimeout         = null;
-let lightningTriggered  = false;
-let _hostMigrating      = false;  // guard para no lanzar migración múltiple
+let lightningTriggered   = false;
+let estimacionTriggered  = false;
+let _hostMigrating       = false;  // guard para no lanzar migración múltiple
 let _lastBoardKey       = null;   // dirty-check tablero
 let _lastScorebarKey    = null;   // dirty-check scorebar
 
@@ -117,6 +118,23 @@ function playCorrect() {
   } catch (_) {}
 }
 
+function playEstimacion() {
+  try {
+    const ctx = getAudioCtx();
+    [330, 415, 523, 659, 784].forEach((freq, i) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.connect(gain); gain.connect(ctx.destination);
+      const t = ctx.currentTime + i * 0.09;
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.18, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      osc.start(t); osc.stop(t + 0.35);
+    });
+  } catch (_) {}
+}
+
 function playLightning() {
   try {
     const ctx = getAudioCtx();
@@ -152,9 +170,10 @@ function playIncorrect() {
 }
 
 // Seguimiento de estado para no re-disparar sonidos en cada render
-let _lastBuzzerTs       = null;
-let _lastPhase          = null;
-let _lastLightningPhase = null;
+let _lastBuzzerTs          = null;
+let _lastPhase             = null;
+let _lastLightningPhase    = null;
+let _lastEstimacionPhase   = null;
 
 function checkSoundTriggers(s) {
   const phase    = s.questionPhase;
@@ -183,6 +202,16 @@ function checkSoundTriggers(s) {
     else                                          playIncorrect();
   }
   _lastLightningPhase = lPhase || null;
+
+  // Sonidos modo estimación
+  const ePhase = s.estimacionMode?.phase;
+  if (ePhase === "announcing" && _lastEstimacionPhase !== "announcing") {
+    playEstimacion();
+  }
+  if (ePhase === "revealed" && _lastEstimacionPhase !== "revealed") {
+    playCorrect();
+  }
+  _lastEstimacionPhase = ePhase || null;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -326,8 +355,13 @@ function renderLightning(s) {
           <div class="lightning-timer-bar" id="lightning-timer-bar"></div>
         </div>
       </div>
-      <div class="lightning-question-text">${esc(qData.question)}</div>`;
-    actionsEl.innerHTML = isHost
+      <div class="lightning-question-text">${esc(qData.question)}</div>
+      ${!isMyTurnLM ? `
+        <div class="respuesta-box visible" style="width:min(400px,92vw)">
+          <div class="respuesta-label">Respuesta correcta</div>
+          <div class="respuesta-texto">${esc(qData.answer)}</div>
+        </div>` : ""}`;
+    actionsEl.innerHTML = isHost && !isMyTurnLM
       ? `<div class="acciones-host-row" style="width:min(400px,92vw)">
            <button class="btn btn-correcto" id="btn-lightning-correcto">✓ Correcto (+200)</button>
            <button class="btn btn-incorrecto" id="btn-lightning-incorrecto">✗ Incorrecto</button>
@@ -399,6 +433,152 @@ function renderLightningTimer(openedAt) {
   };
   tick();
   timerInterval = setInterval(tick, 250);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🎯 RENDER — MODO ESTIMACIÓN
+// ═══════════════════════════════════════════════════════════════
+function renderEstimacion(s) {
+  _lastBoardKey = null; // forzar re-render del tablero al volver
+  clearIntervals();
+  document.getElementById("pregunta-overlay").classList.remove("visible");
+  document.getElementById("estimacion-overlay").classList.add("visible");
+
+  const em          = s.estimacionMode;
+  const slot        = em.currentSlot || 0;
+  const qIdx        = (em.questionIndices || [])[slot] ?? em.questionIndex ?? 0;
+  const qData       = ESTIMATION_QUESTIONS[qIdx] || { question: "...", answer: 0 };
+  const currentVal  = (em.values || [])[slot] ?? em.value ?? 200;
+  const responses   = em.responses || {};
+  const order       = s.playerOrder || [];
+  const myResp      = responses[myPlayerId];
+  const respCount   = Object.keys(responses).length;
+  const totalSlots  = em.totalSlots || 1;
+
+  const contentEl = document.getElementById("estimacion-content");
+  const actionsEl = document.getElementById("estimacion-actions");
+
+  if (em.phase === "announcing") {
+    contentEl.innerHTML = `
+      <div class="estimacion-announcing">
+        <div class="estimacion-big-title">🎯<br>MODO<br>ESTIMACIÓN</div>
+        <p class="estimacion-desc">
+          <strong>${totalSlots} preguntas</strong>, todos responden a la vez.<br>
+          El más cercano al número correcto gana los puntos de esa ronda.
+        </p>
+      </div>`;
+    actionsEl.innerHTML = isHost
+      ? `<button class="btn btn-primario" id="btn-estimacion-comenzar" style="width:min(340px,92vw)">🎯 ¡Empezar!</button>`
+      : `<p style="color:var(--texto-secundario);text-align:center">Esperando que el host inicie...</p>`;
+    if (isHost) {
+      document.getElementById("btn-estimacion-comenzar")
+        .addEventListener("click", handleEstimacionComenzar);
+    }
+
+  } else if (em.phase === "collecting") {
+    const playerRows = order.map(pid => {
+      const p    = s.players?.[pid];
+      const sent = responses[pid] !== undefined;
+      const isMe = pid === myPlayerId;
+      return `<div class="estimacion-player-row${isMe ? " yo" : ""}">
+        <span class="pname">${esc(p?.name || "?")}${isMe ? " <span style='font-size:0.75rem;color:var(--texto-secundario)'>(tú)</span>" : ""}</span>
+        <span class="pstatus${sent ? " enviado" : ""}">${sent ? "✓ Enviado" : "⏳ pensando..."}</span>
+      </div>`;
+    }).join("");
+
+    contentEl.innerHTML = `
+      <div class="estimacion-value-badge">Pregunta ${slot + 1}/${totalSlots} · +${currentVal} pts al más cercano</div>
+      <div class="estimacion-question-text">${esc(qData.question)}</div>
+      <div class="estimacion-timer-bar-wrap">
+        <div class="estimacion-timer-bar" id="estimacion-timer-bar"></div>
+      </div>
+      <div class="estimacion-count">${respCount}/${order.length} respondieron</div>
+      <div class="estimacion-players-list">${playerRows}</div>`;
+
+    // Zona de input/enviado para el jugador actual
+    if (myResp !== undefined) {
+      actionsEl.innerHTML = `<div class="estimacion-enviado-msg">✓ Enviaste: <strong>${myResp}</strong></div>`;
+    } else {
+      actionsEl.innerHTML = `
+        <div class="estimacion-input-wrap">
+          <input class="estimacion-input" type="number" id="estimacion-input" placeholder="Tu número..." autocomplete="off">
+          <button class="btn-estimacion-enviar" id="btn-estimacion-enviar">Enviar</button>
+        </div>`;
+      const inputEl = document.getElementById("estimacion-input");
+      const btnEnviar = document.getElementById("btn-estimacion-enviar");
+      inputEl.focus();
+      inputEl.addEventListener("keydown", e => { if (e.key === "Enter") handleEstimacionSubmit(); });
+      btnEnviar.addEventListener("click", handleEstimacionSubmit);
+    }
+
+    // El host puede revelar en cualquier momento
+    if (isHost) {
+      const btnEl = document.createElement("button");
+      btnEl.className = "btn btn-primario";
+      btnEl.id = "btn-estimacion-revelar";
+      btnEl.style.cssText = "width:min(340px,92vw);margin-top:8px";
+      btnEl.textContent = "👁 Revelar respuestas";
+      btnEl.addEventListener("click", handleEstimacionRevelar);
+      actionsEl.appendChild(btnEl);
+    }
+
+    renderEstimacionTimer(em.openedAt);
+
+  } else if (em.phase === "revealed") {
+    const answer    = qData.answer;
+    const winnerId  = em.winnerId;
+
+    // Ordenar por cercanía (quien no respondió va al final)
+    const ranked = order.map(pid => ({
+      pid,
+      val:  responses[pid],
+      diff: responses[pid] !== undefined ? Math.abs(responses[pid] - answer) : Infinity,
+    })).sort((a, b) => a.diff - b.diff);
+
+    const rows = ranked.map((item, i) => {
+      const p       = s.players?.[item.pid];
+      const isWinner = item.pid === winnerId;
+      const hasResp  = item.val !== undefined;
+      return `<div class="estimacion-result-row${isWinner ? " ganador" : ""}" style="animation-delay:${i * 0.08}s">
+        <span class="rpos">${isWinner ? "🏆" : `${i + 1}.`}</span>
+        <span class="rname">${esc(p?.name || "?")}</span>
+        ${hasResp
+          ? `<span class="rval">${item.val}</span><span class="rdiff">±${item.diff}</span>`
+          : `<span class="rsin">Sin respuesta</span>`}
+        ${isWinner ? `<span class="rpts">+${currentVal} pts</span>` : ""}
+      </div>`;
+    }).join("");
+
+    contentEl.innerHTML = `
+      <div class="estimacion-value-badge">Pregunta ${slot + 1}/${totalSlots} · +${currentVal} pts</div>
+      <div class="estimacion-question-text">${esc(qData.question)}</div>
+      <div class="estimacion-answer-reveal">Respuesta correcta<strong>${answer}</strong></div>
+      <div class="estimacion-results">${rows}</div>`;
+
+    const isLast = (slot + 1) >= totalSlots;
+    actionsEl.innerHTML = isHost
+      ? `<button class="btn btn-primario" id="btn-estimacion-siguiente" style="width:min(340px,92vw)">${isLast ? "Volver al juego ▶" : `Siguiente pregunta (${slot + 2}/${totalSlots}) ▶`}</button>`
+      : `<p style="color:var(--texto-secundario);text-align:center">Esperando al host...</p>`;
+    if (isHost) {
+      document.getElementById("btn-estimacion-siguiente")
+        .addEventListener("click", handleEstimacionSiguiente);
+    }
+  }
+}
+
+function renderEstimacionTimer(openedAt) {
+  const TIMEOUT = 45000;
+  const tick = () => {
+    const barEl = document.getElementById("estimacion-timer-bar");
+    if (!barEl) { clearIntervals(); return; }
+    const elapsed = Date.now() - openedAt;
+    const pct     = Math.max(0, 100 - (elapsed / TIMEOUT) * 100);
+    barEl.style.width      = pct + "%";
+    barEl.style.background = pct < 20 ? "var(--incorrecto)" : pct < 50 ? "var(--acento)" : "#06b6d4";
+    if (pct <= 0) clearIntervals();
+  };
+  tick();
+  timerInterval = setInterval(tick, 500);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -514,6 +694,7 @@ function renderBuzzerZone(s, phase, buzzer) {
 
   btnBuzzer.style.display    = "none";
   btnRevelar.style.display   = "none";
+  btnRevelar.disabled        = false;
   accionesHost.style.display = "none";
   btnSiguiente.style.display = "none";
   btnSkip.style.display      = "none";
@@ -717,9 +898,14 @@ function render(s) {
       showScreen("screen-game");
       updateScorebar(s);
       if (s.lightningMode?.active) {
+        document.getElementById("estimacion-overlay").classList.remove("visible");
         renderLightning(s);
+      } else if (s.estimacionMode?.active) {
+        document.getElementById("lightning-overlay").classList.remove("visible");
+        renderEstimacion(s);
       } else {
         document.getElementById("lightning-overlay").classList.remove("visible");
+        document.getElementById("estimacion-overlay").classList.remove("visible");
         if (!s.currentQuestion) renderBoard(s);
         else                    renderQuestion(s);
       }
@@ -875,8 +1061,15 @@ async function handleSiguiente() {
   const isGameOver = isBoardComplete(state.board, state.categories);
 
   try {
+    const answered = countAnsweredCells(state.board, state.categories);
+    if (!isGameOver && !state.estimacionUsed && !estimacionTriggered) {
+      if (answered >= 10) {
+        estimacionTriggered = true;
+        await triggerEstimacionMode(nextIndex);
+        return;
+      }
+    }
     if (!isGameOver && !state.lightningUsed && !lightningTriggered) {
-      const answered = countAnsweredCells(state.board, state.categories);
       if (answered >= 15) {
         lightningTriggered = true;
         await triggerLightningMode(nextIndex);
@@ -887,7 +1080,8 @@ async function handleSiguiente() {
   } catch (e) {
     console.error("Error al avanzar turno:", e);
     btn.disabled = false;
-    lightningTriggered = false;
+    lightningTriggered  = false;
+    estimacionTriggered = false;
   }
 }
 
@@ -898,11 +1092,18 @@ async function handleSkip() {
   const nextIndex = (state.selectorIndex + 1) % order.length;
 
   try {
+    const answered = countAnsweredCells(state.board, state.categories) + 1; // +1 por la celda skipeada
+    const skipCell = { category: state.currentQuestion.category, value: state.currentQuestion.value };
+    if (!state.estimacionUsed && !estimacionTriggered) {
+      if (answered >= 10) {
+        estimacionTriggered = true;
+        await triggerEstimacionMode(nextIndex, skipCell);
+        return;
+      }
+    }
     if (!state.lightningUsed && !lightningTriggered) {
-      const answered = countAnsweredCells(state.board, state.categories) + 1;
       if (answered >= 15) {
         lightningTriggered = true;
-        const skipCell = { category: state.currentQuestion.category, value: state.currentQuestion.value };
         await triggerLightningMode(nextIndex, skipCell);
         return;
       }
@@ -911,19 +1112,24 @@ async function handleSkip() {
   } catch (e) {
     console.error("Error al skipear:", e);
     btn.disabled = false;
-    lightningTriggered = false;
+    lightningTriggered  = false;
+    estimacionTriggered = false;
   }
 }
 
 async function triggerLightningMode(selectorIndexOnEntry, skipCell = null) {
-  const order       = state.playerOrder || [];
-  const playerCount = order.length;
-  const totalSlots  = playerCount * 2;
+  const order      = state.playerOrder || [];
+  const totalSlots = order.length * 2;
 
-  // Elegir índices al azar del pool de preguntas relámpago
-  const indices  = LIGHTNING_QUESTIONS.map((_, i) => i);
-  const shuffled = [...indices].sort(() => Math.random() - 0.5);
+  const usedIndices = state.lightningUsedIndices || [];
+  const fullPool    = LIGHTNING_QUESTIONS.map((_, i) => i);
+  const available   = fullPool.filter(i => !usedIndices.includes(i));
+  const source      = available.length >= totalSlots ? available : fullPool; // reset si se agotó
+  const shuffled    = [...source].sort(() => Math.random() - 0.5);
   const questionIndices = shuffled.slice(0, totalSlots);
+  const nextUsedIndices = source === fullPool
+    ? questionIndices                                          // reset: solo guardar el lote actual
+    : [...new Set([...usedIndices, ...questionIndices])];
 
   await GameDAO.startLightningMode(roomCode, {
     active: true,
@@ -933,7 +1139,7 @@ async function triggerLightningMode(selectorIndexOnEntry, skipCell = null) {
     questionIndices,
     questionResult: null,
     openedAt: null,
-  }, selectorIndexOnEntry, skipCell);
+  }, selectorIndexOnEntry, skipCell, nextUsedIndices);
 }
 
 async function handleLightningComenzar() {
@@ -967,9 +1173,110 @@ async function handleLightningSiguiente() {
   await GameDAO.lightningAdvance(roomCode, nextSlot, lm.totalSlots);
 }
 
+async function handleEstimacionComenzar() {
+  document.getElementById("btn-estimacion-comenzar").disabled = true;
+  await GameDAO.startEstimacionCollecting(roomCode);
+}
+
+async function handleEstimacionSubmit() {
+  const inputEl  = document.getElementById("estimacion-input");
+  const btnEnviar = document.getElementById("btn-estimacion-enviar");
+  if (!inputEl) return;
+  const val = parseInt(inputEl.value, 10);
+  if (isNaN(val)) { inputEl.focus(); return; }
+  if (btnEnviar) btnEnviar.disabled = true;
+  try {
+    await GameDAO.submitEstimacion(roomCode, myPlayerId, val);
+  } catch (e) {
+    console.error("Error al enviar estimación:", e);
+    if (btnEnviar) btnEnviar.disabled = false;
+  }
+}
+
+async function handleEstimacionRevelar() {
+  const btn = document.getElementById("btn-estimacion-revelar");
+  if (btn) btn.disabled = true;
+  const em        = state.estimacionMode;
+  const slot      = em.currentSlot || 0;
+  const qIdx      = (em.questionIndices || [])[slot] ?? em.questionIndex ?? 0;
+  const qData     = ESTIMATION_QUESTIONS[qIdx];
+  const answer    = qData.answer;
+  const pointsDelta = (em.values || [])[slot] ?? em.value ?? 200;
+  const responses = em.responses || {};
+  const order     = state.playerOrder || [];
+
+  // El jugador más cercano (en orden de turno para desempatar)
+  let winnerId = null;
+  let minDiff  = Infinity;
+  order.forEach(pid => {
+    if (responses[pid] === undefined) return;
+    const diff = Math.abs(responses[pid] - answer);
+    if (diff < minDiff) { minDiff = diff; winnerId = pid; }
+  });
+
+  triggerFlash("correcto");
+  try {
+    await GameDAO.revealEstimaciones(roomCode, winnerId, pointsDelta);
+  } catch (e) {
+    console.error("Error al revelar estimaciones:", e);
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function handleEstimacionSiguiente() {
+  const btn = document.getElementById("btn-estimacion-siguiente");
+  if (btn) btn.disabled = true;
+  const em       = state.estimacionMode;
+  const nextSlot = (em.currentSlot || 0) + 1;
+  try {
+    if (nextSlot >= (em.totalSlots || 1)) {
+      const isGameOver = isBoardComplete(state.board, state.categories);
+      await GameDAO.endEstimacionMode(roomCode, em.nextSelectorIndex, isGameOver);
+    } else {
+      await GameDAO.advanceEstimacionQuestion(roomCode, nextSlot);
+    }
+  } catch (e) {
+    console.error("Error al avanzar estimación:", e);
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function triggerEstimacionMode(nextSelectorIndex, skipCell = null) {
+  const TOTAL_SLOTS = 6;
+  const valuePool   = [200, 400, 600, 800, 1000];
+
+  const usedIndices = state.estimacionUsedIndices || [];
+  const fullPool    = ESTIMATION_QUESTIONS.map((_, i) => i);
+  const available   = fullPool.filter(i => !usedIndices.includes(i));
+  const source      = available.length >= TOTAL_SLOTS ? available : fullPool; // reset si se agotó
+  const shuffled    = [...source].sort(() => Math.random() - 0.5);
+  const questionIndices = shuffled.slice(0, TOTAL_SLOTS);
+  const nextUsedIndices = source === fullPool
+    ? questionIndices
+    : [...new Set([...usedIndices, ...questionIndices])];
+
+  const values = Array.from({ length: TOTAL_SLOTS }, () =>
+    valuePool[Math.floor(Math.random() * valuePool.length)]
+  );
+
+  await GameDAO.startEstimacionMode(roomCode, {
+    active: true,
+    phase: "announcing",
+    currentSlot: 0,
+    totalSlots: TOTAL_SLOTS,
+    questionIndices,
+    values,
+    openedAt: null,
+    responses: null,
+    winnerId: null,
+    nextSelectorIndex,
+  }, skipCell, nextUsedIndices);
+}
+
 async function handleJugarNuevo() {
   if (!isHost) return;
-  lightningTriggered = false;
+  lightningTriggered  = false;
+  estimacionTriggered = false;
   const prevUsed = state.usedCategories || [];
   const alreadyUsed = [...new Set([...prevUsed, ...(state.categories || [])])];
   const categories = pickRandomCategories(CATEGORY_POOL, 6, alreadyUsed);
@@ -989,6 +1296,8 @@ async function handleJugarNuevo() {
     status: "lobby",
     categories,
     usedCategories: nextUsed,
+    lightningUsedIndices:  state.lightningUsedIndices  || [],
+    estimacionUsedIndices: state.estimacionUsedIndices || [],
     board,
     players,
     playerOrder: state.playerOrder,

@@ -372,3 +372,34 @@ export const LIGHTNING_QUESTIONS = [
   { question: "¿Qué animal es el más grande del mundo?", answer: "La ballena azul" },
   { question: "¿Cuántos Grand Slams ganó Messi?", answer: "Ninguno, eso es tenis — Messi juega al fútbol" },
 ];
+
+// ═══════════════════════════════════════════════════════════════
+// 🎯 PREGUNTAS DE ESTIMACIÓN — respuestas numéricas
+// ═══════════════════════════════════════════════════════════════
+export const ESTIMATION_QUESTIONS = [
+  { question: "¿En qué año se fundó el Real Madrid?", answer: 1902 },
+  { question: "¿En qué año nació Lionel Messi?", answer: 1987 },
+  { question: "¿Cuántos metros de altura mide la Torre Eiffel (con antena)?", answer: 330 },
+  { question: "¿En qué año ganó Argentina su primer Mundial de Fútbol?", answer: 1978 },
+  { question: "¿Cuántos países son miembros de la ONU?", answer: 193 },
+  { question: "¿En qué año se celebraron los Juegos Olímpicos de Barcelona?", answer: 1992 },
+  { question: "¿En qué año nació Ibai Llanos?", answer: 1995 },
+  { question: "¿Cuántos goles marcó Messi en la temporada 2011-12 con el Barcelona?", answer: 73 },
+  { question: "¿En qué año se emitió el primer episodio de Los Simpson?", answer: 1989 },
+  { question: "¿En qué año se declaró la independencia de Argentina?", answer: 1816 },
+  { question: "¿Cuántos metros tiene el Aconcagua, el pico más alto de América?", answer: 6961 },
+  { question: "¿En qué año se fundó el FC Barcelona?", answer: 1899 },
+  { question: "¿En qué año se lanzó el primer iPhone?", answer: 2007 },
+  { question: "¿Cuántos episodios tiene Breaking Bad en total?", answer: 62 },
+  { question: "¿En qué año murió Diego Armando Maradona?", answer: 2020 },
+  { question: "¿En qué año se inauguró el Camp Nou?", answer: 1957 },
+  { question: "¿Cuántos Balones de Oro ganó Messi hasta 2023?", answer: 8 },
+  { question: "¿En qué año se fundó Twitch?", answer: 2011 },
+  { question: "¿Cuántos kilómetros separan Madrid de Buenos Aires (en línea recta)?", answer: 10265 },
+  { question: "¿En qué año ganó España su primer Mundial de fútbol?", answer: 2010 },
+  { question: "¿Cuántos países tiene América del Sur?", answer: 12 },
+  { question: "¿En qué año se lanzó YouTube?", answer: 2005 },
+  { question: "¿Cuántas temporadas tiene la serie Breaking Bad?", answer: 5 },
+  { question: "¿En qué año se construyó la Sagrada Familia (inicio de obras)?", answer: 1882 },
+  { question: "¿Cuántos metros de largo tiene un campo de fútbol estándar (mínimo FIFA)?", answer: 100 },
+];
