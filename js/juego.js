@@ -461,7 +461,16 @@ function renderEstimacion(s) {
   if (em.phase === "announcing") {
     contentEl.innerHTML = `
       <div class="estimacion-announcing">
-        <div class="estimacion-big-title">🎯<br>MODO<br>ESTIMACIÓN</div>
+        <div class="estimacion-impact-scene">
+          <div class="estimacion-missile">🚀</div>
+          <div class="estimacion-diana">🎯</div>
+          <div class="estimacion-rings">
+            <div class="ering r1"></div>
+            <div class="ering r2"></div>
+            <div class="ering r3"></div>
+          </div>
+        </div>
+        <div class="estimacion-big-title">MODO<br>ESTIMACIÓN</div>
         <p class="estimacion-desc">
           <strong>${totalSlots} preguntas</strong>, todos responden a la vez.<br>
           El más cercano al número correcto gana los puntos de esa ronda.
