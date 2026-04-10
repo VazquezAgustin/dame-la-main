@@ -22,6 +22,21 @@ export const CATEGORY_POOL = [
   "La Roja y la Albiceleste",
   "Letras Hispanas",
   "El Mundo del Deporte",
+  "Pantalla Chica",
+  "El Hincha",
+  "Los 90 Mandan",
+  "El Podio",
+  "Reyes y Presidentes",
+  "Viral y Punto",
+  "El Cabezón",
+  "La Pista",
+  "La Playlist",
+  "El Vestuario",
+  "Corre, Salta, Nada",
+  "Tierra Nuestra",
+  "La Bodega",
+  "Mente de Científico",
+  "Tótum Revolútum",
 ];
 
 export function pickRandomCategories(pool, count = 6, exclude = []) {
@@ -179,6 +194,126 @@ export const QUESTIONS = {
     { value: 600,  question: "¿En qué deporte se convirtió en leyenda el argentino Juan Manuel Fangio?", answer: "Fórmula 1 (automovilismo)" },
     { value: 800,  question: "¿Cuántos campeonatos mundiales de Fórmula 1 ganó Juan Manuel Fangio?", answer: "5" },
     { value: 1000, question: "¿En qué año ganó Argentina el oro olímpico en básquetbol con la llamada 'Generación Dorada'?", answer: "2004 (Atenas)" },
+  ],
+
+  "Pantalla Chica": [
+    { value: 200,  question: "¿En qué canal argentino se emite el reality Gran Hermano?", answer: "Telefe" },
+    { value: 400,  question: "¿Cómo se llama el programa de cocina de famosos que arrasó en Telefe desde 2020?", answer: "MasterChef Celebrity" },
+    { value: 600,  question: "¿Cómo se llama la telenovela argentina de los 90 protagonizada por Natalia Oreiro y Facundo Arana?", answer: "Muñeca Brava" },
+    { value: 800,  question: "¿En qué año se estrenó la primera edición de Gran Hermano en Argentina?", answer: "2001" },
+    { value: 1000, question: "¿Cómo se llamaba el ciclo de entrevistas y entretenimiento de Canal 13 Argentina que condujo Mirtha Legrand durante décadas?", answer: "Las comidas de Mirtha / Almorzando con Mirtha Legrand (aceptar ambas)" },
+  ],
+
+  "El Hincha": [
+    { value: 200,  question: "¿Cómo se llama el clásico entre River Plate y Boca Juniors?", answer: "El Superclásico" },
+    { value: 400,  question: "¿Cuántas Champions League ha ganado el Real Madrid (hasta 2024)?", answer: "15" },
+    { value: 600,  question: "¿En qué estadio juega River Plate de Argentina?", answer: "El Monumental (Estadio Más Monumental)" },
+    { value: 800,  question: "¿Cuántas Copas Libertadores ha ganado Boca Juniors?", answer: "6" },
+    { value: 1000, question: "¿En qué ciudad se jugó la final de la Copa Libertadores 2018 entre River y Boca, disputada fuera de Argentina?", answer: "Madrid" },
+  ],
+
+  "Los 90 Mandan": [
+    { value: 200,  question: "¿Cómo se llamaba el juguete virtual de bolsillo para cuidar una mascota que fue furor en los 90?", answer: "Tamagotchi" },
+    { value: 400,  question: "¿Qué dúo español cantó 'La Macarena', el hit que conquistó el mundo entero?", answer: "Los del Río" },
+    { value: 600,  question: "¿Qué película de Disney de 1994 cuenta la historia del cachorro de león Simba?", answer: "El Rey León" },
+    { value: 800,  question: "¿Cómo se llama la consola de Nintendo que llegó en 1996 y popularizó los juegos en 3D?", answer: "Nintendo 64" },
+    { value: 1000, question: "¿Cómo se llama la banda de rock argentina de los 90 conocida por 'Corazón Delator' y 'Yo te amo tanto'?", answer: "Vilma Palma e Vampiros" },
+  ],
+
+  "El Podio": [
+    { value: 200,  question: "¿En qué deporte es leyenda el español Rafael Nadal?", answer: "Tenis" },
+    { value: 400,  question: "¿En qué deporte ganó Argentina el oro olímpico en Río 2016 con Los Leones?", answer: "Hockey sobre césped masculino" },
+    { value: 600,  question: "¿Cuántos Tours de Francia consecutivos ganó el ciclista español Miguel Induráin?", answer: "5 (de 1991 a 1995)" },
+    { value: 800,  question: "¿En qué año ganó Juan Martín del Potro el US Open de tenis?", answer: "2009" },
+    { value: 1000, question: "¿En qué deporte ganó Carolina Marín el oro olímpico en Río 2016?", answer: "Bádminton" },
+  ],
+
+  "Reyes y Presidentes": [
+    { value: 200,  question: "¿Cómo se llama el rey actual de España?", answer: "Felipe VI" },
+    { value: 400,  question: "¿Quién fue el primer presidente elegido en Argentina tras la última dictadura militar?", answer: "Raúl Alfonsín" },
+    { value: 600,  question: "¿En qué año abdicó Juan Carlos I a favor de su hijo Felipe VI?", answer: "2014" },
+    { value: 800,  question: "¿Cómo se llama el presidente del Gobierno de España desde 2018?", answer: "Pedro Sánchez" },
+    { value: 1000, question: "¿Cuántos presidentes tuvo Argentina durante la crisis del 19 al 31 de diciembre de 2001?", answer: "5 presidentes" },
+  ],
+
+  "Viral y Punto": [
+    { value: 200,  question: "¿Cómo se llamaba el challenge de 2014 donde la gente se tiraba un balde de agua helada para recaudar fondos?", answer: "Ice Bucket Challenge" },
+    { value: 400,  question: "¿Cómo se llama la app china de videos cortos que se volvió viral en todo el mundo?", answer: "TikTok" },
+    { value: 600,  question: "¿Qué presidente argentino se hizo viral bailando en la Quinta de Olivos durante la pandemia?", answer: "Alberto Fernández" },
+    { value: 800,  question: "¿Cómo se llamaba el juego de móvil que fue viral en 2016 por atrapar Pokémon en la calle con realidad aumentada?", answer: "Pokémon GO" },
+    { value: 1000, question: "¿En qué año se publicó el primer tweet de la historia, fundando la red social Twitter?", answer: "2006" },
+  ],
+
+  "El Cabezón": [
+    { value: 200,  question: "¿Cómo se llama el conductor argentino apodado 'El Cabezón'?", answer: "Marcelo Tinelli" },
+    { value: 400,  question: "¿Cómo se llama el programa que condujo Tinelli durante décadas en El Trece?", answer: "ShowMatch" },
+    { value: 600,  question: "¿De qué club de fútbol argentino es fanático y fue presidente Marcelo Tinelli?", answer: "San Lorenzo de Almagro" },
+    { value: 800,  question: "¿En qué ciudad de la provincia de Buenos Aires nació Marcelo Tinelli?", answer: "Bolívar" },
+    { value: 1000, question: "¿En qué año se emitió ShowMatch por primera vez en la televisión argentina?", answer: "1990" },
+  ],
+
+  "La Pista": [
+    { value: 200,  question: "¿Cómo se llama el segmento de baile más famoso de ShowMatch?", answer: "Bailando por un Sueño" },
+    { value: 400,  question: "¿Cómo se llama la modelo y jurado del Bailando conocida como 'Pampita'?", answer: "Carolina Ardohain" },
+    { value: 600,  question: "¿En qué canal argentino se emite ShowMatch con Tinelli?", answer: "El Trece (Canal 13)" },
+    { value: 800,  question: "¿Qué cantante de cumbia apodada 'La Bomba Tucumana' fue figura icónica del Bailando?", answer: "Gladys" },
+    { value: 1000, question: "¿En qué año se emitió la primera edición del Bailando por un Sueño?", answer: "2006" },
+  ],
+
+  "La Playlist": [
+    { value: 200,  question: "¿De qué país es el cantante de reggaeton J Balvin?", answer: "Colombia" },
+    { value: 400,  question: "¿Qué artista española arrasó en los Grammy Latinos 2018 con su álbum 'El Mal Querer'?", answer: "Rosalía" },
+    { value: 600,  question: "¿Qué banda argentina de rock cantó 'De Música Ligera'?", answer: "Soda Stereo" },
+    { value: 800,  question: "¿Cómo se llama el cantante argentino de cuarteto apodado 'La Mona'?", answer: "Carlos 'La Mona' Jiménez" },
+    { value: 1000, question: "¿Cómo se llama el último álbum de estudio que grabó Gustavo Cerati antes de su accidente en 2010?", answer: "Fuerza Natural (2009)" },
+  ],
+
+  "El Vestuario": [
+    { value: 200,  question: "¿Cuál es el apodo de Lionel Messi?", answer: "La Pulga" },
+    { value: 400,  question: "¿Cuál es el apodo del delantero argentino Lautaro Martínez?", answer: "El Toro" },
+    { value: 600,  question: "¿Cómo se llama el estadio del Atlético de Madrid inaugurado en 2017?", answer: "Cívitas Metropolitano (o Wanda Metropolitano, aceptar ambos)" },
+    { value: 800,  question: "¿Cuánto costó el traspaso de Neymar del Barcelona al PSG en 2017, el más caro de la historia?", answer: "222 millones de euros" },
+    { value: 1000, question: "¿Cuántos goles marcó Sergio 'Kun' Agüero en la Premier League con el Manchester City, siendo el máximo goleador extranjero de la historia?", answer: "184 goles" },
+  ],
+
+  "Corre, Salta, Nada": [
+    { value: 200,  question: "¿En qué deporte se compite en el Tour de Francia?", answer: "Ciclismo" },
+    { value: 400,  question: "¿En cuántos estilos diferentes se compite en natación en los Juegos Olímpicos?", answer: "4 (libre, espalda, pecho y mariposa)" },
+    { value: 600,  question: "¿Qué país ganó el oro en el Mundial de Rugby de 2023 celebrado en Francia?", answer: "Sudáfrica" },
+    { value: 800,  question: "¿Cómo se llama el torneo de tenis que se juega sobre tierra batida en París?", answer: "Roland Garros" },
+    { value: 1000, question: "¿Cuántos Grand Slams ganó Carlos Alcaraz hasta el año 2024?", answer: "4 (US Open 2022, Wimbledon 2023, Roland Garros 2024, Wimbledon 2024)" },
+  ],
+
+  "Tierra Nuestra": [
+    { value: 200,  question: "¿Cuál es la montaña más alta de España?", answer: "El Teide (en Tenerife, Canarias)" },
+    { value: 400,  question: "¿En qué provincia argentina está el glaciar Perito Moreno?", answer: "Santa Cruz" },
+    { value: 600,  question: "¿Cuántas Comunidades Autónomas tiene España?", answer: "17" },
+    { value: 800,  question: "¿En qué provincia argentina está la región conocida como Valle de la Luna?", answer: "San Juan" },
+    { value: 1000, question: "¿Cuál es la provincia más grande de Argentina en superficie?", answer: "Buenos Aires" },
+  ],
+
+  "La Bodega": [
+    { value: 200,  question: "¿Qué bebida espirituosa argentina se mezcla típicamente con Coca-Cola?", answer: "Fernet (Fernet con Coca)" },
+    { value: 400,  question: "¿De qué región española es originario el vino Rioja?", answer: "La Rioja" },
+    { value: 600,  question: "¿En qué provincia argentina se produce la mayor parte del vino nacional?", answer: "Mendoza" },
+    { value: 800,  question: "¿Cómo se llama el aperitivo catalán de pan frotado con tomate y rociado con aceite de oliva?", answer: "Pa amb tomàquet / Pan con tomate" },
+    { value: 1000, question: "¿Cómo se llama el plato típico madrileño de cocido hecho con garbanzos, verduras y carne?", answer: "Cocido madrileño" },
+  ],
+
+  "Mente de Científico": [
+    { value: 200,  question: "¿Qué científico argentino ganó el Premio Nobel de Química en 1970 por su trabajo sobre los nucleótidos del azúcar?", answer: "Luis Federico Leloir" },
+    { value: 400,  question: "¿Cómo se llama el médico argentino que inventó el bypass coronario en 1967?", answer: "René Favaloro" },
+    { value: 600,  question: "¿Cómo se llama el telescopio más grande del mundo, ubicado en La Palma, Canarias?", answer: "Gran Telescopio Canarias (GTC)" },
+    { value: 800,  question: "¿Qué científico español fue pionero en el estudio de las neuronas y ganó el Premio Nobel en 1906?", answer: "Santiago Ramón y Cajal" },
+    { value: 1000, question: "¿En qué año el argentino Bernardo Houssay se convirtió en el primer latinoamericano en ganar el Nobel de Fisiología o Medicina?", answer: "1947" },
+  ],
+
+  "Tótum Revolútum": [
+    { value: 200,  question: "¿Cuántos lados tiene un octágono?", answer: "8" },
+    { value: 400,  question: "¿En qué año se lanzó el primer iPhone?", answer: "2007" },
+    { value: 600,  question: "¿Cuál es el hueso más largo del cuerpo humano?", answer: "El fémur" },
+    { value: 800,  question: "¿Cuántos segundos tiene una hora?", answer: "3600" },
+    { value: 1000, question: "¿Qué país fue el primero en el mundo en otorgar el voto a la mujer?", answer: "Nueva Zelanda (1893)" },
   ],
 };
 
