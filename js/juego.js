@@ -366,16 +366,17 @@ function renderLightning(s) {
         <div class="respuesta-box visible" style="width:min(400px,92vw)">
           <div class="respuesta-label">Respuesta correcta</div>
           <div class="respuesta-texto">${esc(qData.answer)}</div>
-        </div>` : ""}`;
-    actionsEl.innerHTML = isHost
-      ? `${isMyTurnLM ? `<p style="color:var(--texto-secundario);text-align:center;margin-bottom:8px">¡Decí tu respuesta en voz alta!</p>` : ""}
-         <div class="acciones-host-row" style="width:min(400px,92vw)">
-           <button class="btn btn-correcto" id="btn-lightning-correcto">✓ Correcto (+200)</button>
-           <button class="btn btn-incorrecto" id="btn-lightning-incorrecto">✗ Incorrecto</button>
-         </div>`
-      : `<p style="color:var(--texto-secundario);text-align:center">
-           ${isMyTurnLM ? "¡Decí tu respuesta en voz alta!" : "Esperando que el host decida..."}
-         </p>`;
+        </div>` : ""}
+      ${isHost
+        ? `${isMyTurnLM ? `<p style="color:var(--texto-secundario);text-align:center;margin-bottom:8px">¡Decí tu respuesta en voz alta!</p>` : ""}
+           <div class="acciones-host-row" style="width:min(400px,92vw)">
+             <button class="btn btn-correcto" id="btn-lightning-correcto">✓ Correcto (+200)</button>
+             <button class="btn btn-incorrecto" id="btn-lightning-incorrecto">✗ Incorrecto</button>
+           </div>`
+        : `<p style="color:var(--texto-secundario);text-align:center">
+             ${isMyTurnLM ? "¡Decí tu respuesta en voz alta!" : "Esperando que el host decida..."}
+           </p>`}`;
+    actionsEl.innerHTML = "";
     if (isHost) {
       document.getElementById("btn-lightning-correcto")
         .addEventListener("click", () => handleLightningJudge(true));
@@ -794,6 +795,9 @@ function updateScorebar(s) {
   const scorebarKey = JSON.stringify({
     scores: Object.fromEntries(s.playerOrder.map(pid => [pid, s.players[pid]?.score || 0])),
     selectorIndex: s.selectorIndex,
+    isHost,
+    status: s.status,
+    roomCode,
   });
   if (scorebarKey === _lastScorebarKey) return;
   _lastScorebarKey = scorebarKey;
@@ -814,21 +818,48 @@ function updateScorebar(s) {
     el.appendChild(span);
   });
 
+  document.getElementById("scorebar").classList.toggle("host", isHost);
+
+  const rcEl = document.getElementById("scorebar-room-code");
+  if (isHost && roomCode) {
+    rcEl.innerHTML = `
+      <div class="scorebar-roomcode">
+        <span class="scorebar-roomcode-label">CÓDIGO DE SALA</span>
+        <span class="scorebar-roomcode-code">${roomCode}</span>
+        <button class="scorebar-roomcode-copy" id="btn-copy-roomcode" title="Copiar código">📋</button>
+      </div>
+    `;
+    document.getElementById("btn-copy-roomcode").addEventListener("click", (e) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(roomCode).then(() => {
+        const btn = document.getElementById("btn-copy-roomcode");
+        if (btn) { btn.textContent = "✓"; setTimeout(() => { if (btn) btn.textContent = "📋"; }, 1500); }
+      });
+    });
+  } else {
+    rcEl.innerHTML = "";
+  }
+
   const sorted = [...order].sort((a, b) => (players[b]?.score || 0) - (players[a]?.score || 0));
   const rankEl = document.getElementById("scorebar-ranking");
   rankEl.innerHTML = "";
   const medals = ["🥇", "🥈", "🥉"];
+  const canKick = isHost && s.status === "playing";
   sorted.forEach((pid, i) => {
     const p = players[pid];
     if (!p) return;
     const div = document.createElement("div");
     div.className = "rank-item";
+    const kickBtn = (canKick && pid !== myPlayerId)
+      ? `<button class="btn-kick" data-pid="${pid}" title="Expulsar jugador">×</button>`
+      : "";
     div.innerHTML = `
       <span class="rank-pos">${medals[i] || (i + 1)}</span>
       <div class="rank-avatar">${(p.name || "?")[0].toUpperCase()}</div>
       <span class="rank-name">${p.name || "?"}</span>
       ${pid === myPlayerId ? '<span class="rank-tu">← Tú</span>' : ''}
       <span class="rank-pts">${p.score || 0} pts</span>
+      ${kickBtn}
     `;
     rankEl.appendChild(div);
   });
@@ -910,6 +941,16 @@ function checkHostMigration(s) {
 // ═══════════════════════════════════════════════════════════════
 function render(s) {
   if (!s) return;
+
+  // Detectar si este jugador fue kickeado
+  if (s.playerOrder && !s.playerOrder.includes(myPlayerId)) {
+    sessionStorage.removeItem("roomCode");
+    sessionStorage.removeItem("myName");
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    document.getElementById("kicked-overlay").style.display = "flex";
+    return;
+  }
+
   state  = s;
   isHost = myPlayerId === s.hostId;
 
@@ -1008,8 +1049,19 @@ async function handleJoinRoom() {
   try {
     const exists = await GameDAO.roomExists(code);
     if (!exists) {
-      setError("Sala no encontrada o ya iniciada");
-      btn.disabled = false; btn.textContent = "Unirse";
+      const rejoin = await GameDAO.canRejoin(code, myPlayerId);
+      if (!rejoin) {
+        setError("Sala no encontrada o ya iniciada");
+        btn.disabled = false; btn.textContent = "Unirse";
+        return;
+      }
+      // Reingreso: el jugador ya existe en la sala, solo reconectar
+      myName   = name;
+      roomCode = code;
+      sessionStorage.setItem("roomCode", roomCode);
+      sessionStorage.setItem("myName",   myName);
+      subscribeToRoom(roomCode);
+      GameDAO.setupPresence(roomCode, myPlayerId).catch(() => {});
       return;
     }
     myName   = name;
@@ -1148,6 +1200,15 @@ async function handleSkip() {
     btn.disabled = false;
     lightningTriggered  = false;
     estimacionTriggered = false;
+  }
+}
+
+async function handleKick(playerId) {
+  if (!isHost || playerId === myPlayerId) return;
+  try {
+    await GameDAO.kickPlayer(roomCode, playerId);
+  } catch (e) {
+    console.error("Error al expulsar jugador:", e);
   }
 }
 
@@ -1426,8 +1487,14 @@ document.getElementById("btn-skip").addEventListener("click", handleSkip);
 // Final
 document.getElementById("btn-jugar-nuevo").addEventListener("click", handleJugarNuevo);
 
-// Scorebar toggle
-document.getElementById("scorebar").addEventListener("click", () => {
+// Scorebar toggle + delegación de kick
+document.getElementById("scorebar").addEventListener("click", (e) => {
+  const kickBtn = e.target.closest(".btn-kick");
+  if (kickBtn) {
+    e.stopPropagation();
+    handleKick(kickBtn.dataset.pid);
+    return;
+  }
   document.getElementById("scorebar").classList.toggle("expanded");
 });
 
