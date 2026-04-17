@@ -18,6 +18,7 @@ if (firebaseConfigurado) {
 export const GameDAO = {
   createRoom:            async () => {},
   roomExists:            async () => false,
+  canRejoin:             async () => false,
   joinRoom:              async () => {},
   startGame:             async () => {},
   selectQuestion:        async () => {},
@@ -36,6 +37,7 @@ export const GameDAO = {
   revealEstimaciones:         async () => {},
   advanceEstimacionQuestion:  async () => {},
   endEstimacionMode:          async () => {},
+  kickPlayer:             async () => {},
   setupPresence:             async () => {},
   migrateHost:           async () => {},
   subscribe:             () => () => {},
@@ -53,6 +55,14 @@ if (firebaseConfigurado) {
   GameDAO.roomExists = async (roomCode) => {
     const snap = await get(rRef(roomCode));
     return snap.exists() && snap.val().status === "lobby";
+  };
+
+  GameDAO.canRejoin = async (roomCode, playerId) => {
+    const snap = await get(rRef(roomCode));
+    if (!snap.exists()) return false;
+    const val = snap.val();
+    return (val.status === "playing" || val.status === "finished") &&
+           val.playerOrder?.includes(playerId);
   };
 
   GameDAO.joinRoom = async (roomCode, playerId, playerData) => {
@@ -167,6 +177,37 @@ if (firebaseConfigurado) {
       "lightningMode/openedAt": serverTimestamp(),
       "lightningMode/questionResult": null,
     });
+  };
+
+  // Expulsa a un jugador de la sala. Si tenía el buzzer, cancela la pregunta activa
+  // y vuelve al tablero (opción A: celda queda disponible, nadie pierde puntos).
+  GameDAO.kickPlayer = async (roomCode, playerId) => {
+    const snap = await get(rRef(roomCode));
+    const room = snap.val();
+    if (!room) return;
+
+    const order         = (room.playerOrder || []).filter(id => id !== playerId);
+    const oldIndex      = room.selectorIndex || 0;
+    const kickedWasBeforeSelector = (room.playerOrder || []).indexOf(playerId) < oldIndex;
+    const newIndex      = kickedWasBeforeSelector
+      ? Math.max(0, oldIndex - 1) % Math.max(order.length, 1)
+      : oldIndex % Math.max(order.length, 1);
+
+    const hadBuzzer = room.buzzer?.playerId === playerId;
+    const updates = {
+      [`players/${playerId}`]: null,
+      playerOrder: order,
+      selectorIndex: newIndex,
+    };
+
+    if (hadBuzzer) {
+      updates.buzzer          = null;
+      updates.questionPhase   = null;
+      updates.currentQuestion = null;
+      updates.questionResult  = null;
+    }
+
+    await update(rRef(roomCode), updates);
   };
 
   // Registra presencia del jugador: marca connected=false automáticamente al desconectarse.

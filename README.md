@@ -1,6 +1,6 @@
-# Dame la Pasta
+# Dame la Main
 
-Réplica web del concurso "Dame la Pasta" de Ibai Llanos. Juego de trivia multijugador en tiempo real con sistema de pulsador (buzzer). Los jugadores se unen con un código de sala, eligen categorías por turnos desde un tablero y compiten pulsando un botón para responder primero.
+Réplica web del concurso "Dame la Main" de Ibai Llanos. Juego de trivia multijugador en tiempo real con sistema de pulsador (buzzer). Los jugadores se unen con un código de sala, eligen categorías por turnos desde un tablero y compiten pulsando un botón para responder primero.
 
 ---
 

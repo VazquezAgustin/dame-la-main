@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dame la Pasta</title>
+  <title>Dame la Main</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
@@ -15,7 +15,7 @@
   PANTALLA 1: INICIO
 ═══════════════════════════════════════════════════════════════ -->
 <div id="screen-inicio" class="screen active">
-  <h1 class="titulo-juego">Dame<br>la Pasta</h1>
+  <h1 class="titulo-juego">Dame<br>la Main</h1>
   <p class="subtitulo">El juego de trivia multijugador</p>
 
   <div class="inicio-acciones">
@@ -159,6 +159,7 @@
   </div>
   <div class="scorebar-expanded" id="scorebar-expanded">
     <h3>MARCADOR</h3>
+    <div id="scorebar-room-code"></div>
     <div id="scorebar-ranking"></div>
   </div>
 </div>
@@ -179,6 +180,16 @@
 
 <!-- Flash de resultado -->
 <div class="flash-overlay" id="flash-overlay"></div>
+
+<!-- Kicked overlay -->
+<div class="kicked-overlay" id="kicked-overlay" style="display:none">
+  <div class="kicked-box">
+    <div class="kicked-icon">🚫</div>
+    <h2>Fuiste removido de la sala</h2>
+    <p>El host te expulsó de la partida.</p>
+    <button class="btn-primario" onclick="location.reload()">Volver al inicio</button>
+  </div>
+</div>
 
 <script type="module" src="js/juego.js"></script>
 </body>
