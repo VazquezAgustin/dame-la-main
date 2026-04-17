@@ -45,6 +45,7 @@ export const CATEGORY_POOL = [
   "Viajes y Monumentos",
   "Chimento Puro",
   "La Farándula",
+  "Números y Física",
 ];
 
 export function pickRandomCategories(pool, count = 6, exclude = []) {
@@ -350,6 +351,13 @@ export const QUESTIONS = {
     { value: 600,  question: "¿Cómo se llama la hermana gemela de Mirtha Legrand, también actriz?", answer: "Goldy (Evangelina Martínez Suárez)" },
     { value: 800,  question: "¿Cómo se llaman las dos hijas que Diego Maradona tuvo con Claudia Villafañe?", answer: "Dalma y Gianinna" },
     { value: 1000, question: "¿En qué exitosa tira juvenil de Cris Morena participó La China Suárez de adolescente?", answer: "Casi Ángeles" },
+  ],
+  "Números y Física": [
+    { value: 200,  question: "¿Cuánto es la raíz cuadrada de 81?", answer: "9" },
+    { value: 400,  question: "¿Qué científico formuló la ley de la gravedad universal?", answer: "Isaac Newton" },
+    { value: 600,  question: "¿Cuántos grados mide la suma de los ángulos interiores de un triángulo?", answer: "180 grados" },
+    { value: 800,  question: "¿Cuál es la famosa ecuación de Einstein que relaciona masa y energía?", answer: "E = mc²" },
+    { value: 1000, question: "¿Cuál es la velocidad de escape de la Tierra, es decir, la velocidad mínima para salir de su gravedad?", answer: "Aproximadamente 11,2 km/s" },
   ],
   "Tótum Revolútum": [
     { value: 200,  question: "¿Cuántos lados tiene un octágono?", answer: "8" },
