@@ -461,7 +461,7 @@ function renderEstimacion(s) {
   const currentVal  = (em.values || [])[slot] ?? em.value ?? 200;
   const responses   = em.responses || {};
   const order       = s.playerOrder || [];
-  const myResp      = responses[myPlayerId];
+  const myResp      = responses[myPlayerId]?.value;
   const respCount   = Object.keys(responses).length;
   const totalSlots  = em.totalSlots || 1;
 
@@ -550,25 +550,34 @@ function renderEstimacion(s) {
   } else if (em.phase === "revealed") {
     const answer    = qData.answer;
     const winnerId  = em.winnerId;
+    const podiumMap = Object.fromEntries((em.podium || []).map(p => [p.playerId, p.points]));
 
-    // Ordenar por cercanía (quien no respondió va al final)
-    const ranked = order.map(pid => ({
-      pid,
-      val:  responses[pid],
-      diff: responses[pid] !== undefined ? Math.abs(responses[pid] - answer) : Infinity,
-    })).sort((a, b) => a.diff - b.diff);
+    // Ordenar por cercanía; desempate por quien respondió primero (timestamp ASC).
+    // Quien no respondió va al final.
+    const ranked = order.map(pid => {
+      const r   = responses[pid];
+      const val = r?.value;
+      return {
+        pid,
+        val,
+        diff: val !== undefined ? Math.abs(val - answer) : Infinity,
+        ts:   r?.timestamp ?? Infinity,
+      };
+    }).sort((a, b) => a.diff - b.diff || a.ts - b.ts);
 
+    const medals = ["🥇", "🥈", "🥉"];
     const rows = ranked.map((item, i) => {
-      const p       = s.players?.[item.pid];
+      const p        = s.players?.[item.pid];
       const isWinner = item.pid === winnerId;
       const hasResp  = item.val !== undefined;
+      const pts      = podiumMap[item.pid];
       return `<div class="estimacion-result-row${isWinner ? " ganador" : ""}" style="animation-delay:${i * 0.08}s">
-        <span class="rpos">${isWinner ? "🏆" : `${i + 1}.`}</span>
+        <span class="rpos">${medals[i] || `${i + 1}.`}</span>
         <span class="rname">${esc(p?.name || "?")}</span>
         ${hasResp
           ? `<span class="rval">${item.val}</span><span class="rdiff">±${item.diff}</span>`
           : `<span class="rsin">Sin respuesta</span>`}
-        ${isWinner ? `<span class="rpts">+${currentVal} pts</span>` : ""}
+        ${pts ? `<span class="rpts">+${pts} pts</span>` : ""}
       </div>`;
     }).join("");
 
@@ -1231,18 +1240,26 @@ async function handleEstimacionRevelar() {
   const responses = em.responses || {};
   const order     = state.playerOrder || [];
 
-  // El jugador más cercano (en orden de turno para desempatar)
-  let winnerId = null;
-  let minDiff  = Infinity;
-  order.forEach(pid => {
-    if (responses[pid] === undefined) return;
-    const diff = Math.abs(responses[pid] - answer);
-    if (diff < minDiff) { minDiff = diff; winnerId = pid; }
-  });
+  // Ranking: menor diferencia primero; desempate por quien respondió antes (timestamp ASC).
+  const ranked = order
+    .filter(pid => responses[pid]?.value !== undefined)
+    .map(pid => ({
+      pid,
+      diff: Math.abs(responses[pid].value - answer),
+      ts:   responses[pid].timestamp ?? Infinity,
+    }))
+    .sort((a, b) => a.diff - b.diff || a.ts - b.ts);
+
+  // Reparto proporcional al podio: 1° 100%, 2° 50%, 3° 25%.
+  const fractions = [1, 0.5, 0.25];
+  const podium = ranked.slice(0, 3).map((r, i) => ({
+    playerId: r.pid,
+    points:   Math.round(pointsDelta * fractions[i]),
+  }));
 
   triggerFlash("correcto");
   try {
-    await GameDAO.revealEstimaciones(roomCode, winnerId, pointsDelta);
+    await GameDAO.revealEstimaciones(roomCode, podium);
   } catch (e) {
     console.error("Error al revelar estimaciones:", e);
     if (btn) btn.disabled = false;

@@ -237,20 +237,30 @@ if (firebaseConfigurado) {
     });
   };
 
-  // Un jugador envía su estimación numérica.
+  // Un jugador envía su estimación numérica. Guarda timestamp del servidor
+  // para desempatar por orden de envío cuando hay respuestas con la misma diferencia.
   GameDAO.submitEstimacion = async (roomCode, playerId, value) => {
     await update(rRef(roomCode), {
-      [`estimacionMode/responses/${playerId}`]: value,
+      [`estimacionMode/responses/${playerId}`]: {
+        value,
+        timestamp: serverTimestamp(),
+      },
     });
   };
 
-  // El host revela todas las respuestas y asigna puntos al ganador.
-  GameDAO.revealEstimaciones = async (roomCode, winnerId, pointsDelta) => {
-    const updates = { "estimacionMode/phase": "revealed", "estimacionMode/winnerId": winnerId };
-    if (winnerId && pointsDelta > 0) {
-      const scoreSnap = await get(ref(db, `rooms/${roomCode}/players/${winnerId}/score`));
+  // El host revela todas las respuestas y asigna puntos al podio (1°, 2°, 3°).
+  // podium: [{ playerId, points }] ya ordenado del 1° al 3°.
+  GameDAO.revealEstimaciones = async (roomCode, podium) => {
+    const updates = {
+      "estimacionMode/phase": "revealed",
+      "estimacionMode/winnerId": podium[0]?.playerId ?? null,
+      "estimacionMode/podium": podium,
+    };
+    for (const { playerId, points } of podium) {
+      if (!playerId || !points) continue;
+      const scoreSnap = await get(ref(db, `rooms/${roomCode}/players/${playerId}/score`));
       const currentScore = scoreSnap.val() || 0;
-      updates[`players/${winnerId}/score`] = currentScore + pointsDelta;
+      updates[`players/${playerId}/score`] = currentScore + points;
     }
     await update(rRef(roomCode), updates);
   };
@@ -263,6 +273,7 @@ if (firebaseConfigurado) {
       "estimacionMode/openedAt": serverTimestamp(),
       "estimacionMode/responses": null,
       "estimacionMode/winnerId": null,
+      "estimacionMode/podium": null,
     });
   };
 
