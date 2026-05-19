@@ -3,49 +3,21 @@
 // ═══════════════════════════════════════════════════════════════
 export const CATEGORY_POOL = [
   "Trota Mundos",
-  "Historia Pura",
-  "El Copión",
-  "Bajo Presión",
-  "Cultura Musical",
-  "El Fan de la Velada",
-  "Pies de Plomo",
-  "Mente Maestra",
-  "La Gran Pantalla",
-  "Tierra y Mar",
-  "Costumbres del Mundo",
-  "De Aquí y de Allá",
-  "En Boca de Todos",
-  "Números que Hablan",
-  "El Asado",
-  "Historia de España",
+  "Tierra Albiceleste",
   "Historia Argentina",
-  "La Roja y la Albiceleste",
-  "Letras Hispanas",
-  "El Mundo del Deporte",
-  "Pantalla Chica",
-  "El Hincha",
-  "Los 90 Mandan",
-  "El Podio",
-  "Reyes y Presidentes",
-  "Viral y Punto",
-  "El Cabezón",
-  "La Pista",
-  "La Playlist",
-  "El Vestuario",
-  "Corre, Salta, Nada",
-  "Tierra Nuestra",
-  "La Bodega",
-  "Mente de Científico",
-  "Tótum Revolútum",
-  "Espectáculos",
-  "Muñecas Rotas de Hollywood",
-  "Cine",
-  "Moda y Tendencias",
-  "Curiosidades del Mundo",
-  "Viajes y Monumentos",
-  "Chimento Puro",
-  "La Farándula",
-  "Números y Física",
+  "Próceres y Patriotas",
+  "Pies de Plomo",
+  "Maradona y Messi",
+  "Boca, River y Cía",
+  "Rock Nacional",
+  "El Mate y el Asado",
+  "Tele Argenta",
+  "Ibai y los Streamers",
+  "Cine y Series",
+  "Cultura Pop 2000s",
+  "Ciencia y Espacio",
+  "Cuerpo y Naturaleza",
+  "Récords y Números",
 ];
 
 export function pickRandomCategories(pool, count = 6, exclude = []) {
@@ -71,311 +43,21 @@ export const QUESTIONS = {
     },
     {
       value: 600,
+      question: "¿Cuál es el país más grande del mundo por superficie?",
+      answer: "Rusia",
+    },
+    {
+      value: 800,
+      question: "¿Cuál es la cordillera más larga del mundo?",
+      answer: "Los Andes",
+    },
+    {
+      value: 1000,
       question: "¿Cuál es el país más pequeño del mundo?",
       answer: "Ciudad del Vaticano",
     },
-    {
-      value: 800,
-      question: "¿Qué país tiene más kilómetros de costa en el mundo?",
-      answer: "Canadá",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cuál es el único país de América del Sur que tiene costa en el Pacífico y en el Caribe?",
-      answer: "Colombia",
-    },
   ],
-  "Historia Pura": [
-    {
-      value: 200,
-      question: "¿En qué año terminó la Segunda Guerra Mundial?",
-      answer: "1945",
-    },
-    {
-      value: 400,
-      question: "¿Qué civilización construyó el Machu Picchu?",
-      answer: "Los incas",
-    },
-    {
-      value: 600,
-      question: "¿En qué año fue la Revolución Francesa?",
-      answer: "1789",
-    },
-    {
-      value: 800,
-      question: "¿Quién fue el primer presidente de los Estados Unidos?",
-      answer: "George Washington",
-    },
-    {
-      value: 1000,
-      question:
-        "¿En qué año Napoleón Bonaparte fue derrotado definitivamente en Waterloo?",
-      answer: "1815",
-    },
-  ],
-  "El Copión": [
-    {
-      value: 200,
-      question: "¿Qué personaje interpreta Guillermo Francella en 'El Clan'?",
-      answer: "Arquímedes Puccio",
-    },
-    {
-      value: 400,
-      question:
-        "¿Cómo se llama el villano principal de la saga de Batman interpretado por Heath Ledger?",
-      answer: "El Joker",
-    },
-    {
-      value: 600,
-      question: "¿En qué año se estrenó la película argentina 'Nueve Reinas'?",
-      answer: "2000",
-    },
-    {
-      value: 800,
-      question:
-        "¿Quién dirige la película 'El Secreto de sus Ojos', ganadora del Oscar?",
-      answer: "Juan José Campanella",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cómo se llama la serie argentina de Netflix ambientada en una villa de Buenos Aires?",
-      answer: "Okupas (o El marginal, aceptar ambas)",
-    },
-  ],
-  "Bajo Presión": [
-    { value: 200, question: "¿Cuánto es el triple de 30?", answer: "90" },
-    {
-      value: 400,
-      question: "¿Cuántos minutos tiene tres horas?",
-      answer: "180",
-    },
-    {
-      value: 600,
-      question: "¿Qué número es primo entre estos: 15, 17 o 21?",
-      answer: "17",
-    },
-    {
-      value: 800,
-      question: "Si tenés 500 pesos y gastás el 20%, ¿cuánto te queda?",
-      answer: "400 pesos",
-    },
-    {
-      value: 1000,
-      question: "¿Cuántos días tiene el mes de febrero en un año bisiesto?",
-      answer: "29",
-    },
-  ],
-  "Cultura Musical": [
-    {
-      value: 200,
-      question: "¿De qué banda argentina es la canción 'Persiana Americana'?",
-      answer: "Soda Stereo",
-    },
-    {
-      value: 400,
-      question:
-        "¿Cómo se llama el cantante de cuarteto cordobés apodado 'La Mona'?",
-      answer: "Carlos 'La Mona' Jiménez",
-    },
-    {
-      value: 600,
-      question: "¿En qué año murió el cantante Gustavo Cerati?",
-      answer: "2014",
-    },
-    {
-      value: 800,
-      question:
-        "¿Cómo se llama el último álbum de estudio que grabó Soda Stereo antes de separarse?",
-      answer: "Sueño Stereo (1995)",
-    },
-    {
-      value: 1000,
-      question:
-        "¿En qué año se disolvió la banda Patricio Rey y sus Redonditos de Ricota?",
-      answer: "2001",
-    },
-  ],
-  "El Fan de la Velada": [
-    {
-      value: 200,
-      question: "¿En qué plataforma hace sus streams Ibai Llanos?",
-      answer: "Twitch",
-    },
-    {
-      value: 400,
-      question: "¿Qué ex futbolista español cofundó con Ibai la Kings League?",
-      answer: "Gerard Piqué",
-    },
-    {
-      value: 600,
-      question: "¿Cómo se llama el streamer argentino conocido como 'Spreen'?",
-      answer: "Ian González",
-    },
-    {
-      value: 800,
-      question: "¿En qué año se realizó la primera Velada del Año de Ibai?",
-      answer: "2022",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cómo se llama el streamer argentino de Twitch conocido por su contenido de Just Chatting y apodado 'El Inge'?",
-      answer: "Coscu (Martín Pérez Disalvo, aceptar el apodo)",
-    },
-  ],
-  "Pies de Plomo": [
-    {
-      value: 200,
-      question: "¿Qué número de camiseta usó Maradona en el Mundial de 1986?",
-      answer: "10",
-    },
-    {
-      value: 400,
-      question:
-        "¿En qué estadio se jugó la final del Mundial de Argentina 1978?",
-      answer: "El Monumental",
-    },
-    {
-      value: 600,
-      question: "¿Con qué club debutó Lionel Messi en primera división?",
-      answer: "FC Barcelona",
-    },
-    {
-      value: 800,
-      question:
-        "¿Cuántos goles marcó Gabriel Batistuta con la Selección Argentina?",
-      answer: "56 goles",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cuántos títulos de la Primera División argentina ganó San Lorenzo de Almagro hasta 2024?",
-      answer: "15 (aceptar entre 14 y 16)",
-    },
-  ],
-  "Mente Maestra": [
-    {
-      value: 200,
-      question: "¿Qué planeta está más cerca del Sol?",
-      answer: "Mercurio",
-    },
-    {
-      value: 400,
-      question: "¿Cuántos elementos tiene la tabla periódica?",
-      answer: "118",
-    },
-    {
-      value: 600,
-      question:
-        "¿Qué científico argentino ganó el Premio Nobel de Química en 1970?",
-      answer: "Luis Federico Leloir",
-    },
-    {
-      value: 800,
-      question: "¿Cuántas neuronas tiene aproximadamente el cerebro humano?",
-      answer: "86 mil millones (aceptar 80-100 mil millones)",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cuál es el nombre del telescopio espacial lanzado por NASA en 2021 que reemplazó al Hubble?",
-      answer: "James Webb",
-    },
-  ],
-  "La Gran Pantalla": [
-    {
-      value: 200,
-      question: "¿Cuántas películas tiene la saga Toy Story?",
-      answer: "4",
-    },
-    {
-      value: 400,
-      question:
-        "¿Qué película argentina ganó el Oscar a Mejor Película Extranjera en 2010?",
-      answer: "El Secreto de sus Ojos",
-    },
-    {
-      value: 600,
-      question:
-        "¿Qué actor interpretó a Tony Stark / Iron Man en el Universo Marvel?",
-      answer: "Robert Downey Jr.",
-    },
-    {
-      value: 800,
-      question:
-        "¿En qué año se estrenó la primera película de Spider-Man con Tobey Maguire?",
-      answer: "2002",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cómo se llama el director argentino de la película 'Roma' ganadora del Oscar?",
-      answer:
-        "Alfonso Cuarón (es mexicano — trampa, no hay director argentino)",
-    },
-  ],
-  "Tierra y Mar": [
-    {
-      value: 200,
-      question: "¿Cuál es el océano más grande del mundo?",
-      answer: "El Pacífico",
-    },
-    {
-      value: 400,
-      question: "¿Cuál es el río más largo de América del Sur?",
-      answer: "El Amazonas",
-    },
-    {
-      value: 600,
-      question: "¿En qué provincia argentina está el glaciar Perito Moreno?",
-      answer: "Santa Cruz",
-    },
-    {
-      value: 800,
-      question:
-        "¿Qué porcentaje aproximado de la Tierra está cubierto por agua?",
-      answer: "71% (aceptar 70-72%)",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cómo se llama el punto más profundo de los océanos, ubicado en el Pacífico?",
-      answer: "Fosa de las Marianas",
-    },
-  ],
-  "Costumbres del Mundo": [
-    {
-      value: 200,
-      question: "¿Qué bebida típica argentina se toma con bombilla?",
-      answer: "El mate",
-    },
-    {
-      value: 400,
-      question: "¿En qué país se celebra el Día de Muertos el 2 de noviembre?",
-      answer: "México",
-    },
-    {
-      value: 600,
-      question:
-        "¿En qué país es costumbre quitarse los zapatos antes de entrar a una casa?",
-      answer: "Japón (y varios países asiáticos)",
-    },
-    {
-      value: 800,
-      question:
-        "¿En qué país de América del Sur se come el ceviche como plato nacional?",
-      answer: "Perú",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cómo se llama la festividad japonesa de los cerezos en flor que es tradición salir a ver y celebrar?",
-      answer: "Hanami",
-    },
-  ],
-  "De Aquí y de Allá": [
+  "Tierra Albiceleste": [
     {
       value: 200,
       question: "¿Cuál es la capital de Argentina?",
@@ -383,141 +65,23 @@ export const QUESTIONS = {
     },
     {
       value: 400,
-      question: "¿Cuántas provincias tiene Argentina?",
-      answer: "23 provincias más la Ciudad Autónoma de Buenos Aires",
+      question: "¿En qué provincia están las Cataratas del Iguazú?",
+      answer: "Misiones",
     },
     {
       value: 600,
-      question: "¿Cómo se llama el estadio del Club Atlético River Plate?",
-      answer: "El Monumental (Estadio Más Monumental)",
-    },
-    {
-      value: 800,
-      question:
-        "¿En qué año recuperó Argentina la democracia tras la última dictadura?",
-      answer: "1983",
-    },
-    {
-      value: 1000,
       question: "¿Cuál es la provincia argentina con mayor superficie?",
       answer: "Buenos Aires",
     },
-  ],
-  "En Boca de Todos": [
-    {
-      value: 200,
-      question: "¿Cómo se llama el conductor argentino apodado 'El Cabezón'?",
-      answer: "Marcelo Tinelli",
-    },
-    {
-      value: 400,
-      question: "¿En qué ciudad nació el papa Francisco?",
-      answer: "Buenos Aires, Argentina",
-    },
-    {
-      value: 600,
-      question:
-        "¿Cómo se llama el economista argentino que asumió la presidencia en diciembre de 2023?",
-      answer: "Javier Milei",
-    },
     {
       value: 800,
-      question: "¿Quién fue la primera mujer presidenta de Argentina?",
-      answer: "Cristina Fernández de Kirchner",
+      question: "¿En qué provincia argentina está el Glaciar Perito Moreno?",
+      answer: "Santa Cruz",
     },
     {
       value: 1000,
-      question:
-        "¿Cómo se llama el médico argentino que inventó el bypass coronario en 1967?",
-      answer: "René Favaloro",
-    },
-  ],
-  "Números que Hablan": [
-    {
-      value: 200,
-      question: "¿Cuántos Mundiales de fútbol ganó Argentina?",
-      answer: "3 (1978, 1986 y 2022)",
-    },
-    {
-      value: 400,
-      question: "¿Cuántos goles marcó Messi en el Mundial de Qatar 2022?",
-      answer: "7 goles",
-    },
-    {
-      value: 600,
-      question: "¿Cuántas Copas Libertadores ganó Boca Juniors?",
-      answer: "6",
-    },
-    {
-      value: 800,
-      question: "¿Cuántos Balones de Oro ganó Lionel Messi hasta 2023?",
-      answer: "8",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cuántos goles marcó Gabriel Batistuta en la temporada 1994-95 con la Fiorentina, récord de la Serie A en ese momento?",
-      answer: "26 goles",
-    },
-  ],
-  "El Asado": [
-    {
-      value: 200,
-      question:
-        "¿Cómo se llama la salsa verde con ajo y perejil que acompaña al asado?",
-      answer: "Chimichurri",
-    },
-    {
-      value: 400,
-      question: "¿Qué corte de carne se llama 'asado de tira' en Argentina?",
-      answer: "Las costillas cortadas en tiras (corte transversal al hueso)",
-    },
-    {
-      value: 600,
-      question:
-        "¿Cómo se llama el embutido típico del asado argentino hecho con intestino de cerdo?",
-      answer: "Chorizo",
-    },
-    {
-      value: 800,
-      question: "¿Cuál es el ingrediente clave del dulce de leche?",
-      answer: "Leche y azúcar (cocidos juntos)",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cómo se llaman las glándulas del timo de ternera que se comen a la parrilla, consideradas una exquisitez?",
-      answer: "Mollejas",
-    },
-  ],
-  "Historia de España": [
-    {
-      value: 200,
-      question: "¿En qué año terminó la Guerra Civil Española?",
-      answer: "1939",
-    },
-    {
-      value: 400,
-      question:
-        "¿Quién fue el dictador que gobernó España desde 1939 hasta 1975?",
-      answer: "Francisco Franco",
-    },
-    {
-      value: 600,
-      question: "¿En qué año se aprobó la Constitución española vigente?",
-      answer: "1978",
-    },
-    {
-      value: 800,
-      question:
-        "¿Cómo se llama el primer presidente del gobierno elegido democráticamente en España tras la dictadura?",
-      answer: "Adolfo Suárez",
-    },
-    {
-      value: 1000,
-      question:
-        "¿En qué año España ingresó a la Comunidad Económica Europea (hoy Unión Europea)?",
-      answer: "1986",
+      question: "¿Cómo se llama el lago más grande de la Patagonia argentina?",
+      answer: "Lago Argentino (Santa Cruz)",
     },
   ],
   "Historia Argentina": [
@@ -529,8 +93,8 @@ export const QUESTIONS = {
     {
       value: 400,
       question:
-        "¿Cómo se llamó la guerra entre Argentina y Gran Bretaña en 1982?",
-      answer: "Guerra de las Malvinas",
+        "¿Cómo se llamó la guerra de 1982 entre Argentina y Gran Bretaña?",
+      answer: "Guerra de Malvinas",
     },
     {
       value: 600,
@@ -539,802 +103,343 @@ export const QUESTIONS = {
     },
     {
       value: 800,
-      question:
-        "¿Cómo se llama la plaza principal de Buenos Aires, frente a la Casa Rosada?",
-      answer: "Plaza de Mayo",
+      question: "¿En qué año recuperó Argentina la democracia?",
+      answer: "1983",
     },
     {
       value: 1000,
       question:
-        "¿Cómo se llama el General que lideró el Ejército de los Andes y cruzó la cordillera para liberar Chile y Perú?",
-      answer: "José de San Martín",
-    },
-  ],
-  "La Roja y la Albiceleste": [
-    {
-      value: 200,
-      question: "¿Cuántos Mundiales ganó Argentina?",
-      answer: "3 (1978, 1986, 2022)",
-    },
-    {
-      value: 400,
-      question: "¿Cuántos Mundiales ganó España?",
-      answer: "1 (Sudáfrica 2010)",
-    },
-    {
-      value: 600,
-      question:
-        "¿Quién fue el máximo goleador de Argentina en el Mundial de Qatar 2022?",
-      answer: "Julián Álvarez (4 goles, igual que Messi)",
-    },
-    {
-      value: 800,
-      question: "¿Cuántas Eurocopas ganó la selección española?",
-      answer: "3 (1964, 2008 y 2012)",
-    },
-    {
-      value: 1000,
-      question: "¿Cuántas Copas América ganó Argentina en total hasta 2024?",
-      answer: "16",
-    },
-  ],
-  "Letras Hispanas": [
-    {
-      value: 200,
-      question: "¿Quién escribió 'Don Quijote de la Mancha'?",
-      answer: "Miguel de Cervantes",
-    },
-    {
-      value: 400,
-      question: "¿De qué país era el escritor Jorge Luis Borges?",
-      answer: "Argentina",
-    },
-    {
-      value: 600,
-      question:
-        "¿Cómo se llama la novela de Julio Cortázar que alterna capítulos entre París y Buenos Aires?",
-      answer: "Rayuela",
-    },
-    {
-      value: 800,
-      question:
-        "¿Quién escribió 'Martín Fierro', el poema épico gauchesco argentino?",
-      answer: "José Hernández",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cómo se llama el cuento de Borges en el que un hombre puede recordar absolutamente todo con un detalle infinito?",
-      answer: "Funes el memorioso",
-    },
-  ],
-  "El Mundo del Deporte": [
-    {
-      value: 200,
-      question: "¿En qué deporte compite Novak Djokovic?",
-      answer: "Tenis",
-    },
-    {
-      value: 400,
-      question:
-        "¿En qué deporte ganó la 'Generación Dorada' argentina el oro olímpico en Atenas 2004?",
-      answer: "Básquetbol",
-    },
-    {
-      value: 600,
-      question:
-        "¿Cuántos campeonatos de Fórmula 1 ganó el argentino Juan Manuel Fangio?",
-      answer: "5",
-    },
-    {
-      value: 800,
-      question: "¿En qué año ganó Juan Martín del Potro el US Open de tenis?",
-      answer: "2009",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cómo se llama el equipo argentino de polo que ganó el Abierto de Palermo ininterrumpidamente durante muchos años, liderado por los Heguy y los Harriott?",
-      answer:
-        "Coronel Suárez / Indios Chapaleufú (aceptar cualquiera de los equipos históricos dominantes)",
-    },
-  ],
-  "Pantalla Chica": [
-    {
-      value: 200,
-      question: "¿En qué canal argentino se emite el reality Gran Hermano?",
-      answer: "Telefe",
-    },
-    {
-      value: 400,
-      question:
-        "¿Cómo se llama el programa de cocina de famosos que arrasó en Telefe desde 2020?",
-      answer: "MasterChef Celebrity",
-    },
-    {
-      value: 600,
-      question:
-        "¿Cómo se llama la conductora argentina conocida por su programa de chimentos 'LAM'?",
-      answer: "Ángel de Brito",
-    },
-    {
-      value: 800,
-      question:
-        "¿En qué año se emitió la primera edición de Gran Hermano Argentina?",
+        "¿En qué año fue la crisis del corralito que terminó con varios presidentes en pocos días?",
       answer: "2001",
     },
-    {
-      value: 1000,
-      question:
-        "¿Cómo se llamaba el ciclo de entrevistas de Mirtha Legrand que condujo durante décadas en Canal 13?",
-      answer: "Almorzando con Mirtha Legrand",
-    },
   ],
-  "El Hincha": [
+  "Próceres y Patriotas": [
     {
       value: 200,
-      question: "¿Cómo se llama el clásico entre River Plate y Boca Juniors?",
-      answer: "El Superclásico",
+      question: "¿Quién cruzó los Andes para liberar Chile y Perú?",
+      answer: "José de San Martín",
     },
     {
       value: 400,
-      question: "¿En qué estadio juega Boca Juniors?",
-      answer: "La Bombonera (Estadio Alberto J. Armando)",
+      question: "¿Quién creó la Bandera Argentina?",
+      answer: "Manuel Belgrano",
     },
     {
       value: 600,
-      question: "¿Cuántas Champions League ganó el Real Madrid hasta 2024?",
-      answer: "15",
+      question: "¿Quién escribió 'Facundo: Civilización y Barbarie'?",
+      answer: "Domingo Faustino Sarmiento",
+    },
+    {
+      value: 800,
+      question: "¿Quién escribió la letra del Himno Nacional Argentino?",
+      answer: "Vicente López y Planes",
+    },
+    {
+      value: 1000,
+      question: "¿En qué pueblo de Corrientes nació José de San Martín?",
+      answer: "Yapeyú",
+    },
+  ],
+  "Pies de Plomo": [
+    {
+      value: 200,
+      question: "¿Cuántos Mundiales ganó la Selección Argentina?",
+      answer: "3 (1978, 1986 y 2022)",
+    },
+    {
+      value: 400,
+      question:
+        "¿Quién fue el DT campeón del mundo con Argentina en Qatar 2022?",
+      answer: "Lionel Scaloni",
+    },
+    {
+      value: 600,
+      question:
+        "¿Contra qué selección Argentina ganó por penales en los cuartos del Mundial de Qatar?",
+      answer: "Países Bajos",
     },
     {
       value: 800,
       question:
-        "¿En qué ciudad se jugó la final de la Copa Libertadores 2018 entre River y Boca, disputada fuera de Argentina?",
+        "¿Cuántos goles marcó Gabriel Batistuta con la Selección Argentina?",
+      answer: "56 goles",
+    },
+    {
+      value: 1000,
+      question: "¿Quién fue el arquero titular de Argentina campeona en México 86?",
+      answer: "Nery Pumpido",
+    },
+  ],
+  "Maradona y Messi": [
+    {
+      value: 200,
+      question: "¿Qué número de camiseta usó Maradona en el Mundial 86?",
+      answer: "10",
+    },
+    {
+      value: 400,
+      question: "¿Contra qué selección Maradona hizo el 'gol del siglo'?",
+      answer: "Inglaterra (Mundial 1986)",
+    },
+    {
+      value: 600,
+      question: "¿Cuántos Balones de Oro ganó Lionel Messi hasta 2024?",
+      answer: "8",
+    },
+    {
+      value: 800,
+      question:
+        "¿Con qué club Messi ganó su primer Mundial de Clubes en 2009?",
+      answer: "FC Barcelona",
+    },
+    {
+      value: 1000,
+      question: "¿En qué año Maradona ganó la Copa UEFA con el Napoli?",
+      answer: "1989",
+    },
+  ],
+  "Boca, River y Cía": [
+    {
+      value: 200,
+      question: "¿Cómo se llama el estadio de Boca Juniors?",
+      answer: "La Bombonera (Alberto J. Armando)",
+    },
+    {
+      value: 400,
+      question: "¿Cómo se llama el estadio de River Plate?",
+      answer: "El Monumental",
+    },
+    {
+      value: 600,
+      question: "¿Cuántas Copas Libertadores ganó Boca Juniors?",
+      answer: "6",
+    },
+    {
+      value: 800,
+      question:
+        "¿En qué ciudad se jugó la final River-Boca de la Libertadores 2018?",
       answer: "Madrid",
     },
     {
       value: 1000,
-      question: "¿Cómo se llama el estadio de Independiente de Avellaneda?",
-      answer: "Estadio Libertadores de América (Ricardo Enrique Bochini)",
+      question: "¿Con qué apodo se conoce al estadio de Racing Club de Avellaneda?",
+      answer: "El Cilindro (Presidente Perón)",
     },
   ],
-  "Los 90 Mandan": [
+  "Rock Nacional": [
     {
       value: 200,
-      question:
-        "¿Cómo se llamaba el juguete virtual de bolsillo para cuidar una mascota que fue furor en los 90?",
-      answer: "Tamagotchi",
+      question: "¿De qué banda argentina es la canción 'De Música Ligera'?",
+      answer: "Soda Stereo",
     },
     {
       value: 400,
       question:
-        "¿Qué película de Disney de 1994 cuenta la historia del cachorro de león Simba?",
-      answer: "El Rey León",
+        "¿Quién era el cantante de Patricio Rey y sus Redonditos de Ricota?",
+      answer: "El Indio Solari",
     },
     {
       value: 600,
-      question:
-        "¿Cómo se llamaba la telenovela argentina de los 90 protagonizada por Natalia Oreiro y Facundo Arana?",
-      answer: "Muñeca Brava",
-    },
-    {
-      value: 800,
-      question:
-        "¿Cómo se llama la banda de rock argentino de los 90 conocida por 'Corazón Delator'?",
-      answer: "Vilma Palma e Vampiros",
-    },
-    {
-      value: 1000,
-      question:
-        "¿En qué año se emitió por primera vez la telenovela 'Chiquititas' en Argentina?",
-      answer: "1995",
-    },
-  ],
-  "El Podio": [
-    {
-      value: 200,
-      question: "¿En qué deporte es leyenda el español Rafael Nadal?",
-      answer: "Tenis",
-    },
-    {
-      value: 400,
-      question:
-        "¿En qué deporte ganó Argentina el oro olímpico en Río 2016 con 'Los Leones'?",
-      answer: "Hockey sobre césped masculino",
-    },
-    {
-      value: 600,
-      question:
-        "¿Cuántos Tours de Francia consecutivos ganó el ciclista español Miguel Induráin?",
-      answer: "5 (1991 a 1995)",
-    },
-    {
-      value: 800,
-      question: "¿Cuántos Grand Slams ganó Carlos Alcaraz hasta 2024?",
-      answer:
-        "4 (US Open 2022, Wimbledon 2023, Roland Garros 2024, Wimbledon 2024)",
-    },
-    {
-      value: 1000,
-      question:
-        "¿En qué Juegos Olímpicos ganó Gabriela Sabatini la medalla de plata en tenis?",
-      answer: "Seúl 1988",
-    },
-  ],
-  "Reyes y Presidentes": [
-    {
-      value: 200,
-      question: "¿Cómo se llama el rey actual de España?",
-      answer: "Felipe VI",
-    },
-    {
-      value: 400,
-      question:
-        "¿Quién fue el primer presidente elegido en Argentina tras la última dictadura militar?",
-      answer: "Raúl Alfonsín",
-    },
-    {
-      value: 600,
-      question:
-        "¿En qué año abdicó Juan Carlos I a favor de su hijo Felipe VI?",
+      question: "¿En qué año murió Gustavo Cerati?",
       answer: "2014",
     },
     {
       value: 800,
-      question:
-        "¿Cuántos presidentes tuvo Argentina durante la crisis del 19 al 31 de diciembre de 2001?",
-      answer: "5 presidentes",
+      question: "¿De qué banda fueron Charly García y Nito Mestre en los 70?",
+      answer: "Sui Generis",
     },
     {
       value: 1000,
       question:
-        "¿Quién fue el primer presidente de Argentina en la historia, tras la organización nacional de 1853?",
-      answer: "Justo José de Urquiza",
+        "¿Cómo se llama el último álbum de estudio de Soda Stereo antes de separarse?",
+      answer: "Sueño Stereo (1995)",
     },
   ],
-  "Viral y Punto": [
+  "El Mate y el Asado": [
     {
       value: 200,
       question:
-        "¿Cómo se llama la app de videos cortos de origen chino que arrasó en todo el mundo?",
+        "¿Cómo se llama la salsa verde con ajo y perejil que acompaña al asado?",
+      answer: "Chimichurri",
+    },
+    {
+      value: 400,
+      question:
+        "¿Cómo se conoce al corte de costillas cortado transversal al hueso?",
+      answer: "Asado de tira",
+    },
+    {
+      value: 600,
+      question:
+        "¿Cómo se llaman las glándulas del timo de ternera que se cocinan a la parrilla?",
+      answer: "Mollejas",
+    },
+    {
+      value: 800,
+      question: "¿Cómo se llama la pieza metálica del mate por la que se toma?",
+      answer: "La bombilla",
+    },
+    {
+      value: 1000,
+      question: "¿Cuál es el nombre científico de la planta de la yerba mate?",
+      answer: "Ilex paraguariensis",
+    },
+  ],
+  "Tele Argenta": [
+    {
+      value: 200,
+      question: "¿Quién condujo ShowMatch durante más de tres décadas?",
+      answer: "Marcelo Tinelli",
+    },
+    {
+      value: 400,
+      question: "¿En qué canal argentino se emite Gran Hermano?",
+      answer: "Telefe",
+    },
+    {
+      value: 600,
+      question: "¿Cómo se llamaba el ciclo de almuerzos de Mirtha Legrand?",
+      answer: "Almorzando con Mirtha Legrand",
+    },
+    {
+      value: 800,
+      question: "¿Cómo se llama el programa de chimentos que condujo Ángel de Brito?",
+      answer: "LAM (Los Ángeles de la Mañana)",
+    },
+    {
+      value: 1000,
+      question:
+        "¿En qué año se emitió por primera vez Gran Hermano Argentina?",
+      answer: "2001",
+    },
+  ],
+  "Ibai y los Streamers": [
+    {
+      value: 200,
+      question: "¿En qué plataforma hace streams Ibai Llanos?",
+      answer: "Twitch",
+    },
+    {
+      value: 400,
+      question:
+        "¿Cómo se llama el torneo de boxeo de famosos organizado por Ibai?",
+      answer: "La Velada del Año",
+    },
+    {
+      value: 600,
+      question:
+        "¿Cómo se llama el torneo de fútbol 7 cofundado por Ibai y Gerard Piqué?",
+      answer: "Kings League",
+    },
+    {
+      value: 800,
+      question:
+        "¿Cuál es el nombre real del streamer argentino conocido como 'Coscu'?",
+      answer: "Martín Pérez Disalvo",
+    },
+    {
+      value: 1000,
+      question:
+        "¿Cuál es el nombre real del streamer argentino conocido como 'Spreen'?",
+      answer: "Iván Buhajeruk",
+    },
+  ],
+  "Cine y Series": [
+    {
+      value: 200,
+      question:
+        "¿Qué actor interpreta a Tony Stark / Iron Man en el universo Marvel?",
+      answer: "Robert Downey Jr.",
+    },
+    {
+      value: 400,
+      question:
+        "¿Qué película argentina ganó el Oscar a Mejor Película Extranjera en 2010?",
+      answer: "El Secreto de sus Ojos",
+    },
+    {
+      value: 600,
+      question: "¿Quién dirigió 'El Secreto de sus Ojos'?",
+      answer: "Juan José Campanella",
+    },
+    {
+      value: 800,
+      question: "¿Cuántos premios Oscar ganó Titanic en 1998?",
+      answer: "11",
+    },
+    {
+      value: 1000,
+      question:
+        "¿Cómo se llama la serie argentina de presos que se hizo furor en Netflix?",
+      answer: "El Marginal",
+    },
+  ],
+  "Cultura Pop 2000s": [
+    {
+      value: 200,
+      question:
+        "¿Cómo se llama la app china de videos cortos que arrasó en todo el mundo?",
       answer: "TikTok",
     },
     {
       value: 400,
-      question:
-        "¿Cómo se llamaba el challenge de 2014 donde la gente se tiraba agua helada para recaudar fondos?",
-      answer: "Ice Bucket Challenge",
-    },
-    {
-      value: 600,
-      question:
-        "¿Cómo se llamaba el juego de móvil viral de 2016 que usaba realidad aumentada para atrapar Pokémon en la calle?",
-      answer: "Pokémon GO",
-    },
-    {
-      value: 800,
-      question: "¿En qué año se publicó el primer tweet de la historia?",
-      answer: "2006",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Contra que equipo durante la copa del mundo Messi dijo '¿Qué mirás, bobo?'?",
-      answer: "Países Bajos",
-    },
-  ],
-  "El Cabezón": [
-    {
-      value: 200,
-      question:
-        "¿Cómo se llama el programa que condujo Tinelli durante décadas en El Trece?",
-      answer: "ShowMatch",
-    },
-    {
-      value: 400,
-      question: "¿De qué club de fútbol es fanático Marcelo Tinelli?",
-      answer: "San Lorenzo de Almagro",
-    },
-    {
-      value: 600,
-      question:
-        "¿En qué ciudad de la provincia de Buenos Aires nació Marcelo Tinelli?",
-      answer: "Bolívar",
-    },
-    {
-      value: 800,
-      question: "¿En qué año se emitió ShowMatch por primera vez?",
-      answer: "1990",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cuál fue el primer gran segmento de baile de ShowMatch antes del 'Bailando por un Sueño'?",
-      answer:
-        "Bailando por un Sueño / VideoMatch (aceptar VideoMatch como precursor)",
-    },
-  ],
-  "La Pista": [
-    {
-      value: 200,
-      question: "¿Cómo se llama el segmento de baile más famoso de ShowMatch?",
-      answer: "Bailando por un Sueño",
-    },
-    {
-      value: 400,
-      question:
-        "¿Cómo se llama la modelo y jurado del Bailando conocida como 'Pampita'?",
-      answer: "Carolina Ardohain",
-    },
-    {
-      value: 600,
-      question: "¿En qué canal argentino se emite ShowMatch con Tinelli?",
-      answer: "El Trece (Canal 13)",
-    },
-    {
-      value: 800,
-      question:
-        "¿En qué año se emitió la primera edición del Bailando por un Sueño?",
-      answer: "2006",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Qué cantante tropical de Córdoba fue figura icónica del Bailando y es conocida como 'La Bomba Tucumana'?",
-      answer: "Gladys",
-    },
-  ],
-  "La Playlist": [
-    {
-      value: 200,
-      question: "¿De qué país es el cantante de reggaeton J Balvin?",
-      answer: "Colombia",
-    },
-    {
-      value: 400,
-      question:
-        "¿Qué artista española arrasó en los Grammy Latinos 2018 con su álbum 'El Mal Querer'?",
-      answer: "Rosalía",
-    },
-    {
-      value: 600,
-      question:
-        "¿Cómo se llama el cantante argentino que grabó 'Fuiste Mía un Verano' y es ícono del rock romántico?",
-      answer: "Leonardo Favio",
-    },
-    {
-      value: 800,
-      question: "¿Cuántos discos de estudio en solitario grabó Gustavo Cerati?",
-      answer: "4 (Amor Amarillo, Bocanada, Siempre es Hoy, Fuerza Natural)",
-    },
-    {
-      value: 1000,
-      question: "¿En qué año se formó la banda Los Redonditos de Ricota?",
-      answer: "1976",
-    },
-  ],
-  "El Vestuario": [
-    {
-      value: 200,
-      question: "¿Cuál es el apodo de Lionel Messi?",
-      answer: "La Pulga",
-    },
-    {
-      value: 400,
-      question: "¿Cuál es el apodo del delantero argentino Lautaro Martínez?",
-      answer: "El Toro",
-    },
-    {
-      value: 600,
-      question:
-        "¿Cuánto costó el traspaso de Neymar del Barcelona al PSG en 2017, el más caro de la historia?",
-      answer: "222 millones de euros",
-    },
-    {
-      value: 800,
-      question:
-        "¿Con qué apodo se conoce al delantero argentino Sergio Agüero?",
-      answer: "El Kun",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cuántos goles marcó Sergio Agüero en la Premier League con el Manchester City, siendo récord de goleadores extranjeros?",
-      answer: "184 goles",
-    },
-  ],
-  "Corre, Salta, Nada": [
-    {
-      value: 200,
-      question: "¿En qué deporte se compite en el Tour de Francia?",
-      answer: "Ciclismo",
-    },
-    {
-      value: 400,
-      question:
-        "¿Qué país ganó el oro en el Mundial de Rugby de 2023 celebrado en Francia?",
-      answer: "Sudáfrica",
-    },
-    {
-      value: 600,
-      question:
-        "¿Cómo se llama el torneo de tenis que se juega sobre tierra batida en París?",
-      answer: "Roland Garros",
-    },
-    {
-      value: 800,
-      question:
-        "¿En cuántos estilos diferentes se nada en los Juegos Olímpicos?",
-      answer: "4 (libre, espalda, pecho y mariposa)",
-    },
-    {
-      value: 1000,
-      question:
-        "¿En qué año ganó el equipo de rugby argentino Los Pumas su primera victoria sobre los All Blacks de Nueva Zelanda?",
-      answer: "2020 (Tri Nations en Australia)",
-    },
-  ],
-  "Tierra Nuestra": [
-    {
-      value: 200,
-      question: "¿En qué provincia argentina están las Cataratas del Iguazú?",
-      answer: "Misiones",
-    },
-    {
-      value: 400,
-      question: "¿Cuántas Comunidades Autónomas tiene España?",
-      answer: "17",
-    },
-    {
-      value: 600,
-      question:
-        "¿En qué provincia argentina está la región conocida como Valle de la Luna?",
-      answer: "San Juan",
-    },
-    {
-      value: 800,
-      question: "¿Cuál es la montaña más alta de España?",
-      answer: "El Teide (Tenerife, Canarias)",
-    },
-    {
-      value: 1000,
-      question: "¿Cómo se llama el lago más grande de la Patagonia argentina?",
-      answer: "Lago Argentino (en Santa Cruz)",
-    },
-  ],
-  "La Bodega": [
-    {
-      value: 200,
-      question:
-        "¿Qué bebida espirituosa argentina se mezcla típicamente con Coca-Cola?",
-      answer: "Fernet (Fernet con Coca)",
-    },
-    {
-      value: 400,
-      question:
-        "¿En qué provincia argentina se produce la mayor parte del vino nacional?",
-      answer: "Mendoza",
-    },
-    {
-      value: 600,
-      question: "¿De qué región española es originario el vino Rioja?",
-      answer: "La Rioja",
-    },
-    {
-      value: 800,
-      question:
-        "¿Cómo se llama el aperitivo catalán de pan frotado con tomate y aceite de oliva?",
-      answer: "Pa amb tomàquet / Pan con tomate",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cómo se llama el plato de cocido madrileño hecho con garbanzos, verduras y carne?",
-      answer: "Cocido madrileño",
-    },
-  ],
-  "Mente de Científico": [
-    {
-      value: 200,
-      question:
-        "¿Qué científico argentino descubrió la nucleotidación del azúcar y ganó el Nobel de Química?",
-      answer: "Luis Federico Leloir",
-    },
-    {
-      value: 400,
-      question:
-        "¿Qué científico español fue pionero en el estudio de las neuronas y ganó el Premio Nobel en 1906?",
-      answer: "Santiago Ramón y Cajal",
-    },
-    {
-      value: 600,
-      question:
-        "¿En qué año el argentino Bernardo Houssay se convirtió en el primer latinoamericano en ganar el Nobel de Medicina?",
-      answer: "1947",
-    },
-    {
-      value: 800,
-      question:
-        "¿Cómo se llama el telescopio más grande del mundo, ubicado en La Palma, Canarias?",
-      answer: "Gran Telescopio Canarias (GTC)",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cuál es el nombre del observatorio astronómico argentino ubicado en Mendoza que colabora con la NASA?",
-      answer: "Complejo Astronómico El Leoncito (CASLEO)",
-    },
-  ],
-  Espectáculos: [
-    {
-      value: 200,
-      question: "¿Cuál es el nombre real de 'La China' Suárez?",
-      answer: "María Eugenia Suárez",
-    },
-    {
-      value: 400,
-      question:
-        "¿Cómo se llamaba la empresa chocolatera de la familia de Ricardo Fort, de donde heredó su fortuna?",
-      answer: "Felfort",
-    },
-    {
-      value: 600,
-      question:
-        "¿En qué año descubrió Pampita a Benjamín Vicuña con La China Suárez adentro de un motorhome?",
-      answer: "2015",
-    },
-    {
-      value: 800,
-      question:
-        "¿Cuál fue el mensaje que publicó Wanda Nara en Instagram al inicio del Wandagate que se volvió viral?",
-      answer: '"Otra familia rota por una zorra"',
-    },
-    {
-      value: 1000,
-      question: "¿Cómo se llama realmente Mirtha Legrand?",
-      answer: "Rosa María Juana Martínez Suárez",
-    },
-  ],
-  "Muñecas Rotas de Hollywood": [
-    {
-      value: 200,
-      question: "¿A qué edad murió Amy Winehouse?",
-      answer: "27 años",
-    },
-    {
-      value: 400,
-      question:
-        "¿En qué año Britney Spears se rapó la cabeza en una peluquería de Los Ángeles?",
+      question: "¿En qué año salió a la venta el primer iPhone?",
       answer: "2007",
     },
     {
       value: 600,
       question:
-        "¿Cuántos años duró la tutela legal (conservatorship) de Britney Spears controlada por su padre?",
-      answer: "13 años (2008-2021)",
+        "¿Cómo se llamaba el juego viral de 2016 que usaba realidad aumentada para atrapar Pokémon en la calle?",
+      answer: "Pokémon GO",
     },
     {
       value: 800,
       question:
-        "¿Cómo se llamó el movimiento de fans que exigía la libertad de Britney Spears?",
-      answer: "#FreeBritney",
+        "¿Cómo se llamaba el challenge viral de 2014 en el que la gente se tiraba un balde de agua helada?",
+      answer: "Ice Bucket Challenge",
     },
     {
       value: 1000,
-      question: "¿Cuál era el nombre real de Marilyn Monroe?",
-      answer: "Norma Jeane Mortenson (también conocida como Norma Jeane Baker)",
-    },
-  ],
-  Cine: [
-    {
-      value: 200,
-      question:
-        "¿Quién interpretó a Iron Man / Tony Stark en el universo Marvel?",
-      answer: "Robert Downey Jr.",
-    },
-    {
-      value: 400,
-      question: "¿Cuántos premios Oscar ganó la película Titanic de 1997?",
-      answer: "11 Oscars",
-    },
-    {
-      value: 600,
-      question: "¿Quién dirigió El Padrino (The Godfather)?",
-      answer: "Francis Ford Coppola",
-    },
-    {
-      value: 800,
-      question:
-        "¿Cuál es la película más taquillera de la historia (sin ajustar por inflación)?",
-      answer: "Avatar (2009)",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Qué tres películas comparten el récord de mayor cantidad de Oscars ganados, con 11 cada una?",
-      answer: "Ben-Hur, Titanic y El señor de los anillos: El retorno del rey",
-    },
-  ],
-  "Moda y Tendencias": [
-    {
-      value: 200,
-      question:
-        "¿Qué marca de zapatillas tiene el logo conocido como 'swoosh'?",
-      answer: "Nike",
-    },
-    {
-      value: 400,
-      question:
-        "¿Quién diseñó el icónico 'Little Black Dress' y revolucionó la moda del siglo XX?",
-      answer: "Coco Chanel",
-    },
-    {
-      value: 600,
-      question:
-        "¿Cómo se llama el bolso de Hermès bautizado en honor a la actriz y cantante Jane Birkin?",
-      answer: "El Birkin",
-    },
-    {
-      value: 800,
-      question: "¿Cuál era el nombre real de Coco Chanel?",
-      answer: "Gabrielle Bonheur Chanel",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Qué prenda de ropa lleva su nombre en honor a un conde inglés que la usó en la Guerra de Crimea?",
-      answer: "El cárdigan (por el Conde de Cardigan)",
-    },
-  ],
-  "Curiosidades del Mundo": [
-    {
-      value: 200,
-      question: "¿Cuál es el país más grande del mundo por superficie?",
-      answer: "Rusia",
-    },
-    {
-      value: 400,
-      question: "¿Cuánto tarda la luz del Sol en llegar a la Tierra?",
-      answer: "Aproximadamente 8 minutos",
-    },
-    {
-      value: 600,
-      question: "¿Cuál es la capital de Australia? (ojo, no es la más famosa)",
-      answer: "Canberra (no Sydney)",
-    },
-    {
-      value: 800,
-      question:
-        "¿Cuántos idiomas oficiales tiene Zimbabue, el país con más idiomas oficiales del mundo?",
-      answer: "16 idiomas oficiales",
-    },
-    {
-      value: 1000,
-      question:
-        "¿En qué año fue reclasificado Plutón como planeta enano y dejó de ser el noveno planeta del sistema solar?",
+      question: "¿En qué año se publicó el primer tweet de la historia?",
       answer: "2006",
     },
   ],
-  "Viajes y Monumentos": [
+  "Ciencia y Espacio": [
     {
       value: 200,
-      question: "¿En qué país se encuentra Machu Picchu?",
-      answer: "Perú",
+      question: "¿Qué planeta del sistema solar está más cerca del Sol?",
+      answer: "Mercurio",
     },
     {
       value: 400,
       question:
-        "¿Para qué evento fue construida originalmente la Torre Eiffel?",
-      answer: "Para la Exposición Universal de París de 1889",
+        "¿Cuántos planetas tiene el sistema solar tras la reclasificación de Plutón?",
+      answer: "8",
     },
     {
       value: 600,
-      question: "¿Quién mandó construir el Taj Mahal y en honor a quién?",
-      answer: "El emperador Shah Jahan, en honor a su esposa Mumtaz Mahal",
+      question: "¿En qué año el hombre llegó a la Luna por primera vez?",
+      answer: "1969",
     },
     {
       value: 800,
-      question: "¿Qué país regaló la Estatua de la Libertad a Estados Unidos?",
-      answer: "Francia",
+      question:
+        "¿Qué científico argentino ganó el Premio Nobel de Química en 1970?",
+      answer: "Luis Federico Leloir",
     },
     {
       value: 1000,
       question:
-        "¿En qué país se encuentra la ciudad de Petra, famosa por sus construcciones talladas en piedra rosada?",
-      answer: "Jordania",
+        "¿Cómo se llama el telescopio espacial lanzado por NASA en 2021, sucesor del Hubble?",
+      answer: "James Webb",
     },
   ],
-  "Chimento Puro": [
+  "Cuerpo y Naturaleza": [
     {
       value: 200,
-      question: "¿Con qué apodo es conocida la vedette y actriz Moria Casán?",
-      answer: "La One",
+      question: "¿Cuál es el animal terrestre más rápido del mundo?",
+      answer: "El guepardo",
     },
-    {
-      value: 400,
-      question:
-        "¿Cómo se llamaba el programa de chimentos que Jorge Rial condujo durante años en América TV?",
-      answer: "Intrusos en el Espectáculo",
-    },
-    {
-      value: 600,
-      question:
-        "¿En qué año murió el cantante de cuarteto Rodrigo Bueno, 'El Potro'?",
-      answer: "2000",
-    },
-    {
-      value: 800,
-      question:
-        "¿Con qué vedette tuvo Moria Casán una de sus peleas más recordadas en la cartelera teatral del verano de 2006?",
-      answer: "Carmen Barbieri",
-    },
-    {
-      value: 1000,
-      question:
-        "¿En qué exclusivo lugar de España vivían Claudio Paul Caniggia y Mariana Nannis cuando su separación se convirtió en escándalo internacional?",
-      answer: "Marbella",
-    },
-  ],
-  "La Farándula": [
-    {
-      value: 200,
-      question:
-        "¿Cómo se llamaba el programa con el que Marcelo Tinelli se hizo famoso en los 90 antes de ShowMatch?",
-      answer: "VideoMatch",
-    },
-    {
-      value: 400,
-      question:
-        "¿Con qué actor mucho más joven tuvo Graciela Alfano una relación que generó revuelo mediático?",
-      answer: "Matías Alé",
-    },
-    {
-      value: 600,
-      question:
-        "¿Cómo se llama la hermana gemela de Mirtha Legrand, también actriz?",
-      answer: "Goldy (Evangelina Martínez Suárez)",
-    },
-    {
-      value: 800,
-      question:
-        "¿Cómo se llaman las dos hijas que Diego Maradona tuvo con Claudia Villafañe?",
-      answer: "Dalma y Gianinna",
-    },
-    {
-      value: 1000,
-      question:
-        "¿En qué exitosa tira juvenil de Cris Morena participó La China Suárez de adolescente?",
-      answer: "Casi Ángeles",
-    },
-  ],
-  "Números y Física": [
-    { value: 200, question: "¿Cuánto es la raíz cuadrada de 81?", answer: "9" },
-    {
-      value: 400,
-      question: "¿Qué científico formuló la ley de la gravedad universal?",
-      answer: "Isaac Newton",
-    },
-    {
-      value: 600,
-      question:
-        "¿Cuántos grados mide la suma de los ángulos interiores de un triángulo?",
-      answer: "180 grados",
-    },
-    {
-      value: 800,
-      question:
-        "¿Cuál es la famosa ecuación de Einstein que relaciona masa y energía?",
-      answer: "E = mc²",
-    },
-    {
-      value: 1000,
-      question:
-        "¿Cuál es la velocidad de escape de la Tierra, es decir, la velocidad mínima para salir de su gravedad?",
-      answer: "Aproximadamente 11,2 km/s",
-    },
-  ],
-  "Tótum Revolútum": [
-    { value: 200, question: "¿Cuántos lados tiene un octágono?", answer: "8" },
     {
       value: 400,
       question: "¿Cuál es el hueso más largo del cuerpo humano?",
@@ -1342,19 +447,46 @@ export const QUESTIONS = {
     },
     {
       value: 600,
-      question:
-        "¿Qué país fue el primero en el mundo en otorgar el voto a la mujer?",
-      answer: "Nueva Zelanda (1893)",
+      question: "¿Cuántos huesos tiene un cuerpo humano adulto?",
+      answer: "206",
     },
     {
       value: 800,
-      question: "¿Cuántos segundos tiene una hora?",
-      answer: "3600",
+      question: "¿Cuál es el único mamífero capaz de volar?",
+      answer: "El murciélago",
     },
     {
       value: 1000,
-      question: "¿Cuál es el único mamífero capaz de volar?",
-      answer: "El murciélago",
+      question: "¿Cuántas neuronas tiene aproximadamente el cerebro humano?",
+      answer: "86 mil millones (aceptar entre 80 y 100 mil millones)",
+    },
+  ],
+  "Récords y Números": [
+    {
+      value: 200,
+      question: "¿Cuántas provincias tiene Argentina?",
+      answer: "23 (más la Ciudad Autónoma de Buenos Aires)",
+    },
+    {
+      value: 400,
+      question: "¿Cuántos goles marcó Messi en el Mundial de Qatar 2022?",
+      answer: "7",
+    },
+    {
+      value: 600,
+      question: "¿Cuántos Mundiales de fútbol ganó Brasil?",
+      answer: "5",
+    },
+    {
+      value: 800,
+      question: "¿Cuántos Grand Slams ganó Rafael Nadal en total?",
+      answer: "22",
+    },
+    {
+      value: 1000,
+      question:
+        "¿Cuántos goles marcó Batistuta en la temporada 94/95 con la Fiorentina, récord de la Serie A en ese momento?",
+      answer: "26",
     },
   ],
 };
@@ -1363,456 +495,191 @@ export const QUESTIONS = {
 // ⚡ BANCO DE PREGUNTAS — MODO RELÁMPAGO
 // ═══════════════════════════════════════════════════════════════
 export const LIGHTNING_QUESTIONS = [
-  // — Argentina —
-  {
-    question: "¿En qué ciudad argentina está el Obelisco?",
-    answer: "Buenos Aires",
-  },
-  {
-    question: "¿En qué provincia argentina está el glaciar Perito Moreno?",
-    answer: "Santa Cruz",
-  },
-  {
-    question: "¿Cómo se llama el estadio de River Plate?",
-    answer: "El Monumental",
-  },
-  {
-    question: "¿Cuántas provincias tiene Argentina?",
-    answer: "23 (más la Ciudad Autónoma de Buenos Aires)",
-  },
-  {
-    question: "¿En qué año ganó Argentina el Mundial de Qatar?",
-    answer: "2022",
-  },
-  { question: "¿Cuál es el río más largo de Argentina?", answer: "El Paraná" },
-  {
-    question: "¿Cómo se llama el estadio de Boca Juniors?",
-    answer: "La Bombonera",
-  },
-  {
-    question: "¿Qué número de camiseta usó Maradona en el Mundial 86?",
-    answer: "10",
-  },
-  { question: "¿En qué año nació Lionel Messi?", answer: "1987" },
-  { question: "¿Cuántos Mundiales ganó Argentina?", answer: "3" },
-  {
-    question: "¿Cómo se llama la salsa verde típica del asado argentino?",
-    answer: "Chimichurri",
-  },
-  {
-    question: "¿Qué bebida argentina se toma con bombilla?",
-    answer: "El mate",
-  },
-  {
-    question: "¿En qué provincia argentina están las Cataratas del Iguazú?",
-    answer: "Misiones",
-  },
-  { question: "¿Cuándo declaró Argentina su independencia?", answer: "1816" },
+  // — Argentina: geografía, historia, cultura —
   { question: "¿Cuál es la capital de Argentina?", answer: "Buenos Aires" },
-  {
-    question: "¿Cómo se llama el papa que nació en Buenos Aires?",
-    answer: "Francisco (Jorge Bergoglio)",
-  },
-  {
-    question: "¿En qué año fue la crisis del corralito en Argentina?",
-    answer: "2001",
-  },
-  {
-    question: "¿Cómo se llama el conductor de ShowMatch?",
-    answer: "Marcelo Tinelli",
-  },
-  { question: "¿De qué club es hincha Tinelli?", answer: "San Lorenzo" },
-  {
-    question: "¿Cuál es la montaña más alta de América?",
-    answer: "El Aconcagua",
-  },
-  {
-    question:
-      "¿Cómo se llama el personaje que interpreta Francella en 'El Clan'?",
-    answer: "Arquímedes Puccio",
-  },
-  {
-    question: "¿En qué año terminó la dictadura militar argentina?",
-    answer: "1983",
-  },
-  {
-    question: "¿Quién fue el primer presidente electo tras la dictadura?",
-    answer: "Raúl Alfonsín",
-  },
-  {
-    question: "¿Cómo se llama el baile más famoso de ShowMatch?",
-    answer: "Bailando por un Sueño",
-  },
-  { question: "¿Cuántas Copas Libertadores ganó Boca Juniors?", answer: "6" },
-  {
-    question: "¿En qué canal se emite Gran Hermano Argentina?",
-    answer: "Telefe",
-  },
+  { question: "¿Cuántas provincias tiene Argentina?", answer: "23 (más CABA)" },
+  { question: "¿En qué provincia están las Cataratas del Iguazú?", answer: "Misiones" },
+  { question: "¿En qué provincia está el Glaciar Perito Moreno?", answer: "Santa Cruz" },
+  { question: "¿Cuál es el río más largo de Argentina?", answer: "El Paraná" },
+  { question: "¿Cuál es la montaña más alta de América?", answer: "El Aconcagua" },
+  { question: "¿En qué ciudad argentina está el Obelisco?", answer: "Buenos Aires" },
+  { question: "¿En qué año declaró Argentina su independencia?", answer: "1816" },
+  { question: "¿En qué año comenzó la última dictadura militar argentina?", answer: "1976" },
+  { question: "¿En qué año recuperó Argentina la democracia?", answer: "1983" },
+  { question: "¿En qué año fue la crisis del corralito?", answer: "2001" },
+  { question: "¿Cómo se llamó la guerra de 1982 contra Gran Bretaña?", answer: "Guerra de Malvinas" },
+  { question: "¿Quién cruzó los Andes con el Ejército?", answer: "San Martín" },
+  { question: "¿Quién creó la bandera argentina?", answer: "Manuel Belgrano" },
+  { question: "¿Quién escribió 'Facundo'?", answer: "Sarmiento" },
+  { question: "¿Cómo se llama el papa nacido en Buenos Aires?", answer: "Francisco (Jorge Bergoglio)" },
+  { question: "¿Quién inventó el bypass coronario?", answer: "René Favaloro" },
+  { question: "¿Quién fue el primer presidente argentino tras la dictadura?", answer: "Raúl Alfonsín" },
+
+  // — Fútbol argentino —
+  { question: "¿Cuántos Mundiales ganó la Selección Argentina?", answer: "3" },
+  { question: "¿En qué año Argentina ganó el Mundial de Qatar?", answer: "2022" },
+  { question: "¿Quién es el DT campeón con Argentina en Qatar 2022?", answer: "Lionel Scaloni" },
+  { question: "¿Qué número de camiseta usó Maradona en el 86?", answer: "10" },
+  { question: "¿En qué año nació Lionel Messi?", answer: "1987" },
+  { question: "¿Con qué club debutó Messi en primera?", answer: "FC Barcelona" },
+  { question: "¿Cuál es el apodo de Lionel Messi?", answer: "La Pulga" },
   { question: "¿Cuál es el apodo de Sergio Agüero?", answer: "El Kun" },
   { question: "¿Cuál es el apodo de Lautaro Martínez?", answer: "El Toro" },
-  {
-    question:
-      "¿Cómo se llama el médico argentino que inventó el bypass coronario?",
-    answer: "René Favaloro",
-  },
-  {
-    question: "¿De qué banda argentina es la canción 'De Música Ligera'?",
-    answer: "Soda Stereo",
-  },
+  { question: "¿Cómo se llama el estadio de Boca?", answer: "La Bombonera" },
+  { question: "¿Cómo se llama el estadio de River?", answer: "El Monumental" },
+  { question: "¿Cuántas Copas Libertadores ganó Boca Juniors?", answer: "6" },
+  { question: "¿En qué ciudad se jugó la final River-Boca de la Libertadores 2018?", answer: "Madrid" },
+  { question: "¿Cómo se conoce al estadio de Racing?", answer: "El Cilindro" },
 
-  // — Fútbol y deporte mundial —
-  {
-    question: "¿Quién es el máximo goleador histórico de la Champions League?",
-    answer: "Cristiano Ronaldo",
-  },
-  {
-    question: "¿Qué país ganó el primer Mundial de fútbol en 1930?",
-    answer: "Uruguay",
-  },
-  {
-    question: "¿Cuántos jugadores hay en cancha por equipo en el fútbol?",
-    answer: "11",
-  },
-  {
-    question: "¿En qué año se celebró el Mundial de Sudáfrica?",
-    answer: "2010",
-  },
-  {
-    question: "¿Cómo se llama el estadio del Real Madrid?",
-    answer: "Santiago Bernabéu",
-  },
-  {
-    question: "¿En qué deporte se usa un puck (disco de goma)?",
-    answer: "Hockey sobre hielo",
-  },
-  { question: "¿Cuántos tiempos tiene un partido de fútbol?", answer: "2" },
-  { question: "¿Qué país ganó el Mundial de Rusia 2018?", answer: "Francia" },
-  { question: "¿En qué deporte compite Rafael Nadal?", answer: "Tenis" },
-  { question: "¿Cuántos jugadores hay en cancha en el básquet?", answer: "5" },
-  { question: "¿Quién ganó el Mundial de 2006 en Alemania?", answer: "Italia" },
-  { question: "¿En qué deporte se hace un slam dunk?", answer: "Básquet" },
-  {
-    question: "¿Qué club ganó más Champions League en la historia?",
-    answer: "Real Madrid",
-  },
-  { question: "¿En qué deporte se usa el término 'ace'?", answer: "Tenis" },
-  { question: "¿Cuántos Mundiales ganó Brasil?", answer: "5" },
+  // — Cultura argentina, asado, mate —
+  { question: "¿Cómo se llama la salsa verde típica del asado?", answer: "Chimichurri" },
+  { question: "¿Qué infusión argentina se toma con bombilla?", answer: "El mate" },
+  { question: "¿Qué bebida espirituosa se toma con Coca en Argentina?", answer: "Fernet" },
 
-  // — Cine, series y música —
-  {
-    question: "¿Cómo se llama el ogro verde animado de DreamWorks?",
-    answer: "Shrek",
-  },
-  {
-    question: "¿De qué país es la serie 'La Casa de Papel'?",
-    answer: "España",
-  },
+  // — Tele, espectáculos, streamers AR —
+  { question: "¿Quién conduce ShowMatch?", answer: "Marcelo Tinelli" },
+  { question: "¿De qué club es hincha Tinelli?", answer: "San Lorenzo" },
+  { question: "¿En qué canal va Gran Hermano Argentina?", answer: "Telefe" },
+  { question: "¿Cómo se llama el segmento de baile más famoso de ShowMatch?", answer: "Bailando por un Sueño" },
+  { question: "¿Quién condujo Almorzando durante décadas?", answer: "Mirtha Legrand" },
+  { question: "¿De qué banda argentina es 'De Música Ligera'?", answer: "Soda Stereo" },
+  { question: "¿En qué año murió Gustavo Cerati?", answer: "2014" },
+  { question: "¿Quién cantaba en Los Redonditos de Ricota?", answer: "El Indio Solari" },
+  { question: "¿Cómo se llama el actor argentino protagonista de 'El Clan'?", answer: "Guillermo Francella" },
+
+  // — Streamers / cultura hispanohablante —
+  { question: "¿En qué plataforma stremea Ibai?", answer: "Twitch" },
+  { question: "¿Cómo se llama el torneo de fútbol 7 de Piqué e Ibai?", answer: "Kings League" },
+  { question: "¿Cómo se llama el torneo de boxeo de famosos de Ibai?", answer: "La Velada del Año" },
+  { question: "¿Cuál es el nombre real del streamer 'Coscu'?", answer: "Martín Pérez Disalvo" },
+  { question: "¿De qué país es el cantante J Balvin?", answer: "Colombia" },
+  { question: "¿Quién canta 'Despacito'?", answer: "Luis Fonsi" },
+
+  // — Cine, series, música internacional —
+  { question: "¿Cómo se llama el ogro verde animado de DreamWorks?", answer: "Shrek" },
+  { question: "¿De qué país es la serie 'La Casa de Papel'?", answer: "España" },
   { question: "¿Cómo se llama la esposa de Homer Simpson?", answer: "Marge" },
   { question: "¿En qué ciudad vive Batman?", answer: "Gotham City" },
-  { question: "¿Quién canta 'Despacito'?", answer: "Luis Fonsi" },
   { question: "¿Cómo se llama el villano de 'El Rey León'?", answer: "Scar" },
-  { question: "¿En qué año salió Titanic de James Cameron?", answer: "1997" },
-  {
-    question: "¿Cómo se llama el protagonista de 'El Señor de los Anillos'?",
-    answer: "Frodo Bolsón",
-  },
-  {
-    question: "¿En qué ciudad viven los personajes de 'Friends'?",
-    answer: "Nueva York",
-  },
-  {
-    question: "¿De qué color es el traje de Spider-Man?",
-    answer: "Rojo y azul",
-  },
+  { question: "¿En qué año se estrenó Titanic de James Cameron?", answer: "1997" },
+  { question: "¿Cómo se llama el protagonista de 'El Señor de los Anillos'?", answer: "Frodo" },
+  { question: "¿En qué ciudad viven los personajes de 'Friends'?", answer: "Nueva York" },
+  { question: "¿De qué color es el traje de Spider-Man?", answer: "Rojo y azul" },
   { question: "¿Quién es el cantante de Coldplay?", answer: "Chris Martin" },
   { question: "¿Cuántas películas tiene la saga Toy Story?", answer: "4" },
   { question: "¿Cómo se llama el mayordomo de Batman?", answer: "Alfred" },
-  {
-    question: "¿Qué banda argentina cantó 'La Bomba'?",
-    answer: "Los Auténticos Decadentes",
-  },
-  { question: "¿De qué país es el cantante J Balvin?", answer: "Colombia" },
+  { question: "¿Quién pintó la Mona Lisa?", answer: "Leonardo da Vinci" },
+  { question: "¿Quién dirigió 'El Padrino'?", answer: "Francis Ford Coppola" },
 
   // — Cultura general mundial —
   { question: "¿En qué ciudad está la Torre Eiffel?", answer: "París" },
-  { question: "¿Cuántos colores tiene el arcoíris?", answer: "7" },
-  { question: "¿Qué país tiene forma de bota?", answer: "Italia" },
-  {
-    question: "¿Cuál es el animal terrestre más rápido?",
-    answer: "El guepardo (cheetah)",
-  },
-  { question: "¿En qué año llegó el hombre a la Luna?", answer: "1969" },
-  { question: "¿Quién pintó la Mona Lisa?", answer: "Leonardo da Vinci" },
-  { question: "¿Cuántas cuerdas tiene una guitarra estándar?", answer: "6" },
-  { question: "¿En qué país está la Gran Muralla?", answer: "China" },
-  { question: "¿Cuántos planetas tiene el sistema solar?", answer: "8" },
-  {
-    question: "¿Qué país tiene la bandera con una hoja de arce roja?",
-    answer: "Canadá",
-  },
-  { question: "¿Cuántos segundos tiene un minuto?", answer: "60" },
-  {
-    question: "¿Qué elemento es el símbolo H en la tabla periódica?",
-    answer: "Hidrógeno",
-  },
+  { question: "¿Cuál es la capital de Italia?", answer: "Roma" },
+  { question: "¿Cuál es la capital de Japón?", answer: "Tokio" },
   { question: "¿Cuál es la capital de Rusia?", answer: "Moscú" },
-  { question: "¿Qué animal produce la miel?", answer: "La abeja" },
-  { question: "¿Cuántas teclas tiene un piano estándar?", answer: "88" },
   { question: "¿Cuál es la capital de México?", answer: "Ciudad de México" },
-  {
-    question: "¿Cuántos colores tiene la bandera de Argentina?",
-    answer: "3 (celeste, blanco y el sol dorado)",
-  },
-  {
-    question: "¿Cuál es el río más largo del mundo?",
-    answer: "El Nilo (o el Amazonas, aceptar ambos)",
-  },
-  {
-    question: "¿Qué animal es el más grande del mundo?",
-    answer: "La ballena azul",
-  },
-  { question: "¿Cuántos meses tiene un año?", answer: "12" },
-  { question: "¿De qué país es originaria la pizza?", answer: "Italia" },
-  { question: "¿Cuántos lados tiene un triángulo?", answer: "3" },
-  { question: "¿Cuántas horas tiene un día?", answer: "24" },
+  { question: "¿En qué país está la Gran Muralla?", answer: "China" },
+  { question: "¿En qué país está Machu Picchu?", answer: "Perú" },
+  { question: "¿En qué continente está Egipto?", answer: "África" },
+  { question: "¿Qué país tiene forma de bota?", answer: "Italia" },
   { question: "¿Qué idioma se habla en Brasil?", answer: "Portugués" },
+  { question: "¿De qué país es originaria la pizza?", answer: "Italia" },
   { question: "¿De qué país es originario el sushi?", answer: "Japón" },
-  { question: "¿Qué gas necesitamos para respirar?", answer: "Oxígeno" },
-  {
-    question: "¿Qué color resulta de mezclar rojo y azul?",
-    answer: "Morado / violeta",
-  },
-  {
-    question: "¿Cuántos agujeros tiene un campo de golf estándar?",
-    answer: "18",
-  },
+  { question: "¿En qué año terminó la Segunda Guerra Mundial?", answer: "1945" },
+  { question: "¿En qué año el hombre llegó a la Luna?", answer: "1969" },
+
+  // — Ciencia, naturaleza, números —
+  { question: "¿Cuántos planetas tiene el sistema solar?", answer: "8" },
+  { question: "¿Qué planeta está más cerca del Sol?", answer: "Mercurio" },
+  { question: "¿Qué planeta es el más grande del sistema solar?", answer: "Júpiter" },
+  { question: "¿Qué planeta tiene los anillos más famosos?", answer: "Saturno" },
+  { question: "¿Cuál es el animal terrestre más rápido?", answer: "El guepardo" },
+  { question: "¿Cuál es el animal más grande del mundo?", answer: "La ballena azul" },
+  { question: "¿Qué animal produce la miel?", answer: "La abeja" },
   { question: "¿Cuántas patas tiene una araña?", answer: "8" },
-  {
-    question: "¿Cuántas notas tiene la escala musical?",
-    answer: "7 (do re mi fa sol la si)",
-  },
-  {
-    question: "¿Qué gas hay dentro de los globos que vuelan?",
-    answer: "Helio",
-  },
-  {
-    question: "¿Cuál es el planeta más grande del sistema solar?",
-    answer: "Júpiter",
-  },
   { question: "¿Cuántas patas tiene un insecto?", answer: "6" },
-  { question: "¿Qué país tiene más habitantes en el mundo?", answer: "India" },
-  { question: "¿Cuántos centímetros tiene un metro?", answer: "100" },
+  { question: "¿Qué gas necesitamos para respirar?", answer: "Oxígeno" },
+  { question: "¿Cuántos huesos tiene el cuerpo humano adulto?", answer: "206" },
+  { question: "¿Cuántas cuerdas tiene una guitarra estándar?", answer: "6" },
+  { question: "¿Cuántas teclas tiene un piano estándar?", answer: "88" },
+  { question: "¿Cuántas notas tiene la escala musical?", answer: "7" },
+  { question: "¿Cuántos lados tiene un triángulo?", answer: "3" },
+  { question: "¿Cuántos lados tiene un octágono?", answer: "8" },
+  { question: "¿Cuántos segundos tiene un minuto?", answer: "60" },
+  { question: "¿Cuántos meses tiene un año?", answer: "12" },
+  { question: "¿Cuántos colores tiene el arcoíris?", answer: "7" },
+
+  // — Tecnología —
   { question: "¿Qué empresa fabricó el iPhone?", answer: "Apple" },
   { question: "¿En qué año se lanzó el primer iPhone?", answer: "2007" },
-  {
-    question: "¿Qué planeta tiene los anillos más famosos?",
-    answer: "Saturno",
-  },
-  {
-    question: "¿Qué animal fue el primero en ir al espacio?",
-    answer: "Una perra, Laika",
-  },
-  {
-    question: "¿Qué red social tenía un pajarito como logo?",
-    answer: "Twitter (ahora X)",
-  },
-  { question: "¿Cuántos bits tiene un byte?", answer: "8" },
-  {
-    question: "¿A qué velocidad viaja la luz aproximadamente?",
-    answer: "300.000 km/s",
-  },
-  { question: "¿Cuántos jugadores hay en un equipo de rugby?", answer: "15" },
-  {
-    question: "¿En qué año terminó la Segunda Guerra Mundial?",
-    answer: "1945",
-  },
-  {
-    question: "¿Cuál es la fruta más consumida del mundo?",
-    answer: "El plátano (o el tomate si se cuenta como fruta)",
-  },
-  {
-    question: "¿De qué material está hecha la Estatua de la Libertad?",
-    answer: "Cobre",
-  },
-  { question: "¿En qué continente está Egipto?", answer: "África" },
-  {
-    question: "¿Cuántos jugadores hay en un equipo de voleibol en cancha?",
-    answer: "6",
-  },
-  { question: "¿En qué año se lanzó YouTube?", answer: "2005" },
-  { question: "¿Cuántos huesos tiene el cuerpo humano adulto?", answer: "206" },
-  {
-    question: "¿En qué ciudad española está la Sagrada Familia?",
-    answer: "Barcelona",
-  },
-  { question: "¿Cuántos Grand Slams ganó Rafa Nadal?", answer: "22" },
-  {
-    question: "¿Cómo se llama el creador de Facebook?",
-    answer: "Mark Zuckerberg",
-  },
+  { question: "¿Cómo se llama el creador de Facebook?", answer: "Mark Zuckerberg" },
+  { question: "¿Qué red social tenía un pajarito como logo?", answer: "Twitter (hoy X)" },
+  { question: "¿En qué app china se ven videos cortos verticales?", answer: "TikTok" },
 ];
 
 // ═══════════════════════════════════════════════════════════════
 // 🎯 PREGUNTAS DE ESTIMACIÓN — respuestas numéricas
 // ═══════════════════════════════════════════════════════════════
 export const ESTIMATION_QUESTIONS = [
-  // — Argentina —
+  // — Argentina: historia y deporte —
   { question: "¿En qué año declaró Argentina su independencia?", answer: 1816 },
-  {
-    question: "¿En qué año comenzó la última dictadura militar argentina?",
-    answer: 1976,
-  },
+  { question: "¿En qué año comenzó la última dictadura militar argentina?", answer: 1976 },
   { question: "¿En qué año recuperó Argentina la democracia?", answer: 1983 },
-  {
-    question: "¿En qué año fue la crisis del corralito en Argentina?",
-    answer: 2001,
-  },
-  {
-    question: "¿En qué año ganó Argentina su primer Mundial de fútbol?",
-    answer: 1978,
-  },
-  {
-    question:
-      "¿En qué año ganó Argentina el Mundial de México (el de Maradona)?",
-    answer: 1986,
-  },
-  { question: "¿En qué año ganó Argentina el Mundial de Qatar?", answer: 2022 },
+  { question: "¿En qué año fue la crisis del corralito?", answer: 2001 },
+  { question: "¿En qué año ganó Argentina su primer Mundial de fútbol?", answer: 1978 },
+  { question: "¿En qué año Argentina ganó el Mundial de México con Maradona?", answer: 1986 },
+  { question: "¿En qué año Argentina ganó el Mundial de Qatar?", answer: 2022 },
   { question: "¿Cuántos metros tiene el Aconcagua?", answer: 6961 },
   { question: "¿En qué año nació Lionel Messi?", answer: 1987 },
   { question: "¿En qué año nació Diego Maradona?", answer: 1960 },
   { question: "¿En qué año murió Diego Maradona?", answer: 2020 },
-  {
-    question: "¿Cuántas Copas América ganó Argentina en total hasta 2024?",
-    answer: 16,
-  },
+  { question: "¿Cuántas Copas América ganó Argentina hasta 2024?", answer: 16 },
   { question: "¿Cuántos Balones de Oro ganó Messi hasta 2023?", answer: 8 },
-  {
-    question: "¿En qué año se fundó el Club Atlético River Plate?",
-    answer: 1901,
-  },
-  {
-    question: "¿En qué año se fundó el Club Atlético Boca Juniors?",
-    answer: 1905,
-  },
-  {
-    question:
-      "¿En qué año se emitió la primera edición de Gran Hermano Argentina?",
-    answer: 2001,
-  },
-  { question: "¿En qué año nació Ibai Llanos?", answer: 1995 },
-  {
-    question: "¿En qué año se emitió ShowMatch por primera vez?",
-    answer: 1990,
-  },
+  { question: "¿En qué año se fundó el Club Atlético River Plate?", answer: 1901 },
+  { question: "¿En qué año se fundó el Club Atlético Boca Juniors?", answer: 1905 },
+  { question: "¿En qué año se emitió la primera edición de Gran Hermano Argentina?", answer: 2001 },
+  { question: "¿En qué año se emitió por primera vez ShowMatch?", answer: 1990 },
   { question: "¿En qué año murió Gustavo Cerati?", answer: 2014 },
-  {
-    question:
-      "¿En qué año se emitió la primera temporada de la telenovela 'Chiquititas'?",
-    answer: 1995,
-  },
-  { question: "¿Cuántas provincias tiene Argentina?", answer: 23 },
-  {
-    question: "¿Cuántos goles marcó Messi en el Mundial de Qatar 2022?",
-    answer: 7,
-  },
-  {
-    question: "¿En qué año debutó Messi en el primer equipo del FC Barcelona?",
-    answer: 2004,
-  },
-  {
-    question: "¿En qué año ganó Juan Martín del Potro el US Open?",
-    answer: 2009,
-  },
-  {
-    question:
-      "¿En qué año ganó Argentina el oro olímpico en básquetbol en Atenas?",
-    answer: 2004,
-  },
+  { question: "¿Cuántas provincias tiene Argentina (sin contar CABA)?", answer: 23 },
+  { question: "¿Cuántos goles marcó Messi en el Mundial de Qatar 2022?", answer: 7 },
+  { question: "¿En qué año debutó Messi en el primer equipo del FC Barcelona?", answer: 2004 },
+  { question: "¿En qué año ganó Juan Martín del Potro el US Open?", answer: 2009 },
+  { question: "¿En qué año Argentina ganó el oro olímpico en básquet en Atenas?", answer: 2004 },
+  { question: "¿Cuántos goles marcó Batistuta con la Selección Argentina?", answer: 56 },
+  { question: "¿En qué año se fundó Independiente de Avellaneda?", answer: 1905 },
 
-  // — Historia mundial —
+  // — Historia y cultura mundial —
   { question: "¿En qué año terminó la Segunda Guerra Mundial?", answer: 1945 },
   { question: "¿En qué año se inauguró la Torre Eiffel?", answer: 1889 },
   { question: "¿En qué año llegó el hombre a la Luna?", answer: 1969 },
   { question: "¿En qué año cayó el Muro de Berlín?", answer: 1989 },
-  { question: "¿En qué año se fundó la ONU?", answer: 1945 },
-  { question: "¿En qué año murió Freddie Mercury?", answer: 1991 },
   { question: "¿En qué año fue la Revolución Francesa?", answer: 1789 },
-  {
-    question: "¿En qué año se celebró el primer Mundial de fútbol?",
-    answer: 1930,
-  },
-  {
-    question: "¿En qué año se publicó la primera novela de Harry Potter?",
-    answer: 1997,
-  },
-  {
-    question: "¿En qué año se estrenó Titanic de James Cameron?",
-    answer: 1997,
-  },
+  { question: "¿En qué año se celebró el primer Mundial de fútbol?", answer: 1930 },
+  { question: "¿En qué año se publicó la primera novela de Harry Potter?", answer: 1997 },
+  { question: "¿En qué año se estrenó Titanic de James Cameron?", answer: 1997 },
+  { question: "¿En qué año murió Freddie Mercury?", answer: 1991 },
 
   // — Deporte mundial —
   { question: "¿En qué año nació Cristiano Ronaldo?", answer: 1985 },
   { question: "¿Cuántos Mundiales de fútbol ganó Brasil?", answer: 5 },
   { question: "¿Cuántos Grand Slams ganó Rafael Nadal en total?", answer: 22 },
-  {
-    question: "¿En qué año ganó España su primer Mundial de fútbol?",
-    answer: 2010,
-  },
-  { question: "¿Cuántos meters mide una piscina olímpica?", answer: 50 },
-  { question: "¿Cuántos equipos hay en LaLiga española?", answer: 20 },
-  {
-    question: "¿Cuántos Grand Slams ganó Carlos Alcaraz hasta 2024?",
-    answer: 4,
-  },
-  { question: "¿En qué año se fundó el FC Barcelona?", answer: 1899 },
-  { question: "¿En qué año se fundó el Real Madrid?", answer: 1902 },
-  {
-    question:
-      "¿Cuántos goles marcó Messi en la temporada 2011-12 con el Barcelona (récord)?",
-    answer: 73,
-  },
+  { question: "¿Cuántas Champions League ganó el Real Madrid hasta 2024?", answer: 15 },
+  { question: "¿Cuántos goles marcó Messi en la temporada 2011-12 (récord)?", answer: 73 },
 
-  // — Tecnología y cultura —
+  // — Tecnología / cultura pop —
   { question: "¿En qué año se lanzó el primer iPhone?", answer: 2007 },
   { question: "¿En qué año se lanzó YouTube?", answer: 2005 },
   { question: "¿En qué año se creó WhatsApp?", answer: 2009 },
   { question: "¿En qué año se fundó Twitch?", answer: 2011 },
-  {
-    question: "¿En qué año se emitió el primer episodio de Los Simpson?",
-    answer: 1989,
-  },
+  { question: "¿En qué año se emitió el primer episodio de Los Simpson?", answer: 1989 },
   { question: "¿Cuántos episodios tiene Breaking Bad en total?", answer: 62 },
-  {
-    question: "¿Cuántos episodios tiene la serie Friends en total?",
-    answer: 236,
-  },
-  {
-    question:
-      "¿En qué año se estrenó la película 'El Rey León' original de Disney?",
-    answer: 1994,
-  },
-  {
-    question: "¿En qué año se publicó el primer tweet de la historia?",
-    answer: 2006,
-  },
+  { question: "¿Cuántos episodios tiene Friends en total?", answer: 236 },
+  { question: "¿En qué año se publicó el primer tweet de la historia?", answer: 2006 },
   { question: "¿Cuántas teclas tiene un piano estándar?", answer: 88 },
 
-  // — Cantidades y medidas —
+  // — Geografía y ciencia —
   { question: "¿Cuántos países tiene América del Sur?", answer: 12 },
   { question: "¿Cuántos países tiene África?", answer: 54 },
-  { question: "¿Cuántos países tiene Europa?", answer: 44 },
   { question: "¿Cuántos huesos tiene el cuerpo humano adulto?", answer: 206 },
   { question: "¿Cuántos metros mide el Everest?", answer: 8849 },
-  {
-    question:
-      "¿Cuántos kilómetros de distancia separan Madrid de Buenos Aires?",
-    answer: 10265,
-  },
-  { question: "¿Cuántos años vivió Pablo Picasso?", answer: 91 },
-  {
-    question: "¿Cuántos metros de altura mide la Torre Eiffel con antena?",
-    answer: 330,
-  },
-  { question: "¿Cuántos metros mide una piscina olímpica?", answer: 50 },
   { question: "¿Cuántos países son miembros de la ONU?", answer: 193 },
 ];

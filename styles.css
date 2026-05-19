@@ -324,6 +324,140 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
 }
 .celda.jugada .pts { visibility: hidden; }
 
+/* ═══ MODE SELECTOR (Crear sala) ═══════════════════════════════ */
+.mode-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.mode-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: rgba(255,255,255,0.04);
+  border: 2px solid rgba(124,58,237,0.3);
+  border-radius: 10px;
+  color: var(--texto);
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.mode-option:hover { background: rgba(124,58,237,0.12); }
+.mode-option.active {
+  background: rgba(124,58,237,0.22);
+  border-color: var(--primario-glow);
+  box-shadow: 0 0 0 1px var(--primario-glow), 0 4px 20px rgba(168,85,247,0.25);
+}
+.mode-option .mode-icon  { font-size: 1.5rem; }
+.mode-option .mode-name  { font-weight: 700; font-size: 0.95rem; }
+.mode-option .mode-desc  {
+  font-size: 0.72rem;
+  color: var(--texto-secundario);
+  text-align: center;
+  line-height: 1.2;
+}
+.mode-option.active .mode-desc { color: var(--texto); }
+
+/* ═══ RULETA ═══════════════════════════════════════════════════ */
+#vista-ruleta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 0;
+}
+
+.ruleta-stage {
+  position: relative;
+  width: min(320px, 88vw);
+  height: min(320px, 88vw);
+  margin: 8px auto 4px;
+  filter: drop-shadow(0 8px 30px rgba(124,58,237,0.35));
+}
+
+.ruleta-pointer {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 16px solid transparent;
+  border-right: 16px solid transparent;
+  border-top: 26px solid var(--acento);
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+  z-index: 3;
+}
+.ruleta-pointer::after {
+  content: "";
+  position: absolute;
+  top: -32px; left: -6px;
+  width: 12px; height: 12px;
+  background: var(--acento);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(245,158,11,0.7);
+}
+
+.ruleta-wheel {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 6px solid var(--acento);
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.45);
+  transform: rotate(0deg);
+  will-change: transform;
+}
+.ruleta-wheel.spinning {
+  transition: transform 4s cubic-bezier(0.16, 0.84, 0.18, 1);
+}
+
+.ruleta-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44%;
+  text-align: right;
+  padding-right: 14px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: white;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.55);
+  pointer-events: none;
+  transform-origin: 0% 50%;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ruleta-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #f8fafc, #94a3b8 70%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  z-index: 2;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5), inset 0 -3px 6px rgba(0,0,0,0.25);
+}
+
+#btn-ruleta-spin { font-size: 1.1rem; padding: 16px 28px; }
+#btn-ruleta-spin:disabled { opacity: 0.55; }
+
+.ruleta-msg {
+  text-align: center;
+  font-size: 0.92rem;
+  color: var(--texto-secundario);
+  min-height: 22px;
+}
+.ruleta-msg .destacado { color: var(--acento); font-weight: 700; }
+
 /* Overlay pregunta */
 .pregunta-overlay {
   display: none;

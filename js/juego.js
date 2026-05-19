@@ -25,6 +25,9 @@ let _lastLightningKey   = null;   // dirty-check modo relámpago
 let _lastEstimacionKey  = null;   // dirty-check modo estimación
 let _estimacionInput    = "";     // valor del input de estimación pendiente de envío
 let _lastScorebarKey    = null;   // dirty-check scorebar
+let _lastRuletaKey      = null;   // dirty-check ruleta
+let _ruletaRotation     = 0;      // rotación acumulada de la ruleta (deg)
+let _ruletaSpinning     = false;  // bloqueo durante la animación de giro
 
 // ═══════════════════════════════════════════════════════════════
 // 🛠️ UTILIDADES
@@ -314,6 +317,145 @@ function renderBoard(s) {
       tablero.appendChild(cell);
     });
   });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🎰 RENDER — RULETA
+// ═══════════════════════════════════════════════════════════════
+const RULETA_COLORS = ["#7c3aed", "#a855f7", "#ec4899", "#f59e0b", "#06b6d4", "#10b981"];
+const RULETA_SPIN_MS = 4000;
+
+function categoryHasUnplayed(board, cat) {
+  return [200, 400, 600, 800, 1000].some(v => board?.[cat]?.[String(v)] !== true);
+}
+
+function availableCategories(s) {
+  return (s.categories || []).filter(cat => categoryHasUnplayed(s.board || {}, cat));
+}
+
+function buildRuletaWheel(categories) {
+  const wheel = document.getElementById("ruleta-wheel");
+  const n     = categories.length;
+  // Reset rotación (instantáneo, sin transición) al rearmar la rueda entre turnos
+  wheel.classList.remove("spinning");
+  wheel.style.transform = "rotate(0deg)";
+  _ruletaRotation = 0;
+  if (!n) { wheel.innerHTML = ""; wheel.style.background = ""; return; }
+
+  const seg = 360 / n;
+  // Conic gradient para los sectores
+  const stops = categories.map((_, i) => {
+    const color = RULETA_COLORS[i % RULETA_COLORS.length];
+    return `${color} ${i * seg}deg ${(i + 1) * seg}deg`;
+  }).join(", ");
+  wheel.style.background = `conic-gradient(from -90deg, ${stops})`;
+
+  // Etiquetas centradas en cada sector
+  wheel.innerHTML = categories.map((cat, i) => {
+    const center = i * seg + seg / 2;       // ángulo (grados) del centro del sector, 0 = derecha (matemático)
+    // -90 para que 0deg apunte hacia arriba en la conic gradient (cuadra con `from -90deg`)
+    const cssAngle = center - 90;
+    return `<div class="ruleta-label" style="transform: rotate(${cssAngle}deg);">${esc(cat)}</div>`;
+  }).join("");
+}
+
+function renderRoulette(s) {
+  // Mantener tablero key sucio para forzar re-render al volver
+  _lastBoardKey = null;
+  document.getElementById("pregunta-overlay").classList.remove("visible");
+  document.getElementById("vista-tablero").style.display    = "none";
+  document.getElementById("vista-ruleta").style.display     = "flex";
+
+  const order        = s.playerOrder || [];
+  const selectorId   = order[s.selectorIndex || 0];
+  const isMyTurn     = selectorId === myPlayerId;
+  const selectorName = s.players?.[selectorId]?.name || "?";
+
+  const ind = document.getElementById("turno-indicador-ruleta");
+  ind.innerHTML = isMyTurn
+    ? `<span class="mi-turno">Tu turno</span> — girá la ruleta`
+    : `Turno de <strong>${selectorName}</strong> para girar la ruleta`;
+
+  // Dirty-check: solo reconstruir si cambió el set de categorías disponibles o el turno
+  const avail = availableCategories(s);
+  const ruletaKey = JSON.stringify({ avail, selectorIndex: s.selectorIndex });
+  if (ruletaKey !== _lastRuletaKey) {
+    _lastRuletaKey = ruletaKey;
+    buildRuletaWheel(avail);
+  }
+
+  const btn = document.getElementById("btn-ruleta-spin");
+  const msg = document.getElementById("ruleta-msg");
+  if (_ruletaSpinning) {
+    btn.disabled = true;
+    msg.innerHTML = `<span class="destacado">🎰 Girando...</span>`;
+  } else if (isMyTurn) {
+    btn.disabled = false;
+    btn.style.display = "block";
+    msg.textContent = "";
+  } else {
+    btn.disabled = true;
+    btn.style.display = "none";
+    msg.innerHTML = `Esperando que <strong>${esc(selectorName)}</strong> gire...`;
+  }
+}
+
+async function handleRouletteSpin() {
+  if (!state || _ruletaSpinning) return;
+  const order      = state.playerOrder || [];
+  const selectorId = order[state.selectorIndex || 0];
+  if (selectorId !== myPlayerId) return;
+
+  const avail = availableCategories(state);
+  if (!avail.length) return;
+
+  // Elegir categoría al azar entre las disponibles, y valor al azar entre las celdas no jugadas
+  const targetIdx = Math.floor(Math.random() * avail.length);
+  const category  = avail[targetIdx];
+  const unplayedVals = [200, 400, 600, 800, 1000].filter(v => state.board?.[category]?.[String(v)] !== true);
+  const value = unplayedVals[Math.floor(Math.random() * unplayedVals.length)];
+
+  const n   = avail.length;
+  const seg = 360 / n;
+  // Ángulo (en sentido horario desde arriba) del centro del sector elegido
+  const targetCenter = targetIdx * seg + seg / 2;
+  // El puntero está arriba (0°). Para que ese sector quede bajo el puntero,
+  // hay que rotar la rueda -targetCenter grados (mod 360).
+  const baseSpins = 5 * 360;                       // 5 vueltas completas
+  const jitter    = (Math.random() - 0.5) * (seg * 0.5); // pequeño desvío dentro del sector
+  const targetRot = baseSpins + (360 - targetCenter) + jitter;
+
+  const wheel = document.getElementById("ruleta-wheel");
+  const btn   = document.getElementById("btn-ruleta-spin");
+  const msg   = document.getElementById("ruleta-msg");
+
+  _ruletaSpinning = true;
+  btn.disabled = true;
+  msg.innerHTML = `<span class="destacado">🎰 Girando...</span>`;
+
+  // Reset sin transición para empezar desde 0 (acumular se complica visualmente)
+  wheel.classList.remove("spinning");
+  wheel.style.transform = "rotate(0deg)";
+  // Forzar reflow para que la siguiente transición tome efecto
+  void wheel.offsetWidth;
+  wheel.classList.add("spinning");
+  wheel.style.transform = `rotate(${targetRot}deg)`;
+  _ruletaRotation = targetRot;
+
+  playBuzzer();
+
+  await new Promise(resolve => setTimeout(resolve, RULETA_SPIN_MS + 100));
+
+  msg.innerHTML = `<span class="destacado">🎯 ${esc(category)}</span> · ${value} pts`;
+
+  try {
+    await GameDAO.selectQuestion(roomCode, category, value);
+  } catch (e) {
+    console.error("Error al seleccionar pregunta tras girar:", e);
+    btn.disabled = false;
+  } finally {
+    _ruletaSpinning = false;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -986,15 +1128,28 @@ function render(s) {
       updateScorebar(s);
       if (s.lightningMode?.active) {
         document.getElementById("estimacion-overlay").classList.remove("visible");
+        document.getElementById("vista-ruleta").style.display = "none";
+        document.getElementById("vista-tablero").style.display = "block";
         renderLightning(s);
       } else if (s.estimacionMode?.active) {
         document.getElementById("lightning-overlay").classList.remove("visible");
+        document.getElementById("vista-ruleta").style.display = "none";
+        document.getElementById("vista-tablero").style.display = "block";
         renderEstimacion(s);
       } else {
         document.getElementById("lightning-overlay").classList.remove("visible");
         document.getElementById("estimacion-overlay").classList.remove("visible");
-        if (!s.currentQuestion) renderBoard(s);
-        else                    renderQuestion(s);
+        if (!s.currentQuestion) {
+          if (s.gameMode === "ruleta") {
+            renderRoulette(s);
+          } else {
+            document.getElementById("vista-ruleta").style.display = "none";
+            document.getElementById("vista-tablero").style.display = "block";
+            renderBoard(s);
+          }
+        } else {
+          renderQuestion(s);
+        }
       }
       break;
     case "finished":
@@ -1018,6 +1173,8 @@ async function handleCreateRoom() {
   try {
     myName   = name;
     roomCode = generateRoomCode();
+    const selectedMode = document.querySelector(".mode-option.active")?.dataset.mode || "tablero";
+    const gameMode = selectedMode === "ruleta" ? "ruleta" : "tablero";
     const categories = pickRandomCategories(CATEGORY_POOL);
     const board = {};
     categories.forEach(cat => {
@@ -1027,6 +1184,7 @@ async function handleCreateRoom() {
       createdAt: Date.now(),
       hostId: myPlayerId,
       status: "lobby",
+      gameMode,
       categories,
       board,
       players: { [myPlayerId]: { name, score: 0, connected: true } },
@@ -1413,6 +1571,7 @@ async function handleJugarNuevo() {
     createdAt: Date.now(),
     hostId: myPlayerId,
     status: "lobby",
+    gameMode: state.gameMode || "tablero",
     categories,
     usedCategories: nextUsed,
     lightningUsedIndices:  state.lightningUsedIndices  || [],
@@ -1466,6 +1625,17 @@ document.querySelectorAll(".tab").forEach(tab => {
 // Inicio
 document.getElementById("btn-crear-sala").addEventListener("click", handleCreateRoom);
 document.getElementById("btn-unirse").addEventListener("click", handleJoinRoom);
+
+// Mode selector (Tablero vs Ruleta)
+document.querySelectorAll(".mode-option").forEach(opt => {
+  opt.addEventListener("click", () => {
+    document.querySelectorAll(".mode-option").forEach(o => o.classList.remove("active"));
+    opt.classList.add("active");
+  });
+});
+
+// Ruleta
+document.getElementById("btn-ruleta-spin").addEventListener("click", handleRouletteSpin);
 
 // Auto-mayúsculas código
 document.getElementById("input-codigo").addEventListener("input", e => {

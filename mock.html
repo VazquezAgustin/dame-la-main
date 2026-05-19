@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mock — Botón "Siguiente" sticky en fase judged</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fondo: #0a0a1a;
+    --primario: #7c3aed;
+    --primario-glow: #a855f7;
+    --acento: #f59e0b;
+    --correcto: #10b981;
+    --incorrecto: #ef4444;
+    --buzzer: #7c3aed;
+    --celda-jugada: #0f0f1a;
+    --texto: #f8fafc;
+    --texto-secundario: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #1a1a2e;
+    color: var(--texto);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 24px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  h1 { font-family: 'Bebas Neue', cursive; font-size: 1.6rem; letter-spacing: 0.1em; text-align: center; }
+  .hint { color: var(--texto-secundario); font-size: 0.85rem; text-align: center; max-width: 520px; line-height: 1.5; }
+
+  /* Toggle */
+  .toggle-bar {
+    display: flex;
+    gap: 8px;
+    background: rgba(255,255,255,0.05);
+    padding: 6px;
+    border-radius: 12px;
+  }
+  .toggle-bar button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--texto-secundario);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .toggle-bar button.active {
+    background: var(--primario);
+    color: white;
+    box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+  }
+
+  .frames {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  /* Phone frame — emula iPhone SE 375x667 */
+  .phone {
+    width: 375px;
+    height: 667px;
+    background: var(--fondo);
+    border-radius: 28px;
+    border: 8px solid #0a0a14;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .phone-label {
+    text-align: center;
+    margin-top: 10px;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    color: var(--texto-secundario);
+  }
+  .phone-label.propuesto { color: var(--correcto); }
+  .phone-label.actual { color: var(--incorrecto); }
+
+  /* ═══════ Replica de .pregunta-overlay ═══════ */
+  .pregunta-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--fondo);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 20px 70px;
+    overflow-y: auto;
+  }
+
+  .pregunta-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .pregunta-categoria {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1rem;
+    color: var(--texto-secundario);
+    letter-spacing: 0.15em;
+  }
+  .pregunta-valor {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2rem;
+    color: var(--acento);
+  }
+
+  .timer-bar-container {
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .timer-bar {
+    height: 100%;
+    background: var(--primario-glow);
+    width: 100%;
+  }
+
+  .pregunta-texto {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.45;
+    padding: 12px 4px;
+    min-height: 80px;
+  }
+
+  .respuesta-box {
+    padding: 18px;
+    background: rgba(124,58,237,0.08);
+    border: 2px solid var(--primario);
+    border-radius: 14px;
+    text-align: center;
+    margin: 12px 0;
+  }
+  .respuesta-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--texto-secundario);
+    margin-bottom: 6px;
+  }
+  .respuesta-texto {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.6rem;
+    color: var(--acento);
+  }
+
+  .resultado-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .resultado-icono { font-size: 3.5rem; }
+  .resultado-texto { font-family: 'Bebas Neue', cursive; font-size: 1.6rem; }
+  .resultado-puntos { font-family: 'Bebas Neue', cursive; font-size: 2.2rem; color: var(--acento); }
+
+  /* Buzzer zone */
+  .buzzer-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding-top: 10px;
+  }
+  .btn-buzzer {
+    width: min(340px, 92vw);
+    height: 88px;
+    border-radius: 20px;
+    background: #1f2937;
+    color: white;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2.2rem;
+    letter-spacing: 0.08em;
+    border: none;
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  .btn {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primario {
+    background: var(--primario);
+    color: white;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+    width: min(340px, 92vw);
+  }
+
+  /* Scorebar */
+  .scorebar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(10, 10, 26, 0.97);
+    border-top: 1px solid var(--primario);
+    height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 8px;
+    z-index: 100;
+  }
+  .scorebar-players {
+    flex: 1;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    align-items: center;
+    scrollbar-width: none;
+  }
+  .scorebar-players::-webkit-scrollbar { display: none; }
+  .scorebar-player { font-size: 0.82rem; white-space: nowrap; display: flex; gap: 4px; align-items: center; }
+  .scorebar-player .sname { color: var(--texto-secundario); }
+  .scorebar-player .sname.activo { color: var(--acento); font-weight: 700; }
+  .scorebar-player .sname.yo { text-decoration: underline; }
+  .scorebar-player .spts { font-weight: 700; font-size: 0.88rem; }
+  .scorebar-toggle { font-size: 0.65rem; color: var(--texto-secundario); }
+
+  /* ═══════ MODO PROPUESTO ═══════ */
+  /* En fase judged: ocultar buzzer deshabilitado, sticky en Siguiente */
+  .propuesto .buzzer-zone .btn-buzzer { display: none; }
+  .propuesto .pregunta-overlay { padding-bottom: 130px; }
+  .propuesto .buzzer-zone {
+    position: sticky;
+    bottom: 60px;
+    margin-top: auto;
+    padding: 14px 0 14px;
+    background: linear-gradient(to bottom, transparent, var(--fondo) 30%);
+    z-index: 50;
+  }
+  .propuesto .btn-primario {
+    box-shadow: 0 6px 28px rgba(124,58,237,0.55), 0 0 0 1px rgba(168,85,247,0.4);
+    font-size: 1.1rem;
+    padding: 16px 24px;
+  }
+
+  /* Visibilidad por modo */
+  .frame-actual, .frame-propuesto { display: none; }
+  body.mode-actual .frame-actual { display: block; }
+  body.mode-propuesto .frame-propuesto { display: block; }
+  body.mode-ambos .frame-actual,
+  body.mode-ambos .frame-propuesto { display: block; }
+
+  /* Visibilidad por fase */
+  .scene { display: none; }
+  body.phase-judged .scene-judged { display: contents; }
+  body.phase-answer .scene-answer { display: contents; }
+  body.phase-revealed .scene-revealed { display: contents; }
+
+  /* Botones host */
+  .acciones-host { display: flex; flex-direction: column; gap: 10px; width: min(340px, 92vw); }
+  .acciones-host-row { display: flex; gap: 12px; }
+  .acciones-host-row .btn { flex: 1; }
+  .btn-correcto { background: var(--correcto); color: white; box-shadow: 0 4px 20px rgba(16,185,129,0.4); }
+  .btn-incorrecto { background: var(--incorrecto); color: white; box-shadow: 0 4px 20px rgba(239,68,68,0.4); }
+  .btn-peligro { background: rgba(239,68,68,0.15); color: var(--incorrecto); border: 1px solid var(--incorrecto); width: min(340px, 92vw); }
+
+  /* Buzzer-estado */
+  .buzzer-estado { text-align: center; font-size: 1rem; color: var(--texto-secundario); min-height: 24px; padding: 0 8px; }
+  .buzzer-ganador { color: var(--primario-glow); font-weight: 700; font-size: 1.15rem; }
+  .answer-timer-count { text-align: center; font-family: 'Bebas Neue', cursive; font-size: 3.5rem; line-height: 1; margin-bottom: 4px; color: var(--acento); }
+</style>
+</head>
+<body class="mode-ambos phase-judged">
+
+<h1>Mock — botones de acción siempre visibles en móvil</h1>
+<p class="hint">
+  Comparativa del layout <b>actual</b> vs el <b>propuesto</b> en las 3 fases donde el problema ocurre.<br/>
+  Frames simulan iPhone SE (375×667). Cambiá fase y modo con los toggles.
+</p>
+
+<div class="toggle-bar">
+  <button id="phase-judged" class="active" onclick="setPhase('judged')">Fase: judged (Siguiente)</button>
+  <button id="phase-answer" onclick="setPhase('answer')">Fase: waiting_answer (Mostrar respuesta)</button>
+  <button id="phase-revealed" onclick="setPhase('revealed')">Fase: answer_revealed (Correcto/Incorrecto)</button>
+</div>
+
+<div class="toggle-bar">
+  <button id="btn-ambos" class="active" onclick="setMode('ambos')">Ambos</button>
+  <button id="btn-actual" onclick="setMode('actual')">Solo actual</button>
+  <button id="btn-propuesto" onclick="setMode('propuesto')">Solo propuesto</button>
+</div>
+
+<div class="frames">
+
+  <!-- ════════════ FASE: judged (Siguiente) ════════════ -->
+  <div class="scene scene-judged">
+    <div class="frame-actual">
+      <div class="phone">
+        <div class="pregunta-overlay">
+          <div class="pregunta-header">
+            <span class="pregunta-categoria">TROTA MUNDOS</span>
+            <span class="pregunta-valor">400</span>
+          </div>
+          <div class="timer-bar-container"><div class="timer-bar"></div></div>
+          <div class="pregunta-texto">¿En qué país se encuentra el río Amazonas, conocido por ser el más caudaloso del mundo?</div>
+          <div class="respuesta-box">
+            <div class="respuesta-label">Respuesta correcta</div>
+            <div class="respuesta-texto">Brasil (aunque pasa por Perú y Colombia)</div>
+          </div>
+          <div class="resultado-panel">
+            <div class="resultado-icono">✓</div>
+            <div class="resultado-texto">¡Marcos acertó!</div>
+            <div class="resultado-puntos">+ 400 pts</div>
+          </div>
+          <div class="buzzer-zone">
+            <button class="btn-buzzer" disabled>🔔 ¡PULSA!</button>
+            <button class="btn btn-primario">Siguiente ▶</button>
+          </div>
+        </div>
+        <div class="scorebar">
+          <div class="scorebar-players">
+            <span class="scorebar-player"><span class="sname activo yo">Agustín</span> <span class="spts">800</span></span>
+            <span class="scorebar-player"><span class="sname">Marcos</span> <span class="spts">400</span></span>
+            <span class="scorebar-player"><span class="sname">Sofía</span> <span class="spts">200</span></span>
+          </div>
+          <span class="scorebar-toggle">▲</span>
+        </div>
+      </div>
+      <div class="phone-label actual">ACTUAL — Siguiente queda abajo</div>
+    </div>
+
+    <div class="frame-propuesto propuesto">
+      <div class="phone">
+        <div class="pregunta-overlay">
+          <div class="pregunta-header">
+            <span class="pregunta-categoria">TROTA MUNDOS</span>
+            <span class="pregunta-valor">400</span>
+          </div>
+          <div class="timer-bar-container"><div class="timer-bar"></div></div>
+          <div class="pregunta-texto">¿En qué país se encuentra el río Amazonas, conocido por ser el más caudaloso del mundo?</div>
+          <div class="respuesta-box">
+            <div class="respuesta-label">Respuesta correcta</div>
+            <div class="respuesta-texto">Brasil (aunque pasa por Perú y Colombia)</div>
+          </div>
+          <div class="resultado-panel">
+            <div class="resultado-icono">✓</div>
+            <div class="resultado-texto">¡Marcos acertó!</div>
+            <div class="resultado-puntos">+ 400 pts</div>
+          </div>
+          <div class="buzzer-zone">
+            <button class="btn-buzzer" disabled>🔔 ¡PULSA!</button>
+            <button class="btn btn-primario">Siguiente ▶</button>
+          </div>
+        </div>
+        <div class="scorebar">
+          <div class="scorebar-players">
+            <span class="scorebar-player"><span class="sname activo yo">Agustín</span> <span class="spts">800</span></span>
+            <span class="scorebar-player"><span class="sname">Marcos</span> <span class="spts">400</span></span>
+            <span class="scorebar-player"><span class="sname">Sofía</span> <span class="spts">200</span></span>
+          </div>
+          <span class="scorebar-toggle">▲</span>
+        </div>
+      </div>
+      <div class="phone-label propuesto">PROPUESTO — Siguiente sticky, sin buzzer</div>
+    </div>
+  </div>
+
+  <!-- ════════════ FASE: waiting_answer (Mostrar respuesta) ════════════ -->
+  <div class="scene scene-answer">
+    <div class="frame-actual">
+      <div class="phone">
+        <div class="pregunta-overlay">
+          <div class="pregunta-header">
+            <span class="pregunta-categoria">TROTA MUNDOS</span>
+            <span class="pregunta-valor">400</span>
+          </div>
+          <div class="timer-bar-container"><div class="timer-bar" style="width:60%"></div></div>
+          <div class="answer-timer-count">18</div>
+          <div class="pregunta-texto">¿En qué país se encuentra el río Amazonas, conocido por ser el más caudaloso del mundo?</div>
+          <div class="buzzer-estado">
+            <span class="buzzer-ganador">🔔 ¡Agustín buzzeó primero!</span><br/>
+            <span style="font-size:0.88rem;color:var(--texto-secundario)">Decí tu respuesta en voz alto y tocá "Mostrar respuesta"</span>
+          </div>
+          <div class="buzzer-zone">
+            <button class="btn-buzzer" disabled>🔔 ¡PULSA!</button>
+            <button class="btn btn-primario">👁 Mostrar respuesta</button>
+          </div>
+        </div>
+        <div class="scorebar">
+          <div class="scorebar-players">
+            <span class="scorebar-player"><span class="sname activo yo">Agustín</span> <span class="spts">800</span></span>
+            <span class="scorebar-player"><span class="sname">Marcos</span> <span class="spts">400</span></span>
+            <span class="scorebar-player"><span class="sname">Sofía</span> <span class="spts">200</span></span>
+          </div>
+          <span class="scorebar-toggle">▲</span>
+        </div>
+      </div>
+      <div class="phone-label actual">ACTUAL — Mostrar respuesta queda abajo</div>
+    </div>
+
+    <div class="frame-propuesto propuesto">
+      <div class="phone">
+        <div class="pregunta-overlay">
+          <div class="pregunta-header">
+            <span class="pregunta-categoria">TROTA MUNDOS</span>
+            <span class="pregunta-valor">400</span>
+          </div>
+          <div class="timer-bar-container"><div class="timer-bar" style="width:60%"></div></div>
+          <div class="answer-timer-count">18</div>
+          <div class="pregunta-texto">¿En qué país se encuentra el río Amazonas, conocido por ser el más caudaloso del mundo?</div>
+          <div class="buzzer-estado">
+            <span class="buzzer-ganador">🔔 ¡Agustín buzzeó primero!</span><br/>
+            <span style="font-size:0.88rem;color:var(--texto-secundario)">Decí tu respuesta en voz alto y tocá "Mostrar respuesta"</span>
+          </div>
+          <div class="buzzer-zone">
+            <button class="btn-buzzer" disabled>🔔 ¡PULSA!</button>
+            <button class="btn btn-primario">👁 Mostrar respuesta</button>
+          </div>
+        </div>
+        <div class="scorebar">
+          <div class="scorebar-players">
+            <span class="scorebar-player"><span class="sname activo yo">Agustín</span> <span class="spts">800</span></span>
+            <span class="scorebar-player"><span class="sname">Marcos</span> <span class="spts">400</span></span>
+            <span class="scorebar-player"><span class="sname">Sofía</span> <span class="spts">200</span></span>
+          </div>
+          <span class="scorebar-toggle">▲</span>
+        </div>
+      </div>
+      <div class="phone-label propuesto">PROPUESTO — sticky, sin buzzer</div>
+    </div>
+  </div>
+
+  <!-- ════════════ FASE: answer_revealed (Correcto/Incorrecto) ════════════ -->
+  <div class="scene scene-revealed">
+    <div class="frame-actual">
+      <div class="phone">
+        <div class="pregunta-overlay">
+          <div class="pregunta-header">
+            <span class="pregunta-categoria">TROTA MUNDOS</span>
+            <span class="pregunta-valor">400</span>
+          </div>
+          <div class="timer-bar-container"><div class="timer-bar"></div></div>
+          <div class="pregunta-texto">¿En qué país se encuentra el río Amazonas, conocido por ser el más caudaloso del mundo?</div>
+          <div class="respuesta-box">
+            <div class="respuesta-label">Respuesta correcta</div>
+            <div class="respuesta-texto">Brasil (aunque pasa por Perú y Colombia)</div>
+          </div>
+          <div class="buzzer-estado">
+            <span class="buzzer-ganador">🔔 ¡Marcos respondió!</span>
+          </div>
+          <div class="buzzer-zone">
+            <button class="btn-buzzer" disabled>🔔 ¡PULSA!</button>
+            <div class="acciones-host">
+              <div class="acciones-host-row">
+                <button class="btn btn-correcto">✓ Correcto</button>
+                <button class="btn btn-incorrecto">✗ Incorrecto</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="scorebar">
+          <div class="scorebar-players">
+            <span class="scorebar-player"><span class="sname activo yo">Agustín</span> <span class="spts">800</span></span>
+            <span class="scorebar-player"><span class="sname">Marcos</span> <span class="spts">400</span></span>
+            <span class="scorebar-player"><span class="sname">Sofía</span> <span class="spts">200</span></span>
+          </div>
+          <span class="scorebar-toggle">▲</span>
+        </div>
+      </div>
+      <div class="phone-label actual">ACTUAL — Correcto/Incorrecto queda abajo</div>
+    </div>
+
+    <div class="frame-propuesto propuesto">
+      <div class="phone">
+        <div class="pregunta-overlay">
+          <div class="pregunta-header">
+            <span class="pregunta-categoria">TROTA MUNDOS</span>
+            <span class="pregunta-valor">400</span>
+          </div>
+          <div class="timer-bar-container"><div class="timer-bar"></div></div>
+          <div class="pregunta-texto">¿En qué país se encuentra el río Amazonas, conocido por ser el más caudaloso del mundo?</div>
+          <div class="respuesta-box">
+            <div class="respuesta-label">Respuesta correcta</div>
+            <div class="respuesta-texto">Brasil (aunque pasa por Perú y Colombia)</div>
+          </div>
+          <div class="buzzer-estado">
+            <span class="buzzer-ganador">🔔 ¡Marcos respondió!</span>
+          </div>
+          <div class="buzzer-zone">
+            <button class="btn-buzzer" disabled>🔔 ¡PULSA!</button>
+            <div class="acciones-host">
+              <div class="acciones-host-row">
+                <button class="btn btn-correcto">✓ Correcto</button>
+                <button class="btn btn-incorrecto">✗ Incorrecto</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="scorebar">
+          <div class="scorebar-players">
+            <span class="scorebar-player"><span class="sname activo yo">Agustín</span> <span class="spts">800</span></span>
+            <span class="scorebar-player"><span class="sname">Marcos</span> <span class="spts">400</span></span>
+            <span class="scorebar-player"><span class="sname">Sofía</span> <span class="spts">200</span></span>
+          </div>
+          <span class="scorebar-toggle">▲</span>
+        </div>
+      </div>
+      <div class="phone-label propuesto">PROPUESTO — sticky, sin buzzer</div>
+    </div>
+  </div>
+
+</div>
+
+<p class="hint" style="max-width:600px;margin-top:12px">
+  <b>Notas del propuesto:</b><br/>
+  • El botón de buzzer deshabilitado se oculta (libera ~88px + gap).<br/>
+  • La zona de acciones (<code>.buzzer-zone</code>) pasa a <code>position: sticky; bottom: 60px</code> con un fade del fondo para indicar que hay contenido scrolleable detrás.<br/>
+  • El botón "Siguiente" se hace un poco más grande y con más glow para destacar.<br/>
+  • El <code>padding-bottom</code> del overlay sube a 130px para que el contenido scrolleable no quede tapado por el botón sticky.
+</p>
+
+<script>
+  let currentMode = 'ambos';
+  let currentPhase = 'judged';
+
+  function applyClasses() {
+    document.body.className = 'mode-' + currentMode + ' phase-' + currentPhase;
+  }
+
+  function setMode(mode) {
+    currentMode = mode;
+    applyClasses();
+    ['ambos','actual','propuesto'].forEach(m => {
+      document.getElementById('btn-' + m).classList.toggle('active', m === mode);
+    });
+  }
+
+  function setPhase(phase) {
+    currentPhase = phase;
+    applyClasses();
+    ['judged','answer','revealed'].forEach(p => {
+      document.getElementById('phase-' + p).classList.toggle('active', p === phase);
+    });
+  }
+</script>
+
+</body>
+</html>

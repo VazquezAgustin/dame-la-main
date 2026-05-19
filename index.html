@@ -29,6 +29,21 @@
         <label>Tu nombre</label>
         <input type="text" id="input-nombre-crear" placeholder="Ej: Agustín" maxlength="20" autocomplete="off">
       </div>
+      <div class="form-group">
+        <label>Modo de juego</label>
+        <div class="mode-selector" id="mode-selector">
+          <button type="button" class="mode-option active" data-mode="tablero">
+            <span class="mode-icon">📋</span>
+            <span class="mode-name">Tablero</span>
+            <span class="mode-desc">Elegís la categoría</span>
+          </button>
+          <button type="button" class="mode-option" data-mode="ruleta">
+            <span class="mode-icon">🎰</span>
+            <span class="mode-name">Ruleta</span>
+            <span class="mode-desc">Categoría al azar</span>
+          </button>
+        </div>
+      </div>
       <button class="btn btn-primario" id="btn-crear-sala">Crear sala</button>
     </div>
 
@@ -89,6 +104,19 @@
     <div class="tablero-container" style="margin-top:10px">
       <div class="tablero" id="tablero"></div>
     </div>
+  </div>
+
+  <div id="vista-ruleta" style="display:none">
+    <div class="turno-indicador" id="turno-indicador-ruleta"></div>
+    <div class="ruleta-stage">
+      <div class="ruleta-pointer"></div>
+      <div class="ruleta-wheel" id="ruleta-wheel"></div>
+      <div class="ruleta-center">🎰</div>
+    </div>
+    <button class="btn btn-primario" id="btn-ruleta-spin" style="width:min(340px,92vw)">
+      🎰 Girar la ruleta
+    </button>
+    <p class="ruleta-msg" id="ruleta-msg"></p>
   </div>
 
   <!-- Overlay pregunta -->
