@@ -407,6 +407,25 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   box-shadow: inset 0 0 30px rgba(0,0,0,0.45);
   transform: rotate(0deg);
   will-change: transform;
+  overflow: hidden;
+}
+
+/* Líneas divisorias radiales entre sectores (6 segmentos = 6 líneas cada 60°) */
+.ruleta-wheel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    conic-gradient(
+      rgba(0,0,0,0.55) 0deg 1.2deg, transparent 1.2deg 60deg,
+      rgba(0,0,0,0.55) 60deg 61.2deg, transparent 61.2deg 120deg,
+      rgba(0,0,0,0.55) 120deg 121.2deg, transparent 121.2deg 180deg,
+      rgba(0,0,0,0.55) 180deg 181.2deg, transparent 181.2deg 240deg,
+      rgba(0,0,0,0.55) 240deg 241.2deg, transparent 241.2deg 300deg,
+      rgba(0,0,0,0.55) 300deg 301.2deg, transparent 301.2deg 360deg
+    );
 }
 .ruleta-wheel.spinning {
   transition: transform 4s cubic-bezier(0.16, 0.84, 0.18, 1);

@@ -343,12 +343,13 @@ function buildRuletaWheel(categories) {
   if (!n) { wheel.innerHTML = ""; wheel.style.background = ""; return; }
 
   const seg = 360 / n;
-  // Conic gradient para los sectores
+  // Conic gradient: por defecto arranca en 12 en punto (top) y avanza horario.
+  // Las etiquetas usan la misma convención, así que sector i y label i quedan alineados.
   const stops = categories.map((_, i) => {
     const color = RULETA_COLORS[i % RULETA_COLORS.length];
     return `${color} ${i * seg}deg ${(i + 1) * seg}deg`;
   }).join(", ");
-  wheel.style.background = `conic-gradient(from -90deg, ${stops})`;
+  wheel.style.background = `conic-gradient(${stops})`;
 
   // Etiquetas horizontales (sin rotación), posicionadas en el centro angular de cada sector
   // a ~38% del radio. Así son legibles desde cualquier ángulo del wheel.
