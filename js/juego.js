@@ -350,12 +350,18 @@ function buildRuletaWheel(categories) {
   }).join(", ");
   wheel.style.background = `conic-gradient(from -90deg, ${stops})`;
 
-  // Etiquetas centradas en cada sector
+  // Etiquetas horizontales (sin rotación), posicionadas en el centro angular de cada sector
+  // a ~38% del radio. Así son legibles desde cualquier ángulo del wheel.
+  const radiusPct = 33; // % del ancho del wheel desde el centro
   wheel.innerHTML = categories.map((cat, i) => {
-    const center = i * seg + seg / 2;       // ángulo (grados) del centro del sector, 0 = derecha (matemático)
-    // -90 para que 0deg apunte hacia arriba en la conic gradient (cuadra con `from -90deg`)
-    const cssAngle = center - 90;
-    return `<div class="ruleta-label" style="transform: rotate(${cssAngle}deg);">${esc(cat)}</div>`;
+    const center = i * seg + seg / 2;                 // grados, sentido horario desde arriba
+    const rad    = (center * Math.PI) / 180;
+    const xPct   = Math.sin(rad) * radiusPct;
+    const yPct   = -Math.cos(rad) * radiusPct;
+    return `<div class="ruleta-label"
+              style="left: calc(50% + ${xPct.toFixed(2)}%); top: calc(50% + ${yPct.toFixed(2)}%);">
+              ${esc(cat)}
+            </div>`;
   }).join("");
 }
 
