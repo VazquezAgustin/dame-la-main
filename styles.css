@@ -110,6 +110,18 @@ body {
   padding: 16px;
   box-shadow: 0 4px 20px rgba(239,68,68,0.4);
 }
+
+/* Botón de acción prominente: reusa el espacio del buzzer (88px de alto, tipografía grande)
+   para que la acción principal de cada fase quede siempre visible en móvil sin scrollear. */
+.btn-prominente {
+  height: 88px;
+  border-radius: 20px;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.9rem;
+  letter-spacing: 0.06em;
+  padding: 0 16px;
+}
+.acciones-host-row .btn-prominente { font-size: 1.5rem; padding: 0 8px; }
 .btn-peligro {
   background: #1f2937;
   color: var(--texto-secundario);
@@ -360,6 +372,23 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
 }
 .mode-option.active .mode-desc { color: var(--texto); }
 
+/* ═══ LENGTH SLIDERS (Crear sala) ══════════════════════════════ */
+.length-sliders { display: flex; flex-direction: column; gap: 10px; }
+.length-slider-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 36px;
+  align-items: center;
+  gap: 10px;
+}
+.length-slider-label { font-size: 13px; color: var(--texto-secundario); }
+.length-slider-input { accent-color: var(--primario-glow); width: 100%; }
+.length-slider-value {
+  font-family: "Bebas Neue", system-ui;
+  font-size: 18px;
+  color: var(--acento);
+  text-align: right;
+}
+
 /* ═══ RULETA ═══════════════════════════════════════════════════ */
 #vista-ruleta {
   display: flex;
@@ -375,6 +404,37 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   height: min(320px, 88vw);
   margin: 8px auto 4px;
   filter: drop-shadow(0 8px 30px rgba(124,58,237,0.35));
+  transition: filter 0.3s;
+}
+.ruleta-stage.windup {
+  filter: drop-shadow(0 8px 30px rgba(124,58,237,0.55))
+          drop-shadow(0 0 20px rgba(168,85,247,0.6));
+  animation: windup-wobble 0.5s cubic-bezier(0.36, 1.6, 0.36, 1);
+}
+.ruleta-stage.spinning {
+  filter: drop-shadow(0 8px 40px rgba(168,85,247,0.7))
+          drop-shadow(0 0 24px rgba(245,158,11,0.55));
+  animation: spinning-glow 0.45s ease-in-out infinite alternate;
+}
+.ruleta-stage.landed.bonus {
+  filter: drop-shadow(0 8px 50px rgba(245,158,11,0.85))
+          drop-shadow(0 0 30px rgba(245,158,11,0.9));
+  animation: bonus-glow 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes windup-wobble {
+  0%   { transform: rotate(0deg) scale(1); }
+  35%  { transform: rotate(-3deg) scale(1.02); }
+  70%  { transform: rotate(2deg) scale(1.03); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+@keyframes spinning-glow {
+  from { box-shadow: none; }
+  to   { box-shadow: 0 0 0 4px rgba(168,85,247,0.15), 0 0 32px rgba(245,158,11,0.3); }
+}
+@keyframes bonus-glow {
+  from { filter: drop-shadow(0 8px 40px rgba(245,158,11,0.7)); }
+  to   { filter: drop-shadow(0 8px 60px rgba(245,158,11,1)) drop-shadow(0 0 40px rgba(255,215,0,0.9)); }
 }
 
 .ruleta-pointer {
@@ -388,6 +448,7 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   border-top: 26px solid var(--acento);
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
   z-index: 3;
+  transition: transform 0.15s ease-out;
 }
 .ruleta-pointer::after {
   content: "";
@@ -397,6 +458,21 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   background: var(--acento);
   border-radius: 50%;
   box-shadow: 0 0 12px rgba(245,158,11,0.7);
+}
+.ruleta-stage.spinning .ruleta-pointer::after {
+  animation: pointer-pulse 0.35s ease-in-out infinite alternate;
+}
+.ruleta-pointer.bouncing {
+  animation: pointer-bounce 0.5s cubic-bezier(0.36, 1.7, 0.4, 1);
+}
+@keyframes pointer-pulse {
+  from { transform: scale(1);   box-shadow: 0 0 12px rgba(245,158,11,0.7); }
+  to   { transform: scale(1.4); box-shadow: 0 0 22px rgba(245,158,11,1); }
+}
+@keyframes pointer-bounce {
+  0%   { transform: translateX(-50%) scale(1); }
+  35%  { transform: translateX(-50%) scale(1.45) translateY(2px); }
+  100% { transform: translateX(-50%) scale(1); }
 }
 
 .ruleta-wheel {
@@ -427,8 +503,150 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
       rgba(0,0,0,0.55) 300deg 301.2deg, transparent 301.2deg 360deg
     );
 }
+
+/* Franjas bonus doradas — los últimos 10° de cada sector de 60°.
+   Es decir [50°..60°], [110°..120°], etc. Overlay translúcido dorado. */
+.ruleta-wheel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    conic-gradient(
+      transparent 0deg 50deg,    rgba(255,215,0,0.55) 50deg 60deg,
+      transparent 60deg 110deg,  rgba(255,215,0,0.55) 110deg 120deg,
+      transparent 120deg 170deg, rgba(255,215,0,0.55) 170deg 180deg,
+      transparent 180deg 230deg, rgba(255,215,0,0.55) 230deg 240deg,
+      transparent 240deg 290deg, rgba(255,215,0,0.55) 290deg 300deg,
+      transparent 300deg 350deg, rgba(255,215,0,0.55) 350deg 360deg
+    );
+  box-shadow: inset 0 0 12px rgba(255,215,0,0.4);
+}
+
 .ruleta-wheel.spinning {
   transition: transform 4s cubic-bezier(0.16, 0.84, 0.18, 1);
+}
+
+/* Flash arc del sector ganador (cubre solo el sector bajo el pointer en el final). */
+.ruleta-winning-flash {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 2;
+  /* La franja visible cubre [360-seg/2 .. 360] + [0 .. seg/2] (alrededor del pointer arriba). */
+  --seg-deg: 60deg;
+  background:
+    conic-gradient(
+      rgba(255,255,255,0.9) 0deg calc(var(--seg-deg) / 2),
+      transparent calc(var(--seg-deg) / 2) calc(360deg - var(--seg-deg) / 2),
+      rgba(255,255,255,0.9) calc(360deg - var(--seg-deg) / 2) 360deg
+    );
+  -webkit-mask: radial-gradient(circle, transparent 0 38%, #000 38% 100%);
+  mask: radial-gradient(circle, transparent 0 38%, #000 38% 100%);
+}
+.ruleta-winning-flash.visible {
+  animation: winning-flash-fade 0.9s ease-out forwards;
+}
+@keyframes winning-flash-fade {
+  0%   { opacity: 0; }
+  20%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Banner de revelación: aparece sobre el wheel después del aterrizaje. */
+.ruleta-banner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.3);
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  padding: 14px 22px;
+  background: linear-gradient(135deg, #1e1b4b, #312e81);
+  border: 2px solid var(--primario-glow);
+  border-radius: 14px;
+  box-shadow: 0 0 30px rgba(168,85,247,0.6), 0 6px 20px rgba(0,0,0,0.5);
+  text-align: center;
+  min-width: 60%;
+  max-width: 88%;
+  font-family: 'Inter', sans-serif;
+}
+.ruleta-banner.visible {
+  animation: stamp-in 0.55s cubic-bezier(0.36, 1.6, 0.36, 1) forwards;
+}
+.ruleta-banner.bonus {
+  background: linear-gradient(135deg, #78350f, #b45309);
+  border-color: var(--acento);
+  box-shadow: 0 0 40px rgba(245,158,11,0.85), 0 6px 30px rgba(0,0,0,0.5);
+  animation: stamp-in 0.55s cubic-bezier(0.36, 1.6, 0.36, 1) forwards,
+             banner-bonus-pulse 0.5s ease-in-out 0.55s infinite alternate;
+}
+.ruleta-banner-bonus {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.4rem;
+  color: #fde68a;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 12px rgba(245,158,11,0.8);
+  margin-bottom: 4px;
+}
+.ruleta-banner-cat {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.5rem;
+  color: var(--texto);
+  letter-spacing: 0.06em;
+  line-height: 1.05;
+}
+.ruleta-banner-pts {
+  margin-top: 4px;
+  font-size: 0.95rem;
+  color: var(--texto-secundario);
+}
+.ruleta-banner-pts strong {
+  color: var(--acento);
+  font-size: 1.15rem;
+}
+.ruleta-banner.bonus .ruleta-banner-pts strong {
+  color: #fde68a;
+  text-shadow: 0 0 8px rgba(245,158,11,0.8);
+}
+@keyframes stamp-in {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-8deg); }
+  60%  { opacity: 1; transform: translate(-50%, -50%) scale(1.12) rotate(2deg); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1)    rotate(0deg); }
+}
+@keyframes banner-bonus-pulse {
+  from { box-shadow: 0 0 30px rgba(245,158,11,0.6), 0 6px 20px rgba(0,0,0,0.5); }
+  to   { box-shadow: 0 0 55px rgba(245,158,11,1), 0 6px 30px rgba(0,0,0,0.5); }
+}
+
+/* Contra-rotación de los labels durante el spin: misma duración y curva
+   que el wheel para que la rotación neta del texto sea 0 (siempre horizontal). */
+.ruleta-label.spinning {
+  transition: transform 4s cubic-bezier(0.16, 0.84, 0.18, 1);
+}
+
+/* Badge de bonus en la pregunta cuando viene de un giro bonus */
+.preg-bonus-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #0a0a1a;
+  background: var(--acento);
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  margin-right: 4px;
+  box-shadow: 0 0 12px rgba(245,158,11,0.6);
+  animation: bonus-badge-pulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes bonus-badge-pulse {
+  from { box-shadow: 0 0 8px rgba(245,158,11,0.4); }
+  to   { box-shadow: 0 0 18px rgba(245,158,11,0.9); }
 }
 
 .ruleta-label {

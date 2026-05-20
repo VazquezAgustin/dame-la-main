@@ -27,7 +27,6 @@ let _estimacionInput    = "";     // valor del input de estimación pendiente de
 let _lastScorebarKey    = null;   // dirty-check scorebar
 let _lastRuletaKey      = null;   // dirty-check ruleta
 let _ruletaRotation     = 0;      // rotación acumulada de la ruleta (deg)
-let _ruletaSpinning     = false;  // bloqueo durante la animación de giro
 
 // ═══════════════════════════════════════════════════════════════
 // 🛠️ UTILIDADES
@@ -156,6 +155,58 @@ function playLightning() {
       gain.gain.setValueAtTime(0.07, t);
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
       osc.start(t); osc.stop(t + 0.45);
+    });
+  } catch (_) {}
+}
+
+// Click corto, agudo, para cada tick de la ruleta cuando pasa un divisor de sector.
+function playTick(intensity = 0.5) {
+  try {
+    const ctx  = getAudioCtx();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(1800, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.04);
+    gain.gain.setValueAtTime(0.12 * intensity, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.07);
+  } catch (_) {}
+}
+
+// Sweep ascendente para el windup pre-spin.
+function playWindupSweep() {
+  try {
+    const ctx  = getAudioCtx();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sawtooth";
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(180, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(640, ctx.currentTime + 0.5);
+    gain.gain.setValueAtTime(0.001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.6);
+  } catch (_) {}
+}
+
+// Fanfarria especial para bonus x2: acorde brillante + acento dorado.
+function playBonusFanfare() {
+  try {
+    const ctx = getAudioCtx();
+    [523.25, 659.25, 784.0, 1046.5, 1318.5].forEach((freq, i) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = i % 2 === 0 ? "triangle" : "sine";
+      osc.connect(gain); gain.connect(ctx.destination);
+      const t = ctx.currentTime + i * 0.08;
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.0, t);
+      gain.gain.linearRampToValueAtTime(0.22, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+      osc.start(t); osc.stop(t + 0.6);
     });
   } catch (_) {}
 }
@@ -322,8 +373,20 @@ function renderBoard(s) {
 // ═══════════════════════════════════════════════════════════════
 // 🎰 RENDER — RULETA
 // ═══════════════════════════════════════════════════════════════
-const RULETA_COLORS = ["#7c3aed", "#a855f7", "#ec4899", "#f59e0b", "#06b6d4", "#10b981"];
-const RULETA_SPIN_MS = 4000;
+const RULETA_COLORS    = ["#7c3aed", "#a855f7", "#ec4899", "#f59e0b", "#06b6d4", "#10b981"];
+const RULETA_WINDUP_MS = 500;     // anticipación
+const RULETA_SPIN_MS   = 4000;    // duración del giro real
+const RULETA_REVEAL_MS = 1500;    // tiempo entre que para la rueda y arranca la pregunta
+const RULETA_TOTAL_MS  = RULETA_WINDUP_MS + RULETA_SPIN_MS + RULETA_REVEAL_MS;
+const RULETA_BONUS_PROBABILITY = 0.15;   // 15% de spins caen en zona bonus
+const RULETA_BONUS_ARC_DEG     = 10;     // ancho angular de la franja bonus dentro de cada sector
+
+// Estado runtime del giro (solo del cliente que actualmente renderiza el spin)
+let _ruletaActiveSpinId = null;          // spinId que está animando
+let _ruletaTickRaf      = null;          // requestAnimationFrame id para el loop de ticks
+let _ruletaTickLastSec  = -1;            // último sector visto bajo el pointer (para detectar cruce)
+let _ruletaRevealTimer  = null;          // setTimeout para la revelación
+let _ruletaFinishTimer  = null;          // setTimeout para llamar finishRouletteSpin (selector)
 
 function categoryHasUnplayed(board, cat) {
   return [200, 400, 600, 800, 1000].some(v => board?.[cat]?.[String(v)] !== true);
@@ -351,8 +414,9 @@ function buildRuletaWheel(categories) {
   }).join(", ");
   wheel.style.background = `conic-gradient(${stops})`;
 
-  // Etiquetas horizontales (sin rotación), posicionadas en el centro angular de cada sector
-  // a ~38% del radio. Así son legibles desde cualquier ángulo del wheel.
+  // Etiquetas horizontales (sin rotación). Cada label arranca con rotate(0deg)
+  // como parte de su transform — durante el spin se contra-rota con `rotate(-targetRot)`
+  // para cancelar la rotación del wheel y mantenerse legible.
   const radiusPct = 33; // % del ancho del wheel desde el centro
   wheel.innerHTML = categories.map((cat, i) => {
     const center = i * seg + seg / 2;                 // grados, sentido horario desde arriba
@@ -360,10 +424,27 @@ function buildRuletaWheel(categories) {
     const xPct   = Math.sin(rad) * radiusPct;
     const yPct   = -Math.cos(rad) * radiusPct;
     return `<div class="ruleta-label"
-              style="left: calc(50% + ${xPct.toFixed(2)}%); top: calc(50% + ${yPct.toFixed(2)}%);">
+              style="left: calc(50% + ${xPct.toFixed(2)}%); top: calc(50% + ${yPct.toFixed(2)}%); transform: translate(-50%, -50%) rotate(0deg);">
               ${esc(cat)}
             </div>`;
   }).join("");
+}
+
+// Resetea visualmente todos los elementos del overlay de ruleta (banner, flash, pointer)
+// sin tocar las etiquetas ni el wheel.
+function resetRouletteVisuals() {
+  const stage   = document.getElementById("ruleta-stage");
+  const pointer = document.getElementById("ruleta-pointer");
+  const banner  = document.getElementById("ruleta-banner");
+  const flash   = document.getElementById("ruleta-winning-flash");
+  if (stage)   stage.classList.remove("spinning", "windup", "landed", "bonus");
+  if (pointer) pointer.classList.remove("bouncing");
+  if (banner)  { banner.classList.remove("visible", "bonus"); banner.innerHTML = ""; }
+  if (flash)   { flash.classList.remove("visible"); flash.style.transform = "rotate(0deg)"; }
+  if (_ruletaTickRaf)     { cancelAnimationFrame(_ruletaTickRaf); _ruletaTickRaf = null; }
+  if (_ruletaRevealTimer) { clearTimeout(_ruletaRevealTimer);     _ruletaRevealTimer = null; }
+  if (_ruletaFinishTimer) { clearTimeout(_ruletaFinishTimer);     _ruletaFinishTimer = null; }
+  _ruletaTickLastSec = -1;
 }
 
 function renderRoulette(s) {
@@ -372,6 +453,12 @@ function renderRoulette(s) {
   document.getElementById("pregunta-overlay").classList.remove("visible");
   document.getElementById("vista-tablero").style.display    = "none";
   document.getElementById("vista-ruleta").style.display     = "flex";
+
+  // Limpiar visuales de cualquier spin anterior (banner, flash, glow, pointer bounce).
+  // Esto se ejecuta cuando volvemos a la ruleta entre turnos y asegura que el wheel
+  // arranque limpio sin restos del giro previo.
+  resetRouletteVisuals();
+  _ruletaActiveSpinId = null;
 
   const order        = s.playerOrder || [];
   const selectorId   = order[s.selectorIndex || 0];
@@ -393,10 +480,7 @@ function renderRoulette(s) {
 
   const btn = document.getElementById("btn-ruleta-spin");
   const msg = document.getElementById("ruleta-msg");
-  if (_ruletaSpinning) {
-    btn.disabled = true;
-    msg.innerHTML = `<span class="destacado">🎰 Girando...</span>`;
-  } else if (isMyTurn) {
+  if (isMyTurn) {
     btn.disabled = false;
     btn.style.display = "block";
     msg.textContent = "";
@@ -407,8 +491,13 @@ function renderRoulette(s) {
   }
 }
 
+// ───────────────────────────────────────────────────────────────
+// Handler del selector: calcula categoría/valor/bonus y dispara
+// el spin sincronizado escribiendo `rouletteSpin` en Firebase.
+// El animation/render lo hace renderRouletteSpin (todos los clients).
+// ───────────────────────────────────────────────────────────────
 async function handleRouletteSpin() {
-  if (!state || _ruletaSpinning) return;
+  if (!state || state.rouletteSpin) return;
   const order      = state.playerOrder || [];
   const selectorId = order[state.selectorIndex || 0];
   if (selectorId !== myPlayerId) return;
@@ -416,53 +505,330 @@ async function handleRouletteSpin() {
   const avail = availableCategories(state);
   if (!avail.length) return;
 
-  // Elegir categoría al azar entre las disponibles, y valor al azar entre las celdas no jugadas
+  // 1) Elegir categoría aleatoria entre las disponibles, y un valor aleatorio
+  //    entre las celdas no jugadas de esa categoría.
   const targetIdx = Math.floor(Math.random() * avail.length);
   const category  = avail[targetIdx];
   const unplayedVals = [200, 400, 600, 800, 1000].filter(v => state.board?.[category]?.[String(v)] !== true);
   const value = unplayedVals[Math.floor(Math.random() * unplayedVals.length)];
 
+  // 2) Decidir si este giro cae en zona bonus (x2). Independiente del valor.
+  const isBonus = Math.random() < RULETA_BONUS_PROBABILITY;
+
+  // 3) Calcular rotación target absoluta. El pointer está arriba (0°).
+  //    Sector i ocupa [i*seg, (i+1)*seg] horario desde arriba.
+  //    Zona bonus = los últimos RULETA_BONUS_ARC_DEG° de cada sector
+  //    (antes del divisor con el siguiente sector).
   const n   = avail.length;
   const seg = 360 / n;
-  // Ángulo (en sentido horario desde arriba) del centro del sector elegido
-  const targetCenter = targetIdx * seg + seg / 2;
-  // El puntero está arriba (0°). Para que ese sector quede bajo el puntero,
-  // hay que rotar la rueda -targetCenter grados (mod 360).
-  const baseSpins = 5 * 360;                       // 5 vueltas completas
-  const jitter    = (Math.random() - 0.5) * (seg * 0.5); // pequeño desvío dentro del sector
-  const targetRot = baseSpins + (360 - targetCenter) + jitter;
-
-  const wheel = document.getElementById("ruleta-wheel");
-  const btn   = document.getElementById("btn-ruleta-spin");
-  const msg   = document.getElementById("ruleta-msg");
-
-  _ruletaSpinning = true;
-  btn.disabled = true;
-  msg.innerHTML = `<span class="destacado">🎰 Girando...</span>`;
-
-  // Reset sin transición para empezar desde 0 (acumular se complica visualmente)
-  wheel.classList.remove("spinning");
-  wheel.style.transform = "rotate(0deg)";
-  // Forzar reflow para que la siguiente transición tome efecto
-  void wheel.offsetWidth;
-  wheel.classList.add("spinning");
-  wheel.style.transform = `rotate(${targetRot}deg)`;
-  _ruletaRotation = targetRot;
-
-  playBuzzer();
-
-  await new Promise(resolve => setTimeout(resolve, RULETA_SPIN_MS + 100));
-
-  msg.innerHTML = `<span class="destacado">🎯 ${esc(category)}</span> · ${value} pts`;
+  let landingOffsetInSector; // grados desde el inicio del sector (0..seg)
+  if (isBonus) {
+    // Caer dentro de la franja bonus: [seg - RULETA_BONUS_ARC_DEG, seg)
+    landingOffsetInSector = seg - RULETA_BONUS_ARC_DEG + Math.random() * RULETA_BONUS_ARC_DEG;
+  } else {
+    // Caer en la zona "normal": [0, seg - RULETA_BONUS_ARC_DEG)
+    landingOffsetInSector = Math.random() * (seg - RULETA_BONUS_ARC_DEG);
+  }
+  const landingAngle = targetIdx * seg + landingOffsetInSector;
+  const baseSpins    = 5 * 360;  // 5 vueltas completas para drama
+  const targetRotation = baseSpins + (360 - landingAngle);
 
   try {
-    await GameDAO.selectQuestion(roomCode, category, value);
+    await GameDAO.startRouletteSpin(roomCode, {
+      targetCategoryIdx: targetIdx,
+      targetCategory:    category,
+      targetValue:       value,
+      targetRotation,
+      isBonus,
+      by: myPlayerId,
+      spinId: `${roomCode}-${Date.now()}`,
+    });
   } catch (e) {
-    console.error("Error al seleccionar pregunta tras girar:", e);
-    btn.disabled = false;
-  } finally {
-    _ruletaSpinning = false;
+    console.error("Error al iniciar el giro:", e);
   }
+}
+
+// ───────────────────────────────────────────────────────────────
+// renderRouletteSpin: TODOS los clients corren esta función mientras
+// existe `state.rouletteSpin`. Anima el wheel en sincro usando
+// `startedAt` como reloj compartido, dispara ticks, banner y reveal.
+// Solo el selector llama a finishRouletteSpin cuando termina.
+// ───────────────────────────────────────────────────────────────
+function renderRouletteSpin(s) {
+  const spin = s.rouletteSpin;
+  if (!spin) return;
+  // Asegurar vista visible (ruleta, no tablero)
+  document.getElementById("pregunta-overlay").classList.remove("visible");
+  document.getElementById("vista-tablero").style.display = "none";
+  document.getElementById("vista-ruleta").style.display  = "flex";
+
+  // Construir el wheel si todavía no está armado para estas categorías
+  const avail = availableCategories(s);
+  const ruletaKey = JSON.stringify({ avail, selectorIndex: s.selectorIndex });
+  if (ruletaKey !== _lastRuletaKey) {
+    _lastRuletaKey = ruletaKey;
+    buildRuletaWheel(avail);
+  }
+
+  // Si ya estamos animando este spin, no relanzar nada
+  if (_ruletaActiveSpinId === spin.spinId) return;
+  _ruletaActiveSpinId = spin.spinId;
+
+  // UI básica durante el spin
+  const ind = document.getElementById("turno-indicador-ruleta");
+  const order        = s.playerOrder || [];
+  const selectorId   = order[s.selectorIndex || 0];
+  const selectorName = s.players?.[selectorId]?.name || "?";
+  ind.innerHTML = `🎰 ${esc(selectorName)} está girando la ruleta...`;
+
+  const btn   = document.getElementById("btn-ruleta-spin");
+  const msg   = document.getElementById("ruleta-msg");
+  btn.disabled    = true;
+  btn.style.display = "none";
+  msg.innerHTML   = `<span class="destacado">🎰 Girando...</span>`;
+
+  // Lanzar la coreografía completa
+  startSpinChoreography(s, spin);
+}
+
+// Coreografía: windup → spin → reveal. Sincronizada via spin.startedAt.
+function startSpinChoreography(s, spin) {
+  const wheel   = document.getElementById("ruleta-wheel");
+  const stage   = document.getElementById("ruleta-stage");
+  const pointer = document.getElementById("ruleta-pointer");
+  const banner  = document.getElementById("ruleta-banner");
+  const flash   = document.getElementById("ruleta-winning-flash");
+  const labels  = wheel.querySelectorAll(".ruleta-label");
+  const startedAt = spin.startedAt || Date.now();
+  const now       = Date.now();
+  const elapsed   = Math.max(0, now - startedAt);
+
+  // Limpiar cualquier estado previo
+  resetRouletteVisuals();
+
+  // ── Fase 1: WINDUP (0 .. RULETA_WINDUP_MS) ─────────────────────
+  // La animación de wobble la maneja `.ruleta-stage.windup` via CSS keyframes.
+  // El wheel se mantiene en 0° durante el windup.
+  if (elapsed < RULETA_WINDUP_MS) {
+    stage.classList.add("windup");
+    wheel.classList.remove("spinning");
+    wheel.style.transform = "rotate(0deg)";
+    labels.forEach(l => {
+      l.classList.remove("spinning");
+      l.style.transform = "translate(-50%, -50%) rotate(0deg)";
+    });
+    playWindupSweep();
+
+    // Programar el inicio del spin real cuando termine el windup
+    setTimeout(() => {
+      stage.classList.remove("windup");
+      launchMainSpin(spin);
+    }, Math.max(0, RULETA_WINDUP_MS - elapsed));
+  } else if (elapsed < RULETA_WINDUP_MS + RULETA_SPIN_MS) {
+    // Llegamos tarde (otro cliente con latencia): saltar al spin en curso.
+    launchMainSpin(spin, /*lateJoinElapsed*/ elapsed - RULETA_WINDUP_MS);
+  } else {
+    // Llegamos muy tarde: ir directo al reveal.
+    finalizeWheelAtTarget(spin);
+    triggerReveal(spin);
+  }
+}
+
+// Arranca el giro principal del wheel (después del windup).
+function launchMainSpin(spin, lateJoinElapsed = 0) {
+  const wheel   = document.getElementById("ruleta-wheel");
+  const stage   = document.getElementById("ruleta-stage");
+  const labels  = wheel.querySelectorAll(".ruleta-label");
+  const targetRot = spin.targetRotation;
+
+  // Reset wheel a 0° sin transición, luego arrancar transición a targetRot.
+  wheel.classList.remove("spinning");
+  wheel.style.transform = "rotate(0deg)";
+  labels.forEach(l => {
+    l.classList.remove("spinning");
+    l.style.transform = "translate(-50%, -50%) rotate(0deg)";
+  });
+  void wheel.offsetWidth;
+
+  // Activar transiciones — el label se contra-rota con la MISMA duración y curva
+  // que el wheel, de modo que la rotación neta del texto sea 0 en todo momento.
+  stage.classList.add("spinning");
+  wheel.classList.add("spinning");
+  wheel.style.transform = `rotate(${targetRot}deg)`;
+  labels.forEach(l => {
+    l.classList.add("spinning");
+    l.style.transform = `translate(-50%, -50%) rotate(${-targetRot}deg)`;
+  });
+
+  // Sonidos: arrancar el loop de ticks que cruza divisores de sector.
+  startTickLoop(spin, lateJoinElapsed);
+
+  // Programar el reveal cuando termine el spin (en sincro con startedAt).
+  const remaining = Math.max(0, RULETA_SPIN_MS - lateJoinElapsed);
+  _ruletaRevealTimer = setTimeout(() => {
+    finalizeWheelAtTarget(spin);
+    triggerReveal(spin);
+  }, remaining);
+}
+
+// Loop con requestAnimationFrame que reproduce un tick cada vez que el sector
+// bajo el pointer cambia. Como la transición es cubic-bezier en el wheel,
+// medimos la rotación leyendo getComputedStyle del wheel.
+function startTickLoop(spin, lateJoinElapsed) {
+  const wheel   = document.getElementById("ruleta-wheel");
+  const avail   = availableCategories(state);
+  const n       = Math.max(1, avail.length);
+  const seg     = 360 / n;
+  _ruletaTickLastSec = -1;
+
+  const tick = () => {
+    if (!state?.rouletteSpin || state.rouletteSpin.spinId !== spin.spinId) {
+      _ruletaTickRaf = null;
+      return;
+    }
+    // Leer rotación actual del wheel desde el matrix
+    const computed = window.getComputedStyle(wheel).transform;
+    let currentRot = 0;
+    if (computed && computed !== "none") {
+      const m = computed.match(/matrix\(([^)]+)\)/);
+      if (m) {
+        const v = m[1].split(",").map(parseFloat);
+        const angleRad = Math.atan2(v[1], v[0]);
+        currentRot = (angleRad * 180) / Math.PI;
+        if (currentRot < 0) currentRot += 360;
+      }
+    }
+    // El pointer está en 0° (arriba). El sector visible bajo el pointer
+    // es aquel cuyo rango [i*seg, (i+1)*seg] contiene `(-currentRot) mod 360`.
+    const angleAtPointer = ((360 - currentRot) % 360 + 360) % 360;
+    const sectorIdx = Math.floor(angleAtPointer / seg) % n;
+    if (sectorIdx !== _ruletaTickLastSec) {
+      _ruletaTickLastSec = sectorIdx;
+      // Intensidad decae con el tiempo restante para sentir "desaceleración"
+      const elapsed = Date.now() - (spin.startedAt + RULETA_WINDUP_MS);
+      const progress = Math.min(1, Math.max(0, elapsed / RULETA_SPIN_MS));
+      const intensity = 0.4 + 0.6 * progress; // ticks finales más fuertes
+      playTick(intensity);
+    }
+    _ruletaTickRaf = requestAnimationFrame(tick);
+  };
+  _ruletaTickRaf = requestAnimationFrame(tick);
+}
+
+// Asegura que el wheel y los labels queden visualmente en targetRotation
+// (sirve para clientes que se enganchan tarde y para el cleanup post-spin).
+function finalizeWheelAtTarget(spin) {
+  const wheel  = document.getElementById("ruleta-wheel");
+  const labels = wheel.querySelectorAll(".ruleta-label");
+  wheel.style.transform = `rotate(${spin.targetRotation}deg)`;
+  labels.forEach(l => {
+    l.style.transform = `translate(-50%, -50%) rotate(${-spin.targetRotation}deg)`;
+  });
+}
+
+// Aterrizaje dramático: flash del sector ganador, bounce del pointer,
+// banner de revelación con categoría + valor (y x2 si bonus), fanfarria.
+function triggerReveal(spin) {
+  const stage   = document.getElementById("ruleta-stage");
+  const pointer = document.getElementById("ruleta-pointer");
+  const banner  = document.getElementById("ruleta-banner");
+  const flash   = document.getElementById("ruleta-winning-flash");
+  const wheel   = document.getElementById("ruleta-wheel");
+
+  // Detener ticks
+  if (_ruletaTickRaf) { cancelAnimationFrame(_ruletaTickRaf); _ruletaTickRaf = null; }
+
+  stage.classList.remove("spinning");
+  stage.classList.add("landed");
+  if (spin.isBonus) stage.classList.add("bonus");
+  pointer.classList.add("bouncing");
+
+  // Flash arc sobre el sector ganador.
+  // El sector ganador ahora está bajo el pointer (arriba). El flash es un
+  // overlay absoluto que se rota junto con el wheel — lo posicionamos para
+  // que cubra el sector ganador en su posición final.
+  if (flash) {
+    const avail = availableCategories(state);
+    const n     = Math.max(1, avail.length);
+    const seg   = 360 / n;
+    // El sector ganador ocupa [-seg/2, +seg/2] alrededor del pointer (0° arriba).
+    // El flash es un conic-gradient que queda visible solo en ese rango.
+    flash.style.setProperty("--seg-deg", `${seg}deg`);
+    flash.classList.add("visible");
+  }
+
+  // Banner: animación stamp-in
+  if (banner) {
+    banner.innerHTML = spin.isBonus
+      ? `<div class="ruleta-banner-bonus">⚡ x2 BONUS ⚡</div>
+         <div class="ruleta-banner-cat">${esc(spin.targetCategory)}</div>
+         <div class="ruleta-banner-pts">${spin.targetValue} × 2 = <strong>${spin.targetValue * 2} pts</strong></div>`
+      : `<div class="ruleta-banner-cat">${esc(spin.targetCategory)}</div>
+         <div class="ruleta-banner-pts"><strong>${spin.targetValue} pts</strong></div>`;
+    banner.classList.add("visible");
+    if (spin.isBonus) banner.classList.add("bonus");
+  }
+
+  // Sonidos + flash de pantalla
+  if (spin.isBonus) {
+    playBonusFanfare();
+    playCorrect();
+    triggerFlash("correcto");
+    // Confetti chico (no full-screen como en el final)
+    launchConfettiBurst();
+  } else {
+    playCorrect();
+    triggerFlash("correcto");
+  }
+
+  // Quitar el "bouncing" del pointer después de la animación
+  setTimeout(() => { pointer.classList.remove("bouncing"); }, 600);
+
+  // Si soy el selector, después del REVEAL escribo finishRouletteSpin
+  // para que se abra la pregunta para todos.
+  const order      = state.playerOrder || [];
+  const selectorId = order[state.selectorIndex || 0];
+  const isSelector = selectorId === myPlayerId;
+  if (isSelector) {
+    _ruletaFinishTimer = setTimeout(async () => {
+      try {
+        await GameDAO.finishRouletteSpin(
+          roomCode,
+          spin.targetCategory,
+          spin.targetValue,
+          spin.isBonus
+        );
+      } catch (e) {
+        console.error("Error al cerrar el giro:", e);
+      }
+    }, RULETA_REVEAL_MS);
+  }
+}
+
+// Versión compacta de launchConfetti para el bonus (menos partículas, 1s).
+function launchConfettiBurst() {
+  const container = document.getElementById("confetti-container");
+  if (!container) return;
+  const colors = ["#f59e0b", "#a855f7", "#10b981", "#06b6d4", "#ec4899"];
+  for (let i = 0; i < 36; i++) {
+    const piece = document.createElement("div");
+    piece.className = "confetti-piece";
+    const size     = 5 + Math.random() * 8;
+    const duration = 1.2 + Math.random() * 1.4;
+    const delay    = Math.random() * 0.4;
+    piece.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      width: ${size}px; height: ${size}px;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      border-radius: ${Math.random() > 0.5 ? "50%" : "2px"};
+      transform: rotate(${Math.random() * 360}deg);
+      animation-duration: ${duration}s;
+      animation-delay: ${delay}s;
+    `;
+    container.appendChild(piece);
+  }
+  // Auto-limpieza
+  setTimeout(() => { container.innerHTML = ""; }, 3000);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -790,7 +1156,12 @@ function renderQuestion(s) {
   const qData  = getQuestion(q.category, q.value);
 
   document.getElementById("preg-categoria").textContent = q.category.toUpperCase();
-  document.getElementById("preg-valor").textContent     = q.value + " PTS";
+  const valorEl = document.getElementById("preg-valor");
+  if (q.bonus) {
+    valorEl.innerHTML = `<span class="preg-bonus-badge">⚡ x2 BONUS</span> ${q.value * 2} PTS`;
+  } else {
+    valorEl.textContent = q.value + " PTS";
+  }
   document.getElementById("preg-texto").textContent     = qData?.question || "Pregunta no encontrada";
 
   const respBox = document.getElementById("respuesta-box");
@@ -915,8 +1286,9 @@ function renderBuzzerZone(s, phase, buzzer) {
       }
     }
   } else if (phase === "waiting_answer") {
-    btnBuzzer.style.display = "block";
-    btnBuzzer.disabled      = true;
+    // Ocultamos el buzzer (en vez de mostrarlo deshabilitado) para liberar los 88px
+    // que ocupaba — así el botón de acción de la fase queda visible sin scrollear.
+    btnBuzzer.style.display = "none";
     if (buzzer) {
       const name = s.players?.[buzzer.playerId]?.name || "?";
       buzzerEstado.innerHTML = `<span class="buzzer-ganador">🔔 ¡${name} buzzeó primero!</span>`;
@@ -926,8 +1298,7 @@ function renderBuzzerZone(s, phase, buzzer) {
       }
     }
   } else if (phase === "answer_revealed") {
-    btnBuzzer.style.display = "block";
-    btnBuzzer.disabled      = true;
+    btnBuzzer.style.display = "none";
     if (buzzer) {
       const name = s.players?.[buzzer.playerId]?.name || "?";
       buzzerEstado.innerHTML = `<span class="buzzer-ganador">🔔 ¡${name} respondió!</span>`;
@@ -938,8 +1309,7 @@ function renderBuzzerZone(s, phase, buzzer) {
       buzzerEstado.innerHTML += `<br><span style="color:var(--texto-secundario);font-size:0.85rem">Esperando que el host decida...</span>`;
     }
   } else if (phase === "judged") {
-    btnBuzzer.style.display = "block";
-    btnBuzzer.disabled      = true;
+    btnBuzzer.style.display = "none";
     if (isHost) {
       btnSiguiente.style.display = "block";
     } else {
@@ -1146,7 +1516,10 @@ function render(s) {
       } else {
         document.getElementById("lightning-overlay").classList.remove("visible");
         document.getElementById("estimacion-overlay").classList.remove("visible");
-        if (!s.currentQuestion) {
+        if (s.rouletteSpin) {
+          // Giro sincronizado en curso — todos los clients animan la misma ruleta
+          renderRouletteSpin(s);
+        } else if (!s.currentQuestion) {
           if (s.gameMode === "ruleta") {
             renderRoulette(s);
           } else {
@@ -1167,6 +1540,67 @@ function render(s) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// 🎚️ LONGITUD DE PARTIDA — sliders
+// ═══════════════════════════════════════════════════════════════
+const TOTAL_LENGTH = 30;
+const LENGTH_BOUNDS = {
+  base:       { min: 6, max: 30 },
+  lightning:  { min: 0, max: 24 },
+  estimacion: { min: 0, max: 24 },
+};
+
+// Estado autoritativo de los sliders. Separado del DOM porque cuando llega
+// el evento `input`, el slider movido YA tiene su valor nuevo, así que el
+// "valor previo" del que medimos el delta no se puede leer del DOM.
+let _lengthState = { base: 18, lightning: 6, estimacion: 6 };
+
+function readLengthSliders() {
+  return { ..._lengthState };
+}
+
+function writeLengthSliders(values) {
+  Object.entries(values).forEach(([slot, v]) => {
+    const row = document.querySelector(`#length-sliders .length-slider-row[data-slot="${slot}"]`);
+    if (!row) return;
+    row.querySelector("input").value = v;
+    row.querySelector(".length-slider-value").textContent = v;
+  });
+}
+
+// Reparte el delta entre los otros sliders respetando mínimos y máximos.
+// Si no hay margen suficiente, se recorta el cambio del slider modificado
+// para que la suma siempre sea TOTAL_LENGTH.
+function rebalanceLengths(changedSlot, newValue) {
+  const bounds = LENGTH_BOUNDS[changedSlot];
+  newValue = Math.max(bounds.min, Math.min(bounds.max, newValue));
+
+  const others = Object.keys(_lengthState).filter(k => k !== changedSlot);
+  // delta > 0 => el slider sube => hay que bajar los otros
+  let delta = newValue - _lengthState[changedSlot];
+
+  const next = { ..._lengthState, [changedSlot]: newValue };
+  while (delta !== 0) {
+    const sign = Math.sign(delta);
+    const candidates = others
+      .map(k => ({
+        k,
+        room: sign > 0 ? next[k] - LENGTH_BOUNDS[k].min : LENGTH_BOUNDS[k].max - next[k],
+      }))
+      .filter(c => c.room > 0)
+      .sort((a, b) => b.room - a.room);
+    if (candidates.length === 0) break;
+    next[candidates[0].k] -= sign;
+    delta -= sign;
+  }
+
+  // Si quedó delta sin asignar, recortar el cambio del slider modificado.
+  if (delta !== 0) next[changedSlot] -= delta;
+
+  _lengthState = next;
+  writeLengthSliders(next);
+}
+
+// ═══════════════════════════════════════════════════════════════
 // 🖱️ HANDLERS
 // ═══════════════════════════════════════════════════════════════
 async function handleCreateRoom() {
@@ -1182,6 +1616,7 @@ async function handleCreateRoom() {
     roomCode = generateRoomCode();
     const selectedMode = document.querySelector(".mode-option.active")?.dataset.mode || "tablero";
     const gameMode = selectedMode === "ruleta" ? "ruleta" : "tablero";
+    const gameLength = readLengthSliders();
     const categories = pickRandomCategories(CATEGORY_POOL);
     const board = {};
     categories.forEach(cat => {
@@ -1192,6 +1627,7 @@ async function handleCreateRoom() {
       hostId: myPlayerId,
       status: "lobby",
       gameMode,
+      gameLength,
       categories,
       board,
       players: { [myPlayerId]: { name, score: 0, connected: true } },
@@ -1292,10 +1728,12 @@ async function handleCorrecto() {
   const btnI = document.getElementById("btn-incorrecto");
   btnC.disabled = true; btnI.disabled = true;
   const responderId = state.buzzer.playerId;
-  const { value, category } = state.currentQuestion;
+  const { value, category, bonus } = state.currentQuestion;
+  // Si el giro cayó en zona bonus (modo ruleta), los puntos se duplican.
+  const pointsDelta = bonus ? value * 2 : value;
   triggerFlash("correcto");
   try {
-    await GameDAO.judgeAnswer(roomCode, responderId, true, value, category, value);
+    await GameDAO.judgeAnswer(roomCode, responderId, true, pointsDelta, category, value);
   } catch (e) {
     console.error("Error al juzgar correcto:", e);
     btnC.disabled = false; btnI.disabled = false;
@@ -1308,10 +1746,12 @@ async function handleIncorrecto() {
   const btnI = document.getElementById("btn-incorrecto");
   btnC.disabled = true; btnI.disabled = true;
   const responderId = state.buzzer.playerId;
-  const { value, category } = state.currentQuestion;
+  const { value, category, bonus } = state.currentQuestion;
+  // En zona bonus, el castigo también se duplica (riesgo↔recompensa).
+  const pointsDelta = bonus ? -value * 2 : -value;
   triggerFlash("incorrecto");
   try {
-    await GameDAO.judgeAnswer(roomCode, responderId, false, -value, category, value);
+    await GameDAO.judgeAnswer(roomCode, responderId, false, pointsDelta, category, value);
   } catch (e) {
     console.error("Error al juzgar incorrecto:", e);
     btnC.disabled = false; btnI.disabled = false;
@@ -1321,12 +1761,36 @@ async function handleIncorrecto() {
 async function handleSiguiente() {
   const btn = document.getElementById("btn-siguiente");
   btn.disabled = true;
-  const order      = state.playerOrder || [];
-  const nextIndex  = (state.selectorIndex + 1) % order.length;
-  const isGameOver = isBoardComplete(state.board, state.categories);
+  const order     = state.playerOrder || [];
+  const nextIndex = (state.selectorIndex + 1) % order.length;
+  const answered  = countAnsweredCells(state.board, state.categories);
+  const len       = state.gameLength || null;
 
   try {
-    const answered = countAnsweredCells(state.board, state.categories);
+    if (len) {
+      // Nuevo modelo: jugar TODAS las preguntas del modo base primero,
+      // después estimación, después lightning, y termina.
+      const baseDone = answered >= len.base;
+      if (baseDone) {
+        if (!state.estimacionUsed && !estimacionTriggered && len.estimacion > 0) {
+          estimacionTriggered = true;
+          await triggerEstimacionMode(nextIndex);
+          return;
+        }
+        if (!state.lightningUsed && !lightningTriggered && len.lightning > 0) {
+          lightningTriggered = true;
+          await triggerLightningMode(nextIndex);
+          return;
+        }
+        await GameDAO.nextTurn(roomCode, nextIndex, true);
+        return;
+      }
+      await GameDAO.nextTurn(roomCode, nextIndex, false);
+      return;
+    }
+
+    // Legacy (salas sin gameLength): thresholds viejos 10/15 sobre 30 celdas.
+    const isGameOver = isBoardComplete(state.board, state.categories);
     if (!isGameOver && !state.estimacionUsed && !estimacionTriggered) {
       if (answered >= 10) {
         estimacionTriggered = true;
@@ -1359,6 +1823,28 @@ async function handleSkip() {
   try {
     const answered = countAnsweredCells(state.board, state.categories) + 1; // +1 por la celda skipeada
     const skipCell = { category: state.currentQuestion.category, value: state.currentQuestion.value };
+    const len = state.gameLength || null;
+
+    if (len) {
+      // Nuevo modelo: gatillos solo cuando base está completo.
+      const baseDone = answered >= len.base;
+      if (baseDone) {
+        if (!state.estimacionUsed && !estimacionTriggered && len.estimacion > 0) {
+          estimacionTriggered = true;
+          await triggerEstimacionMode(nextIndex, skipCell);
+          return;
+        }
+        if (!state.lightningUsed && !lightningTriggered && len.lightning > 0) {
+          lightningTriggered = true;
+          await triggerLightningMode(nextIndex, skipCell);
+          return;
+        }
+      }
+      await GameDAO.skipQuestion(roomCode, nextIndex);
+      return;
+    }
+
+    // Legacy: thresholds 10/15.
     if (!state.estimacionUsed && !estimacionTriggered) {
       if (answered >= 10) {
         estimacionTriggered = true;
@@ -1393,7 +1879,7 @@ async function handleKick(playerId) {
 
 async function triggerLightningMode(selectorIndexOnEntry, skipCell = null) {
   const order      = state.playerOrder || [];
-  const totalSlots = order.length * 2;
+  const totalSlots = state.gameLength?.lightning ?? (order.length * 2);
 
   const usedIndices = state.lightningUsedIndices || [];
   const fullPool    = LIGHTNING_QUESTIONS.map((_, i) => i);
@@ -1442,9 +1928,20 @@ async function handleLightningJudge(correct) {
 async function handleLightningSiguiente() {
   const btn = document.getElementById("btn-lightning-siguiente");
   if (btn) btn.disabled = true;
-  const lm      = state.lightningMode;
+  const lm       = state.lightningMode;
   const nextSlot = lm.currentSlot + 1;
-  await GameDAO.lightningAdvance(roomCode, nextSlot, lm.totalSlots);
+
+  // Si es la última ronda y hay gameLength con base ya completo, terminar partida.
+  let isGameOver = false;
+  if (nextSlot >= lm.totalSlots) {
+    const len = state.gameLength || null;
+    if (len) {
+      const answered = countAnsweredCells(state.board, state.categories);
+      isGameOver = answered >= len.base;
+    }
+  }
+
+  await GameDAO.lightningAdvance(roomCode, nextSlot, lm.totalSlots, isGameOver);
 }
 
 async function handleEstimacionComenzar() {
@@ -1514,8 +2011,21 @@ async function handleEstimacionSiguiente() {
   try {
     _estimacionInput = "";
   if (nextSlot >= (em.totalSlots || 1)) {
-      const isGameOver = isBoardComplete(state.board, state.categories);
-      await GameDAO.endEstimacionMode(roomCode, em.nextSelectorIndex, isGameOver);
+      const len = state.gameLength || null;
+      const answered = countAnsweredCells(state.board, state.categories);
+      const baseDone = len
+        ? answered >= len.base
+        : isBoardComplete(state.board, state.categories);
+
+      // Si el base ya terminó y queda lightning pendiente → encadenar directo.
+      // (Si no encadenamos, el tablero quedaría vacío sin acción posible.)
+      if (len && baseDone && !state.lightningUsed && !lightningTriggered && len.lightning > 0) {
+        await GameDAO.endEstimacionMode(roomCode, em.nextSelectorIndex, false);
+        lightningTriggered = true;
+        await triggerLightningMode(em.nextSelectorIndex);
+      } else {
+        await GameDAO.endEstimacionMode(roomCode, em.nextSelectorIndex, baseDone);
+      }
     } else {
       await GameDAO.advanceEstimacionQuestion(roomCode, nextSlot);
     }
@@ -1526,7 +2036,7 @@ async function handleEstimacionSiguiente() {
 }
 
 async function triggerEstimacionMode(nextSelectorIndex, skipCell = null) {
-  const TOTAL_SLOTS = 6;
+  const TOTAL_SLOTS = state.gameLength?.estimacion ?? 6;
   const valuePool   = [200, 400, 600, 800, 1000];
 
   const usedIndices = state.estimacionUsedIndices || [];
@@ -1579,6 +2089,7 @@ async function handleJugarNuevo() {
     hostId: myPlayerId,
     status: "lobby",
     gameMode: state.gameMode || "tablero",
+    gameLength: state.gameLength || null,
     categories,
     usedCategories: nextUsed,
     lightningUsedIndices:  state.lightningUsedIndices  || [],
@@ -1638,6 +2149,14 @@ document.querySelectorAll(".mode-option").forEach(opt => {
   opt.addEventListener("click", () => {
     document.querySelectorAll(".mode-option").forEach(o => o.classList.remove("active"));
     opt.classList.add("active");
+  });
+});
+
+// Length sliders (modo base / lightning / estimación)
+document.querySelectorAll("#length-sliders .length-slider-input").forEach(input => {
+  input.addEventListener("input", e => {
+    const slot = e.target.closest(".length-slider-row").dataset.slot;
+    rebalanceLengths(slot, parseInt(e.target.value, 10));
   });
 });
 

@@ -31,6 +31,8 @@ export const GameDAO = {
   lightningBeginQuestion:    async () => {},
   lightningJudge:            async () => {},
   lightningAdvance:          async () => {},
+  startRouletteSpin:         async () => {},
+  finishRouletteSpin:        async () => {},
   startEstimacionMode:        async () => {},
   startEstimacionCollecting:  async () => {},
   submitEstimacion:           async () => {},
@@ -239,10 +241,13 @@ if (firebaseConfigurado) {
   };
 
   // Avanza al siguiente jugador/ronda, o termina el modo relámpago.
-  GameDAO.lightningAdvance = async (roomCode, nextSlot, totalSlots) => {
+  // Si isGameOver=true, además cierra la partida.
+  GameDAO.lightningAdvance = async (roomCode, nextSlot, totalSlots, isGameOver = false) => {
     if (nextSlot >= totalSlots) {
       // Fin del modo — selectorIndex ya está correcto desde startLightningMode
-      await update(rRef(roomCode), { lightningMode: null });
+      const updates = { lightningMode: null };
+      if (isGameOver) updates.status = "finished";
+      await update(rRef(roomCode), updates);
     } else {
       await update(rRef(roomCode), {
         "lightningMode/currentSlot": nextSlot,
@@ -251,6 +256,28 @@ if (firebaseConfigurado) {
         "lightningMode/questionResult": null,
       });
     }
+  };
+
+  // ── Modo Ruleta (giro sincronizado) ───────────────────────────
+
+  // El selector dispara el giro: escribe rouletteSpin con startedAt del servidor.
+  // Todos los clients lo recogen via subscribe y animan en sincro.
+  GameDAO.startRouletteSpin = async (roomCode, spinData) => {
+    await update(rRef(roomCode), {
+      rouletteSpin: { ...spinData, startedAt: serverTimestamp() },
+    });
+  };
+
+  // El selector cierra el giro al terminar la animación: limpia rouletteSpin
+  // y abre la pregunta. Si fue bonus, se guarda en currentQuestion.
+  GameDAO.finishRouletteSpin = async (roomCode, category, value, isBonus) => {
+    await update(rRef(roomCode), {
+      rouletteSpin: null,
+      currentQuestion: { category, value, bonus: !!isBonus, openedAt: serverTimestamp() },
+      buzzer: null,
+      questionPhase: "waiting_buzz",
+      questionResult: null,
+    });
   };
 
   // ── Modo Estimación ───────────────────────────────────────────

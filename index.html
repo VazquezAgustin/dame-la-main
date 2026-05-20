@@ -44,6 +44,26 @@
           </button>
         </div>
       </div>
+      <div class="form-group">
+        <label>Longitud de la partida (30 preguntas)</label>
+        <div class="length-sliders" id="length-sliders">
+          <div class="length-slider-row" data-slot="base">
+            <span class="length-slider-label">📋 Modo base</span>
+            <input type="range" min="6" max="30" value="18" class="length-slider-input">
+            <span class="length-slider-value">18</span>
+          </div>
+          <div class="length-slider-row" data-slot="lightning">
+            <span class="length-slider-label">⚡ Lightning</span>
+            <input type="range" min="0" max="24" value="6" class="length-slider-input">
+            <span class="length-slider-value">6</span>
+          </div>
+          <div class="length-slider-row" data-slot="estimacion">
+            <span class="length-slider-label">🎯 Estimación</span>
+            <input type="range" min="0" max="24" value="6" class="length-slider-input">
+            <span class="length-slider-value">6</span>
+          </div>
+        </div>
+      </div>
       <button class="btn btn-primario" id="btn-crear-sala">Crear sala</button>
     </div>
 
@@ -108,10 +128,12 @@
 
   <div id="vista-ruleta" style="display:none">
     <div class="turno-indicador" id="turno-indicador-ruleta"></div>
-    <div class="ruleta-stage">
-      <div class="ruleta-pointer"></div>
+    <div class="ruleta-stage" id="ruleta-stage">
+      <div class="ruleta-pointer" id="ruleta-pointer"></div>
       <div class="ruleta-wheel" id="ruleta-wheel"></div>
       <div class="ruleta-center">🎰</div>
+      <div class="ruleta-winning-flash" id="ruleta-winning-flash"></div>
+      <div class="ruleta-banner" id="ruleta-banner"></div>
     </div>
     <button class="btn btn-primario" id="btn-ruleta-spin" style="width:min(340px,92vw)">
       🎰 Girar la ruleta
@@ -147,16 +169,16 @@
     <div class="buzzer-zone" id="buzzer-zone">
       <div class="buzzer-estado" id="buzzer-estado"></div>
       <button class="btn-buzzer" id="btn-buzzer">🔔 ¡PULSA!</button>
-      <button class="btn btn-primario" id="btn-revelar" style="display:none;width:min(340px,92vw)">
+      <button class="btn btn-primario btn-prominente" id="btn-revelar" style="display:none;width:min(340px,92vw)">
         👁 Mostrar respuesta
       </button>
       <div class="acciones-host" id="acciones-host" style="display:none">
         <div class="acciones-host-row">
-          <button class="btn btn-correcto" id="btn-correcto">✓ Correcto</button>
-          <button class="btn btn-incorrecto" id="btn-incorrecto">✗ Incorrecto</button>
+          <button class="btn btn-correcto btn-prominente" id="btn-correcto">✓ Correcto</button>
+          <button class="btn btn-incorrecto btn-prominente" id="btn-incorrecto">✗ Incorrecto</button>
         </div>
       </div>
-      <button class="btn btn-primario" id="btn-siguiente" style="display:none;width:min(340px,92vw)">
+      <button class="btn btn-primario btn-prominente" id="btn-siguiente" style="display:none;width:min(340px,92vw)">
         Siguiente ▶
       </button>
       <button class="btn btn-peligro" id="btn-skip" style="display:none;font-size:0.85rem;padding:10px 20px">
