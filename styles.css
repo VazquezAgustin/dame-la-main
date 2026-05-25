@@ -1721,6 +1721,13 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   background: var(--fondo);
   z-index: 200;
   overflow: hidden;
+  /* El panel cubre el viewport, pero como es position:fixed los touches
+     se propagaban al body y scrolleaban la página por detrás (problemático
+     porque el jugador tiene el celular apoyado en la frente y cualquier
+     roce dispara scroll). touch-action:none impide gestos de scroll/zoom
+     y overscroll-behavior corta el rebote en bordes. */
+  touch-action: none;
+  overscroll-behavior: contain;
 }
 .quien-active-timer {
   font-family: 'Bebas Neue', cursive;
@@ -1745,6 +1752,7 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   text-shadow: 0 2px 24px rgba(245,158,11,0.45);
   word-break: break-word;
   width: 100%;
+  text-align: center;
 }
 .quien-tilt-hint {
   font-size: clamp(1.4rem, 8vmin, 4.5rem);
