@@ -13,6 +13,10 @@
   --celda-jugada: #0f0f1a;
   --texto: #f8fafc;
   --texto-secundario: #94a3b8;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,10 +27,13 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
+  padding-top: var(--safe-top);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
 }
 
 /* ═══ SCREENS ══════════════════════════════════════════════════ */
-.screen { display: none; min-height: 100vh; padding-bottom: 60px; }
+.screen { display: none; min-height: 100vh; padding-bottom: calc(60px + var(--safe-bottom)); }
 .screen.active { display: flex; flex-direction: column; }
 
 /* ═══ INICIO ═══════════════════════════════════════════════════ */
@@ -722,7 +729,7 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   background: var(--fondo);
   z-index: 50;
   flex-direction: column;
-  padding: 20px 20px 70px;
+  padding: calc(20px + var(--safe-top)) calc(20px + var(--safe-right)) calc(70px + var(--safe-bottom)) calc(20px + var(--safe-left));
   overflow-y: auto;
 }
 .pregunta-overlay.visible { display: flex; }
@@ -892,11 +899,12 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   z-index: 100;
   cursor: pointer;
   transition: height 0.3s ease;
-  height: 44px;
+  height: calc(44px + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
   overflow: hidden;
 }
-#scorebar.expanded { height: 260px; }
-#scorebar.expanded.host { height: 316px; }
+#scorebar.expanded { height: calc(260px + var(--safe-bottom)); }
+#scorebar.expanded.host { height: calc(316px + var(--safe-bottom)); }
 
 .scorebar-collapsed {
   height: 44px;
@@ -1125,7 +1133,7 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   z-index: 55;
   flex-direction: column;
   align-items: center;
-  padding: 20px 20px 70px;
+  padding: calc(20px + var(--safe-top)) calc(20px + var(--safe-right)) calc(70px + var(--safe-bottom)) calc(20px + var(--safe-left));
   overflow-y: auto;
   gap: 0;
 }
@@ -1282,7 +1290,7 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   z-index: 55;
   flex-direction: column;
   align-items: center;
-  padding: 20px 20px 70px;
+  padding: calc(20px + var(--safe-top)) calc(20px + var(--safe-right)) calc(70px + var(--safe-bottom)) calc(20px + var(--safe-left));
   overflow-y: auto;
   gap: 0;
 }
