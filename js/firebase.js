@@ -354,3 +354,5 @@ if (firebaseConfigurado) {
     });
   };
 }
+
+export { db };

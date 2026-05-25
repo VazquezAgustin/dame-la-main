@@ -43,40 +43,83 @@
         <input type="text" id="input-nombre-crear" placeholder="Ej: Agustín" maxlength="20" autocomplete="off">
       </div>
       <div class="form-group">
-        <label>Modo de juego</label>
-        <div class="mode-selector" id="mode-selector">
-          <button type="button" class="mode-option active" data-mode="tablero">
-            <span class="mode-icon">📋</span>
-            <span class="mode-name">Tablero</span>
-            <span class="mode-desc">Elegís la categoría</span>
+        <label>Juego</label>
+        <div class="game-selector" id="game-selector">
+          <button type="button" class="game-option active" data-game="dame-la-main">
+            <span class="game-icon">📋</span>
+            <span class="game-name">Dame la Main</span>
+            <span class="game-desc">Trivia por categorías</span>
           </button>
-          <button type="button" class="mode-option" data-mode="ruleta">
-            <span class="mode-icon">🎰</span>
-            <span class="mode-name">Ruleta</span>
-            <span class="mode-desc">Categoría al azar</span>
+          <button type="button" class="game-option" data-game="quien-es-main">
+            <span class="game-icon">🎭</span>
+            <span class="game-name">¿Quién es Main?</span>
+            <span class="game-desc">Adivina el famoso</span>
           </button>
         </div>
       </div>
-      <div class="form-group">
-        <label>Longitud de la partida (30 preguntas)</label>
-        <div class="length-sliders" id="length-sliders">
-          <div class="length-slider-row" data-slot="base">
-            <span class="length-slider-label">📋 Modo base</span>
-            <input type="range" min="6" max="30" value="18" class="length-slider-input">
-            <span class="length-slider-value">18</span>
+
+      <div id="dame-la-main-options">
+        <div class="form-group">
+          <label>Modo de juego</label>
+          <div class="mode-selector" id="mode-selector">
+            <button type="button" class="mode-option active" data-mode="tablero">
+              <span class="mode-icon">📋</span>
+              <span class="mode-name">Tablero</span>
+              <span class="mode-desc">Elegís la categoría</span>
+            </button>
+            <button type="button" class="mode-option" data-mode="ruleta">
+              <span class="mode-icon">🎰</span>
+              <span class="mode-name">Ruleta</span>
+              <span class="mode-desc">Categoría al azar</span>
+            </button>
           </div>
-          <div class="length-slider-row" data-slot="lightning">
-            <span class="length-slider-label">⚡ Lightning</span>
-            <input type="range" min="0" max="24" value="6" class="length-slider-input">
-            <span class="length-slider-value">6</span>
-          </div>
-          <div class="length-slider-row" data-slot="estimacion">
-            <span class="length-slider-label">🎯 Estimación</span>
-            <input type="range" min="0" max="24" value="6" class="length-slider-input">
-            <span class="length-slider-value">6</span>
+        </div>
+        <div class="form-group">
+          <label>Longitud de la partida (30 preguntas)</label>
+          <div class="length-sliders" id="length-sliders">
+            <div class="length-slider-row" data-slot="base">
+              <span class="length-slider-label">📋 Modo base</span>
+              <input type="range" min="6" max="30" value="18" class="length-slider-input">
+              <span class="length-slider-value">18</span>
+            </div>
+            <div class="length-slider-row" data-slot="lightning">
+              <span class="length-slider-label">⚡ Lightning</span>
+              <input type="range" min="0" max="24" value="6" class="length-slider-input">
+              <span class="length-slider-value">6</span>
+            </div>
+            <div class="length-slider-row" data-slot="estimacion">
+              <span class="length-slider-label">🎯 Estimación</span>
+              <input type="range" min="0" max="24" value="6" class="length-slider-input">
+              <span class="length-slider-value">6</span>
+            </div>
           </div>
         </div>
       </div>
+
+      <div id="quien-es-main-options" style="display:none">
+        <div class="form-group">
+          <label>Rondas por jugador</label>
+          <div class="length-slider-row">
+            <input type="range" min="1" max="5" value="2" id="quien-rounds-slider" class="length-slider-input">
+            <span id="quien-rounds-value" class="length-slider-value">2</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Famosos por ronda</label>
+          <div class="length-slider-row">
+            <input type="range" min="3" max="15" value="8" id="quien-famosos-slider" class="length-slider-input">
+            <span id="quien-famosos-value" class="length-slider-value">8</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Tiempo por ronda</label>
+          <div class="length-slider-row">
+            <input type="range" min="30" max="120" value="60" step="10" id="quien-duration-slider" class="length-slider-input">
+            <span id="quien-duration-value" class="length-slider-value">60s</span>
+          </div>
+        </div>
+      </div>
+
       <button class="btn btn-primario" id="btn-crear-sala">Crear sala</button>
     </div>
 
@@ -153,6 +196,51 @@
       🎰 Girar la ruleta
     </button>
     <p class="ruleta-msg" id="ruleta-msg"></p>
+  </div>
+
+  <!-- ¿Quién es Main? -->
+  <div id="vista-quien-es-main" style="display:none">
+
+    <!-- Entre rondas (host inicia) -->
+    <div id="quien-between" class="quien-panel">
+      <div class="quien-ronda-info" id="quien-ronda-info"></div>
+      <div class="quien-next-player" id="quien-next-player"></div>
+      <button class="btn btn-primario btn-prominente" id="btn-quien-start-round">🎯 Comenzar ronda</button>
+      <p class="esperando-msg" id="quien-wait-host" style="display:none">Esperando que el host inicie...</p>
+    </div>
+
+    <!-- Listo para empezar (jugador activo) -->
+    <div id="quien-ready" class="quien-panel" style="display:none">
+      <div class="quien-ready-emoji">🎭</div>
+      <div class="quien-ready-title">¡Es tu turno!</div>
+      <p class="quien-ready-desc" id="quien-ready-desc"></p>
+      <button class="btn btn-primario btn-prominente" id="btn-quien-begin">▶ ¡Empezar!</button>
+    </div>
+
+    <!-- Ronda activa — vista del jugador que adivina -->
+    <div id="quien-active" class="quien-panel" style="display:none">
+      <div class="quien-famoso" id="quien-famoso"></div>
+      <div class="quien-tilt-hint">⬆ correcto &nbsp;·&nbsp; ⬇ paso</div>
+      <div class="quien-score-live" id="quien-score-live">✓ 0 &nbsp; ✗ 0</div>
+    </div>
+
+    <!-- Ronda activa — vista del resto de jugadores -->
+    <div id="quien-passive" class="quien-panel" style="display:none">
+      <div class="quien-passive-title" id="quien-passive-title"></div>
+      <div class="quien-timer-big" id="quien-timer-big">—</div>
+      <div class="quien-results-live" id="quien-results-live"></div>
+    </div>
+
+    <!-- Resultado de ronda (todos) -->
+    <div id="quien-round-result" class="quien-panel" style="display:none">
+      <div class="quien-result-title">¡Ronda terminada!</div>
+      <div class="quien-result-player" id="quien-result-player"></div>
+      <div class="quien-result-stats" id="quien-result-stats"></div>
+      <div class="quien-result-list" id="quien-result-list"></div>
+      <button class="btn btn-primario btn-prominente" id="btn-quien-siguiente" style="display:none">Siguiente turno ▶</button>
+      <p class="esperando-msg" id="quien-wait-siguiente" style="display:none">Esperando al host...</p>
+    </div>
+
   </div>
 
   <!-- Overlay pregunta -->
@@ -256,6 +344,6 @@
   </div>
 </div>
 
-<script type="module" src="js/juego.js"></script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>
