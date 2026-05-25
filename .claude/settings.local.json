@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(awk '/export const LIGHTNING_QUESTIONS/,/export const ESTIMATION_QUESTIONS/ {print NR\": \"$0}' js/preguntas.js)"
+      "Bash(awk '/export const LIGHTNING_QUESTIONS/,/export const ESTIMATION_QUESTIONS/ {print NR\": \"$0}' js/preguntas.js)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Repos\\\\dame-la-pasta\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)"
     ]
   }
 }

@@ -4,10 +4,15 @@ import { CATEGORY_POOL, QUESTIONS, LIGHTNING_QUESTIONS, ESTIMATION_QUESTIONS, pi
 // ═══════════════════════════════════════════════════════════════
 // 🎮 ESTADO GLOBAL
 // ═══════════════════════════════════════════════════════════════
-let myPlayerId = sessionStorage.getItem("playerId");
+// Migración: usuarios pre-localStorage tenían playerId en sessionStorage
+if (!localStorage.getItem("playerId")) {
+  const legacy = sessionStorage.getItem("playerId");
+  if (legacy) localStorage.setItem("playerId", legacy);
+}
+let myPlayerId = localStorage.getItem("playerId");
 if (!myPlayerId) {
   myPlayerId = "p_" + Date.now().toString(36);
-  sessionStorage.setItem("playerId", myPlayerId);
+  localStorage.setItem("playerId", myPlayerId);
 }
 
 let myName              = "";
@@ -1475,8 +1480,8 @@ function render(s) {
 
   // Detectar si este jugador fue kickeado
   if (s.playerOrder && !s.playerOrder.includes(myPlayerId)) {
-    sessionStorage.removeItem("roomCode");
-    sessionStorage.removeItem("myName");
+    localStorage.removeItem("roomCode");
+    localStorage.removeItem("myName");
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
     document.getElementById("kicked-overlay").style.display = "flex";
     return;
@@ -1485,10 +1490,10 @@ function render(s) {
   state  = s;
   isHost = myPlayerId === s.hostId;
 
-  // Recuperar nombre si reconectamos sin sessionStorage
+  // Recuperar nombre si reconectamos sin nombre en storage
   if (!myName && s.players?.[myPlayerId]?.name) {
     myName = s.players[myPlayerId].name;
-    sessionStorage.setItem("myName", myName);
+    localStorage.setItem("myName", myName);
   }
 
   checkSoundTriggers(s);
@@ -1638,8 +1643,8 @@ async function handleCreateRoom() {
       questionPhase: null,
       questionResult: null,
     });
-    sessionStorage.setItem("roomCode", roomCode);
-    sessionStorage.setItem("myName",   myName);
+    localStorage.setItem("roomCode", roomCode);
+    localStorage.setItem("myName",   myName);
     try { window.history.replaceState(null, "", `?room=${roomCode}`); } catch (_) {}
     subscribeToRoom(roomCode);
     GameDAO.setupPresence(roomCode, myPlayerId).catch(() => {});
@@ -1672,8 +1677,8 @@ async function handleJoinRoom() {
       // Reingreso: el jugador ya existe en la sala, solo reconectar
       myName   = name;
       roomCode = code;
-      sessionStorage.setItem("roomCode", roomCode);
-      sessionStorage.setItem("myName",   myName);
+      localStorage.setItem("roomCode", roomCode);
+      localStorage.setItem("myName",   myName);
       subscribeToRoom(roomCode);
       GameDAO.setupPresence(roomCode, myPlayerId).catch(() => {});
       return;
@@ -1681,8 +1686,8 @@ async function handleJoinRoom() {
     myName   = name;
     roomCode = code;
     await GameDAO.joinRoom(roomCode, myPlayerId, { name, score: 0, connected: true });
-    sessionStorage.setItem("roomCode", roomCode);
-    sessionStorage.setItem("myName",   myName);
+    localStorage.setItem("roomCode", roomCode);
+    localStorage.setItem("myName",   myName);
     try { window.history.replaceState(null, "", `?room=${roomCode}`); } catch (_) {}
     subscribeToRoom(roomCode);
     GameDAO.setupPresence(roomCode, myPlayerId).catch(() => {});
@@ -2067,6 +2072,16 @@ async function triggerEstimacionMode(nextSelectorIndex, skipCell = null) {
   }, skipCell, nextUsedIndices);
 }
 
+function handleSalir() {
+  if (!confirm("¿Salir de la sala? Vas a volver a la pantalla de inicio.")) return;
+  localStorage.removeItem("roomCode");
+  localStorage.removeItem("myName");
+  // playerId se conserva — es identidad reutilizable
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  try { window.history.replaceState(null, "", location.pathname); } catch (_) {}
+  location.reload();
+}
+
 async function handleJugarNuevo() {
   if (!isHost) return;
   lightningTriggered  = false;
@@ -2115,8 +2130,8 @@ function subscribeToRoom(code) {
   if (unsubscribe) unsubscribe();
   unsubscribe = GameDAO.subscribe(code, (gameState) => {
     if (!gameState) {
-      sessionStorage.removeItem("roomCode");
-      sessionStorage.removeItem("myName");
+      localStorage.removeItem("roomCode");
+      localStorage.removeItem("myName");
       setError("Sala no encontrada");
       showScreen("screen-inicio");
       return;
@@ -2206,7 +2221,7 @@ document.getElementById("btn-skip").addEventListener("click", handleSkip);
 // Final
 document.getElementById("btn-jugar-nuevo").addEventListener("click", handleJugarNuevo);
 
-// Scorebar toggle + delegación de kick
+// Scorebar toggle + delegación de kick + botón salir
 document.getElementById("scorebar").addEventListener("click", (e) => {
   const kickBtn = e.target.closest(".btn-kick");
   if (kickBtn) {
@@ -2214,13 +2229,21 @@ document.getElementById("scorebar").addEventListener("click", (e) => {
     handleKick(kickBtn.dataset.pid);
     return;
   }
+  if (e.target.closest("#btn-salir-scorebar")) {
+    e.stopPropagation();
+    handleSalir();
+    return;
+  }
   document.getElementById("scorebar").classList.toggle("expanded");
 });
 
+// Botón salir desde el lobby
+document.getElementById("btn-salir-lobby").addEventListener("click", handleSalir);
+
 // Auto-reconexión al recargar
 if (firebaseConfigurado) {
-  const savedRoom = sessionStorage.getItem("roomCode");
-  const savedName = sessionStorage.getItem("myName");
+  const savedRoom = localStorage.getItem("roomCode");
+  const savedName = localStorage.getItem("myName");
   if (savedRoom) {
     roomCode = savedRoom;
     if (savedName) myName = savedName;

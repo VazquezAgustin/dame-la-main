@@ -142,10 +142,11 @@ El primer jugador que crea la sala es el **host**. Su `playerId` se guarda en `r
 ## Identidad del jugador (sin autenticación)
 
 ```javascript
-let myPlayerId = sessionStorage.getItem("playerId");
+// playerId persiste en localStorage para permitir reconexión tras cerrar pestaña/navegador.
+let myPlayerId = localStorage.getItem("playerId");
 if (!myPlayerId) {
   myPlayerId = "p_" + Date.now().toString(36); // ej: "p_lk3j2h"
-  sessionStorage.setItem("playerId", myPlayerId);
+  localStorage.setItem("playerId", myPlayerId);
 }
 
 // Al unirse, guardar también si es host
@@ -916,7 +917,7 @@ function renderPlaying(s) {
 - **Responsivo mobile-first**: el botón de buzzer tiene al menos 80px de alto para ser fácil de tocar
 - El tablero en mobile usa `overflow-x: auto` con las 6 columnas mostrándose en scroll horizontal
 - Si Firebase no está configurado, mostrar error claro: `"Falta configurar Firebase. Ver README."`
-- `sessionStorage` solo para `playerId`, `roomCode` y `myName` — nada más persiste entre páginas
+- `localStorage` solo para `playerId`, `roomCode` y `myName` — `playerId` persiste entre sesiones para permitir reconexión tras cerrar el browser; `roomCode` y `myName` se limpian al salir de la sala (botón "Salir") o cuando la sala expira
 - Las categorías del pool deben tener preguntas bien redactadas con respuestas cortas y verificables para facilitar el juicio del host
 - **No duplicar preguntas** entre `QUESTIONS` y `LIGHTNING_QUESTIONS` — ambas pueden aparecer en la misma partida
 
