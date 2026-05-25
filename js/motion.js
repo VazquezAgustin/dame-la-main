@@ -19,51 +19,67 @@ export async function requestMotionPermission() {
 // relativo a la posición inicial (se calibra al arrancar). El jugador debe
 // volver a la zona neutral entre tilts para evitar disparos duplicados.
 // Devuelve una función para cancelar la escucha.
-export function onTilt(callback, thresholdDeg = 40, neutralBand = 18) {
-  let baseline   = null;     // beta de referencia, capturado tras calibrar
-  let armed      = false;    // requiere zona neutral antes de disparar
-  let lastFired  = null;
-  let lastBeta   = null;
-  const COOLDOWN_MS    = 800;
-  const CALIBRATE_MS   = 1000;   // tiempo para colocar el celular antes de medir
+//
+// Robusto a orientación: rastreamos beta y gamma simultáneamente y, en cada
+// muestra, evaluamos el eje con mayor desviación absoluta. Esto cubre tanto
+// portrait (beta domina) como landscape heads-up (gamma domina), incluso si
+// `screen.orientation` no refleja la pose física por rotation lock.
+//
+// Convención de signos: en ambos ejes, "adelante" (correcto) corresponde a
+// que el valor DECREZCA respecto al baseline. Esto coincide con el sentido
+// físico habitual: en portrait sobre la frente, inclinar el top hacia
+// adelante baja beta; en landscape sobre la frente (rotación horaria del
+// celular), inclinar el top hacia adelante baja gamma.
+export function onTilt(callback, thresholdDeg = 30, neutralBand = 14) {
+  const axes = {
+    beta:  { baseline: null, last: null },
+    gamma: { baseline: null, last: null },
+  };
+  let armed     = false;
+  let lastFired = null;
+  const COOLDOWN_MS  = 800;
+  const CALIBRATE_MS = 1000;
+
+  function deltaForward(name) {
+    const ax = axes[name];
+    if (ax.baseline === null || ax.last === null) return 0;
+    // "adelante = correcto" → valor decrece → delta_forward = baseline - value
+    return ax.baseline - ax.last;
+  }
 
   function handler(e) {
-    const beta = e.beta; // -180 a 180: inclinación frontal/trasera
-    if (beta === null) return;
-    lastBeta = beta;
+    if (e.beta  !== null && e.beta  !== undefined) axes.beta.last  = e.beta;
+    if (e.gamma !== null && e.gamma !== undefined) axes.gamma.last = e.gamma;
 
-    if (baseline === null) return; // aún no calibrado, ignorar
-    const delta = beta - baseline;
-    const now   = Date.now();
+    if (axes.beta.baseline === null && axes.gamma.baseline === null) return;
 
-    // Re-arme: el celular volvió cerca de la posición inicial
-    if (Math.abs(delta) < neutralBand) {
+    const dBeta  = deltaForward("beta");
+    const dGamma = deltaForward("gamma");
+    // Eje dominante = el que más se desvió del baseline
+    const dom = Math.abs(dBeta) >= Math.abs(dGamma) ? dBeta : dGamma;
+    const now = Date.now();
+
+    if (Math.abs(dom) < neutralBand) {
       armed = true;
       return;
     }
-
     if (!armed) return;
     if (lastFired && now - lastFired < COOLDOWN_MS) return;
+    if (Math.abs(dom) < thresholdDeg) return;
 
-    if (delta < -thresholdDeg) {
-      lastFired = now;
-      armed = false;
-      callback({ up: true, down: false });
-    } else if (delta > thresholdDeg) {
-      lastFired = now;
-      armed = false;
-      callback({ up: false, down: true });
-    }
+    lastFired = now;
+    armed = false;
+    // dom > 0 = inclinó hacia adelante (valor decreció) = correcto
+    if (dom > 0) callback({ up: true,  down: false });
+    else         callback({ up: false, down: true  });
   }
 
   window.addEventListener("deviceorientation", handler);
 
-  // Calibrar después de un breve delay para que el jugador acomode el celular.
   const calibrateTimer = setTimeout(() => {
-    if (lastBeta !== null) {
-      baseline = lastBeta;
-      armed = true; // ya está en la zona neutral (es la propia baseline)
-    }
+    if (axes.beta.last  !== null) axes.beta.baseline  = axes.beta.last;
+    if (axes.gamma.last !== null) axes.gamma.baseline = axes.gamma.last;
+    armed = true;
   }, CALIBRATE_MS);
 
   return () => {

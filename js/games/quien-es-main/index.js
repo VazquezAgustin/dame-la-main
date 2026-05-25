@@ -104,6 +104,18 @@ function _getActiveName(s) {
   return s.players?.[pid]?.name || "?";
 }
 
+// Pinta la pantalla del jugador activo de verde (correcto) o rojo (paso)
+// durante ~0.5s. La animación se reinicia removiendo la clase y forzando
+// reflow antes de re-aplicarla, así dos tilts seguidos vuelven a flashear.
+function _flashScreen(kind) {
+  const el = document.getElementById("quien-flash");
+  if (!el) return;
+  el.classList.remove("correcto", "paso");
+  // forzar reflow para reiniciar la animación CSS
+  void el.offsetWidth;
+  el.classList.add(kind);
+}
+
 // ── Renders ──────────────────────────────────────────────────────
 
 export function _setTestContext(ctx) { _ctx = ctx; }
@@ -287,6 +299,17 @@ function _startActiveTimer(duration) {
     if (!round || round.phase !== "active" || !round.startedAt) return;
     const elapsed   = Math.floor((Date.now() - round.startedAt) / 1000);
     const remaining = Math.max(0, duration - elapsed);
+
+    const el = document.getElementById("quien-active-timer");
+    if (el) {
+      el.textContent = remaining + "s";
+      el.classList.toggle("urgente", remaining <= 10);
+    }
+    if (remaining > 0 && remaining <= 10 && remaining !== _lastTimerTick) {
+      _lastTimerTick = remaining;
+      playTick();
+    }
+
     if (remaining <= 0) {
       _clearTimers();
       _daoTimeExpired(getRoomCode()).catch(() => {});
@@ -349,6 +372,7 @@ function _setupTilt(s) {
     const isLast    = nextIndex >= famosos.length;
 
     if (up) playCorrect(); else playIncorrect();
+    _flashScreen(up ? "correcto" : "paso");
 
     // Optimistic local update
     const famEl = document.getElementById("quien-famoso");
