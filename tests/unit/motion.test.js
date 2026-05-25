@@ -2,12 +2,22 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { onTilt } from "../../js/motion.js";
 
+// Simula un evento deviceorientation con beta variable y gamma=0.
+// En pose canónica landscape, beta es el eje dominante (|beta|≈90 > |gamma|≈0).
 function fireBeta(beta) {
   const ev = new Event("deviceorientation");
   ev.beta  = beta;
   ev.gamma = 0;
   ev.alpha = 0;
   window.dispatchEvent(ev);
+}
+
+// El primer evento fija el eje dominante y la referencia canónica (sin disparar).
+// setup() encapsula ese primer evento para que los tests arranquen listos.
+function setup(cb, canonicalBeta = 90) {
+  const cleanup = onTilt(cb);
+  fireBeta(canonicalBeta);
+  return cleanup;
 }
 
 describe("onTilt", () => {
@@ -23,96 +33,83 @@ describe("onTilt", () => {
     vi.useRealTimers();
   });
 
-  it("no dispara durante la ventana de calibración", () => {
+  it("dispara inmediatamente sin ventana de calibración", () => {
     const cb = vi.fn();
-    cleanup = onTilt(cb);
-    fireBeta(90);
-    fireBeta(90);
-    vi.advanceTimersByTime(500);
-    fireBeta(140); // delta sería +50 pero todavía no calibró
-    expect(cb).not.toHaveBeenCalled();
+    cleanup = setup(cb); // primer evento fija referencia (beta=90)
+    fireBeta(50);        // delta = 90-50 = 40 > threshold → correcto
+    expect(cb).toHaveBeenCalledWith({ up: true, down: false });
   });
 
-  it("calibra al baseline observado al final de la ventana", () => {
+  it("dispara 'paso' cuando el valor supera la pose canónica", () => {
     const cb = vi.fn();
-    cleanup = onTilt(cb);
-    fireBeta(90);
-    vi.advanceTimersByTime(1000); // baseline = 90
-    fireBeta(140); // delta +50 → paso
+    cleanup = setup(cb);
+    fireBeta(130); // delta = 90-130 = -40 → paso
     expect(cb).toHaveBeenCalledWith({ up: false, down: true });
   });
 
-  it("dispara 'correcto' cuando el delta es negativo", () => {
+  it("dispara 'correcto' cuando el valor cae por debajo de la pose canónica", () => {
     const cb = vi.fn();
-    cleanup = onTilt(cb);
-    fireBeta(0);
-    vi.advanceTimersByTime(1000); // baseline = 0
-    fireBeta(-50); // delta -50 → correcto
+    cleanup = setup(cb);
+    fireBeta(50); // delta = 90-50 = 40 → correcto
     expect(cb).toHaveBeenCalledWith({ up: true, down: false });
   });
 
   it("requiere volver a la zona neutral antes del próximo tilt", () => {
     const cb = vi.fn();
-    cleanup = onTilt(cb);
-    fireBeta(0);
-    vi.advanceTimersByTime(1000); // baseline = 0
-    fireBeta(50); // dispara paso
+    cleanup = setup(cb);
+    fireBeta(130); // dispara paso
     expect(cb).toHaveBeenCalledTimes(1);
 
-    // Cooldown
-    vi.advanceTimersByTime(900);
+    vi.advanceTimersByTime(900); // cooldown
 
-    // Sigue lejos del baseline → no debe re-disparar
-    fireBeta(60);
+    // Sigue lejos de canonical → armed sigue false, no dispara
+    fireBeta(125);
     expect(cb).toHaveBeenCalledTimes(1);
 
-    // Vuelve cerca del baseline → re-arme
-    fireBeta(5);
-    fireBeta(50); // ahora sí dispara
+    // Vuelve cerca de canonical → re-arme
+    fireBeta(88); // |90-88| = 2 < neutralBand(14) → armed = true
+    fireBeta(130); // ahora sí dispara
     expect(cb).toHaveBeenCalledTimes(2);
   });
 
   it("respeta el cooldown entre tilts consecutivos", () => {
     const cb = vi.fn();
-    cleanup = onTilt(cb);
-    fireBeta(0);
-    vi.advanceTimersByTime(1000);
-    fireBeta(50); // dispara
+    cleanup = setup(cb);
+    fireBeta(130); // dispara
     expect(cb).toHaveBeenCalledTimes(1);
 
-    // Inmediatamente vuelve a neutral y vuelve a tiltar
-    fireBeta(0);
-    fireBeta(50);
-    // Aunque esté armado, el cooldown todavía corre
+    // Vuelve a neutral e intenta de nuevo antes del cooldown
+    fireBeta(88); // neutral → armed = true
+    fireBeta(130); // dentro del cooldown → no dispara
     expect(cb).toHaveBeenCalledTimes(1);
 
     vi.advanceTimersByTime(900);
-    fireBeta(0);
-    fireBeta(50);
+    fireBeta(88); // neutral
+    fireBeta(130);
     expect(cb).toHaveBeenCalledTimes(2);
   });
 
   it("la función de cleanup detiene la escucha", () => {
     const cb = vi.fn();
-    cleanup = onTilt(cb);
-    vi.advanceTimersByTime(1000);
+    cleanup = setup(cb);
     cleanup();
     cleanup = null;
-    fireBeta(0);
-    fireBeta(80);
+    fireBeta(50);
     expect(cb).not.toHaveBeenCalled();
   });
 
-  it("ignora eventos con beta null", () => {
+  it("ignora eventos hasta tener ambos ejes disponibles", () => {
     const cb = vi.fn();
     cleanup = onTilt(cb);
+
+    // Evento sin datos — dominantAxis sigue null
     const ev = new Event("deviceorientation");
-    ev.beta = null;
+    ev.beta  = null;
+    ev.gamma = null;
     window.dispatchEvent(ev);
-    vi.advanceTimersByTime(1000);
-    // sin samples válidos, baseline queda null → tilts no disparan
-    fireBeta(140);
-    // ahora hay una muestra y el baseline ya pasó: nunca calibró → no dispara
+
+    // Primer evento válido: solo fija la referencia, no dispara
+    fireBeta(130);
     expect(cb).not.toHaveBeenCalled();
   });
 });
