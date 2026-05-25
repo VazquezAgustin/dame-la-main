@@ -6,7 +6,7 @@ import { db } from "../../firebase.js";
 import {
   ref, update, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { requestMotionPermission, onTilt } from "../../motion.js";
+import { requestMotionPermission, onTilt, lockOrientation, unlockOrientation } from "../../motion.js";
 import { playCorrect, playIncorrect, playTick } from "../../audio.js";
 
 // ── Contexto inyectado por main.js via initGame() ────────────────
@@ -27,6 +27,9 @@ function _clearTimers() {
   if (_tiltCleanup)   { _tiltCleanup(); _tiltCleanup = null; }
   _tiltInFlight = false;
   _lastTimerTick = -1;
+  // Liberar la orientación al salir de la vista activa (entre-rondas,
+  // ready, resultado de ronda y cleanup todos pasan por acá).
+  unlockOrientation();
 }
 
 // ── Inline DAO — operaciones Firebase específicas de este juego ──
