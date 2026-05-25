@@ -1695,20 +1695,36 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
 
 /* Ronda activa — jugador activo. El panel se rota 90° porque el jugador
    sostiene el celular en landscape sobre la frente; así el público lee
-   el nombre del famoso correctamente. */
+   el contenido orientado horizontalmente.
+
+   Usamos position:fixed con width=100vh y height=100vw: al rotarlo -90°,
+   las dimensiones se intercambian y el panel termina ocupando exactamente
+   100vw × 100vh del viewport. Así el contenido aprovecha toda la pantalla. */
 #quien-active {
-  position: relative;
-  transform: rotate(-90deg);
-  transform-origin: center center;
-  /* Usamos vmin (la dimensión menor del viewport) para que el ancho útil
-     del panel rotado sea siempre la altura física del celular en landscape. */
-  width: 96vmin;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vh;
+  height: 100vw;
   max-width: none;
-  gap: 10px;
+  /* origin (0,0) + rotate -90° lleva el panel arriba a la izquierda fuera
+     de pantalla; translate(-100%, 0) lo trae devuelta de modo que ocupe
+     exactamente el viewport completo (100vw × 100vh visualmente). */
+  transform-origin: 0 0;
+  transform: rotate(-90deg) translate(-100%, 0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3vmin;
+  padding: 4vmin 6vmin;
+  background: var(--fondo);
+  z-index: 200;
+  overflow: hidden;
 }
 .quien-active-timer {
   font-family: 'Bebas Neue', cursive;
-  font-size: clamp(2rem, 7vmin, 4rem);
+  font-size: clamp(3.5rem, 18vmin, 11rem);
   color: var(--primario-glow);
   letter-spacing: 0.08em;
   line-height: 1;
@@ -1720,41 +1736,44 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
 }
 .quien-famoso {
   font-family: 'Bebas Neue', cursive;
-  /* vmin escala con la dimensión menor (el alto físico del celular en
-     landscape), evitando que el nombre se vea diminuto al rotar. */
-  font-size: clamp(3rem, 16vmin, 9rem);
+  /* vmin = la dimensión menor del viewport (el alto físico del celular en
+     landscape). El nombre tiene que dominar visualmente. */
+  font-size: clamp(5rem, 34vmin, 20rem);
   color: var(--acento);
-  line-height: 1.05;
+  line-height: 1;
   padding: 0 8px;
   text-shadow: 0 2px 24px rgba(245,158,11,0.45);
   word-break: break-word;
+  width: 100%;
 }
 .quien-tilt-hint {
-  font-size: clamp(0.8rem, 2.4vmin, 1.2rem);
+  font-size: clamp(1.4rem, 8vmin, 4.5rem);
   color: var(--texto-secundario);
   letter-spacing: 0.12em;
+  font-weight: 600;
 }
 .quien-score-live {
   font-family: 'Bebas Neue', cursive;
-  font-size: clamp(1.6rem, 5vmin, 3rem);
+  font-size: clamp(2.4rem, 14vmin, 8rem);
   color: var(--primario-glow);
   letter-spacing: 0.1em;
+  line-height: 1;
 }
 
-/* Flash de pantalla en correcto/paso (cubre todo el panel rotado) */
+/* Flash de pantalla en correcto/paso (cubre todo el panel) */
 .quien-flash {
   position: absolute;
-  inset: -200vmax;
+  inset: 0;
   pointer-events: none;
   opacity: 0;
   z-index: 50;
 }
 .quien-flash.correcto {
-  background: rgba(16, 185, 129, 0.55);
+  background: rgba(16, 185, 129, 0.6);
   animation: quien-flash-anim 0.5s ease-out;
 }
 .quien-flash.paso {
-  background: rgba(239, 68, 68, 0.55);
+  background: rgba(239, 68, 68, 0.6);
   animation: quien-flash-anim 0.5s ease-out;
 }
 @keyframes quien-flash-anim {
