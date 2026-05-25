@@ -106,7 +106,9 @@ function _getActiveName(s) {
 
 // ── Renders ──────────────────────────────────────────────────────
 
-function renderBetweenRounds(s) {
+export function _setTestContext(ctx) { _ctx = ctx; }
+
+export function renderBetweenRounds(s) {
   _showQuienView();
   _showPanel("quien-between");
   _clearTimers();
@@ -133,6 +135,7 @@ function renderBetweenRounds(s) {
   const waitHost  = document.getElementById("quien-wait-host");
   if (isHost()) {
     btnStart.style.display = "block";
+    btnStart.disabled      = false;
     waitHost.style.display = "none";
     btnStart.onclick = () => _handleStartRound(s);
   } else {
@@ -141,7 +144,7 @@ function renderBetweenRounds(s) {
   }
 }
 
-function renderReady(s) {
+export function renderReady(s) {
   _showQuienView();
   _showPanel("quien-ready");
   _clearTimers();
@@ -150,11 +153,12 @@ function renderReady(s) {
   const activeName = _getActiveName(s);
 
   document.getElementById("quien-ready-desc").textContent = amIActive
-    ? "Sostené el celular frente a vos. Tus amigos ven la pantalla y te dan pistas. Incliná ⬆ si adivinaste, ⬇ si pasás."
+    ? "Sostené el celular en horizontal sobre tu frente, con la pantalla hacia tus amigos. Inclinálo hacia adelante si adivinaste, hacia atrás si pasás."
     : `${activeName} va a adivinar. Preparate para dar pistas cuando veas la pantalla.`;
 
   const btn = document.getElementById("btn-quien-begin");
   btn.style.display = amIActive ? "block" : "none";
+  if (amIActive) btn.disabled = false;
 }
 
 function renderActive(s) {
@@ -198,7 +202,7 @@ function _renderPassiveResults(s) {
   ).join("");
 }
 
-function renderRoundResult(s) {
+export function renderRoundResult(s) {
   _showQuienView();
   _showPanel("quien-round-result");
   _clearTimers();
@@ -233,6 +237,7 @@ function renderRoundResult(s) {
   const waitSig = document.getElementById("quien-wait-siguiente");
   if (isHost()) {
     btnSig.style.display  = "block";
+    btnSig.disabled       = false;
     waitSig.style.display = "none";
     btnSig.onclick = () => _handleSiguiente(s);
   } else {

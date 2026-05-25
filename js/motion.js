@@ -16,28 +16,60 @@ export async function requestMotionPermission() {
 }
 
 // Llama a callback({ up: bool, down: bool }) cada vez que detecta un tilt
-// por encima del umbral (deg). Devuelve una función para cancelar la escucha.
-export function onTilt(callback, thresholdDeg = 40) {
-  let lastFired = null;
-  const COOLDOWN_MS = 800;
+// relativo a la posición inicial (se calibra al arrancar). El jugador debe
+// volver a la zona neutral entre tilts para evitar disparos duplicados.
+// Devuelve una función para cancelar la escucha.
+export function onTilt(callback, thresholdDeg = 40, neutralBand = 18) {
+  let baseline   = null;     // beta de referencia, capturado tras calibrar
+  let armed      = false;    // requiere zona neutral antes de disparar
+  let lastFired  = null;
+  let lastBeta   = null;
+  const COOLDOWN_MS    = 800;
+  const CALIBRATE_MS   = 1000;   // tiempo para colocar el celular antes de medir
 
   function handler(e) {
     const beta = e.beta; // -180 a 180: inclinación frontal/trasera
     if (beta === null) return;
-    const now = Date.now();
+    lastBeta = beta;
+
+    if (baseline === null) return; // aún no calibrado, ignorar
+    const delta = beta - baseline;
+    const now   = Date.now();
+
+    // Re-arme: el celular volvió cerca de la posición inicial
+    if (Math.abs(delta) < neutralBand) {
+      armed = true;
+      return;
+    }
+
+    if (!armed) return;
     if (lastFired && now - lastFired < COOLDOWN_MS) return;
 
-    if (beta < -thresholdDeg) {
+    if (delta < -thresholdDeg) {
       lastFired = now;
+      armed = false;
       callback({ up: true, down: false });
-    } else if (beta > thresholdDeg) {
+    } else if (delta > thresholdDeg) {
       lastFired = now;
+      armed = false;
       callback({ up: false, down: true });
     }
   }
 
   window.addEventListener("deviceorientation", handler);
-  return () => window.removeEventListener("deviceorientation", handler);
+
+  // Calibrar después de un breve delay para que el jugador acomode el celular.
+  const calibrateTimer = setTimeout(() => {
+    if (lastBeta !== null) {
+      baseline = lastBeta;
+      armed = true; // ya está en la zona neutral (es la propia baseline)
+    }
+  }, CALIBRATE_MS);
+
+  return () => {
+    clearTimeout(calibrateTimer);
+    window.removeEventListener("deviceorientation", handler);
+  };
 }
 
 // Solicita bloquear la orientación a landscape (o portrait/any).

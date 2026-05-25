@@ -1693,7 +1693,13 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   max-width: 320px;
 }
 
-/* Ronda activa — jugador activo */
+/* Ronda activa — jugador activo. El panel se rota 90° porque el jugador
+   sostiene el celular en landscape sobre la frente; así el público lee
+   el nombre del famoso correctamente. */
+#quien-active {
+  transform: rotate(-90deg);
+  transform-origin: center center;
+}
 .quien-famoso {
   font-family: 'Bebas Neue', cursive;
   font-size: clamp(2.4rem, 10vw, 5rem);
