@@ -190,6 +190,12 @@ function renderActive(s) {
   if (amIActive) {
     _showPanel("quien-active");
 
+    // Bloquear orientación a portrait: el CSS rota el panel -90° asumiendo
+    // que el viewport sigue siendo portrait aunque el usuario tenga el
+    // celular físicamente en horizontal sobre la frente. Sin lock, si el
+    // sistema rota a landscape, el CSS rota encima → contenido vertical.
+    lockOrientation("portrait");
+
     document.getElementById("quien-famoso").textContent = famosos[curIdx] || "—";
 
     const correct = Object.values(results).filter(r => r.result === "correcto").length;
