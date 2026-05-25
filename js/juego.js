@@ -1,5 +1,9 @@
 import { GameDAO, firebaseConfigurado } from "./firebase.js";
 import { CATEGORY_POOL, QUESTIONS, LIGHTNING_QUESTIONS, ESTIMATION_QUESTIONS, pickRandomCategories } from "./preguntas.js";
+import {
+  generateRoomCode, isBoardComplete, countAnsweredCells, esc, getQuestion,
+  categoryHasUnplayed, availableCategories, rebalanceLengths as rebalanceLengthsFn,
+} from "./logica.js";
 
 // ═══════════════════════════════════════════════════════════════
 // 🎮 ESTADO GLOBAL
@@ -36,13 +40,6 @@ let _ruletaRotation     = 0;      // rotación acumulada de la ruleta (deg)
 // ═══════════════════════════════════════════════════════════════
 // 🛠️ UTILIDADES
 // ═══════════════════════════════════════════════════════════════
-function generateRoomCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
-
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
@@ -52,36 +49,6 @@ function showScreen(id) {
 
 function setError(msg) { document.getElementById("error-inicio").textContent = msg; }
 function clearError()  { document.getElementById("error-inicio").textContent = ""; }
-
-function isBoardComplete(board, categories) {
-  if (!board || !categories) return false;
-  return categories.every(cat =>
-    [200, 400, 600, 800, 1000].every(v => board[cat]?.[String(v)] === true)
-  );
-}
-
-function countAnsweredCells(board, categories) {
-  if (!board || !categories) return 0;
-  let count = 0;
-  categories.forEach(cat =>
-    [200, 400, 600, 800, 1000].forEach(v => {
-      if (board[cat]?.[String(v)] === true) count++;
-    })
-  );
-  return count;
-}
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function getQuestion(category, value) {
-  return (QUESTIONS[category] || []).find(q => q.value === value) || null;
-}
 
 function clearIntervals() {
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
@@ -392,14 +359,6 @@ let _ruletaTickRaf      = null;          // requestAnimationFrame id para el loo
 let _ruletaTickLastSec  = -1;            // último sector visto bajo el pointer (para detectar cruce)
 let _ruletaRevealTimer  = null;          // setTimeout para la revelación
 let _ruletaFinishTimer  = null;          // setTimeout para llamar finishRouletteSpin (selector)
-
-function categoryHasUnplayed(board, cat) {
-  return [200, 400, 600, 800, 1000].some(v => board?.[cat]?.[String(v)] !== true);
-}
-
-function availableCategories(s) {
-  return (s.categories || []).filter(cat => categoryHasUnplayed(s.board || {}, cat));
-}
 
 function buildRuletaWheel(categories) {
   const wheel = document.getElementById("ruleta-wheel");
@@ -1572,37 +1531,9 @@ function writeLengthSliders(values) {
   });
 }
 
-// Reparte el delta entre los otros sliders respetando mínimos y máximos.
-// Si no hay margen suficiente, se recorta el cambio del slider modificado
-// para que la suma siempre sea TOTAL_LENGTH.
 function rebalanceLengths(changedSlot, newValue) {
-  const bounds = LENGTH_BOUNDS[changedSlot];
-  newValue = Math.max(bounds.min, Math.min(bounds.max, newValue));
-
-  const others = Object.keys(_lengthState).filter(k => k !== changedSlot);
-  // delta > 0 => el slider sube => hay que bajar los otros
-  let delta = newValue - _lengthState[changedSlot];
-
-  const next = { ..._lengthState, [changedSlot]: newValue };
-  while (delta !== 0) {
-    const sign = Math.sign(delta);
-    const candidates = others
-      .map(k => ({
-        k,
-        room: sign > 0 ? next[k] - LENGTH_BOUNDS[k].min : LENGTH_BOUNDS[k].max - next[k],
-      }))
-      .filter(c => c.room > 0)
-      .sort((a, b) => b.room - a.room);
-    if (candidates.length === 0) break;
-    next[candidates[0].k] -= sign;
-    delta -= sign;
-  }
-
-  // Si quedó delta sin asignar, recortar el cambio del slider modificado.
-  if (delta !== 0) next[changedSlot] -= delta;
-
-  _lengthState = next;
-  writeLengthSliders(next);
+  _lengthState = rebalanceLengthsFn(_lengthState, LENGTH_BOUNDS, changedSlot, newValue);
+  writeLengthSliders(_lengthState);
 }
 
 // ═══════════════════════════════════════════════════════════════
