@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="60%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#0a0a1a"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <text x="256" y="230" font-family="'Bebas Neue', Impact, sans-serif" font-size="150" font-weight="700"
+        text-anchor="middle" fill="#f8fafc" letter-spacing="4">DAME</text>
+  <text x="256" y="370" font-family="'Bebas Neue', Impact, sans-serif" font-size="150" font-weight="700"
+        text-anchor="middle" fill="url(#gold)" letter-spacing="4">LA MAIN</text>
+  <circle cx="256" cy="430" r="14" fill="#f59e0b"/>
+</svg>

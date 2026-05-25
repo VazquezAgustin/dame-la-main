@@ -1,0 +1,21 @@
+{
+  "name": "Dame la Main",
+  "short_name": "Dame la Main",
+  "description": "Juego de trivia multijugador en tiempo real, estilo Dame la Pasta de Ibai Llanos.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a1a",
+  "theme_color": "#7c3aed",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
