@@ -1,4 +1,7 @@
 import { pickFamosos } from "./famosos.js";
+import {
+  calcRoundScore, isGameOver, nextSelectorIndex, buildQuienInitialState,
+} from "./logica.js";
 import { db } from "../../firebase.js";
 import {
   ref, update, serverTimestamp,
@@ -403,19 +406,15 @@ async function _handleSiguiente(s) {
   try {
     const order          = s.playerOrder || [];
     const config         = s.quienConfig || {};
-    const roundsPerPlayer= config.roundsPerPlayer || 2;
-    const totalRounds    = roundsPerPlayer * order.length;
     const doneNow        = (s.roundsCompleted || 0) + 1;
-    const isGameOver     = doneNow >= totalRounds;
+    const gameOver       = isGameOver(doneNow, config.roundsPerPlayer || 2, order.length);
 
-    const round      = s.currentRound;
-    const activePid  = round?.activePlayerId;
-    const results    = round?.results || {};
-    const correct    = Object.values(results).filter(r => r.result === "correcto").length;
-    const pts        = correct * 100;
+    const round     = s.currentRound;
+    const activePid = round?.activePlayerId;
+    const pts       = calcRoundScore(round?.results);
 
-    const nextSelectorIdx = (s.selectorIndex + 1) % order.length;
-    await _daoNextRound(getRoomCode(), nextSelectorIdx, doneNow, activePid, pts, isGameOver);
+    const nextIdx = nextSelectorIndex(s.selectorIndex, order.length);
+    await _daoNextRound(getRoomCode(), nextIdx, doneNow, activePid, pts, gameOver);
   } catch (e) {
     console.error(e);
     if (btn) btn.disabled = false;
@@ -451,14 +450,8 @@ export default {
     document.getElementById("btn-quien-begin")?.addEventListener("click", _handleBeginRound);
   },
 
-  buildInitialState({ roundsPerPlayer = 2, famososPerRound = 8, roundDuration = 60 } = {}) {
-    return {
-      gameType:       "quien-es-main",
-      quienConfig:    { roundsPerPlayer, famososPerRound, roundDuration },
-      selectorIndex:  0,
-      roundsCompleted: 0,
-      currentRound:   null,
-    };
+  buildInitialState(config) {
+    return buildQuienInitialState(config);
   },
 
   render(s) {
