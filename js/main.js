@@ -171,8 +171,9 @@ function updateScorebar(s) {
   const sorted = [...order].sort((a, b) => (players[b]?.score || 0) - (players[a]?.score || 0));
   const rankEl = document.getElementById("scorebar-ranking");
   rankEl.innerHTML = "";
-  const medals  = ["🥇", "🥈", "🥉"];
-  const canKick = isHost && s.status === "playing";
+  const medals      = ["🥇", "🥈", "🥉"];
+  const canKick     = isHost && s.status === "playing";
+  const canPassHost = isHost;
   sorted.forEach((pid, i) => {
     const p = players[pid];
     if (!p) return;
@@ -181,13 +182,16 @@ function updateScorebar(s) {
     const kickBtn = (canKick && pid !== myPlayerId)
       ? `<button class="btn-kick" data-pid="${pid}" title="Expulsar jugador">×</button>`
       : "";
+    const passHostBtn = (canPassHost && pid !== myPlayerId)
+      ? `<button class="btn-pass-host" data-pid="${pid}" title="Pasar host a este jugador">👑</button>`
+      : "";
     div.innerHTML = `
       <span class="rank-pos">${medals[i] || (i + 1)}</span>
       <div class="rank-avatar">${(p.name || "?")[0].toUpperCase()}</div>
       <span class="rank-name">${p.name || "?"}</span>
       ${pid === myPlayerId ? '<span class="rank-tu">← Tú</span>' : ''}
       <span class="rank-pts">${p.score || 0} pts</span>
-      ${kickBtn}
+      ${passHostBtn}${kickBtn}
     `;
     rankEl.appendChild(div);
   });
@@ -446,8 +450,21 @@ document.getElementById("btn-copiar-link").addEventListener("click", () => {
   });
 });
 
+async function handlePassHost(targetPid) {
+  if (!isHost || targetPid === myPlayerId) return;
+  try {
+    await GameDAO.migrateHost(roomCode, myPlayerId, targetPid);
+  } catch (e) { console.error("Error al pasar host:", e); }
+}
+
 // Scorebar: toggle, kick (delegación), salir
 document.getElementById("scorebar").addEventListener("click", (e) => {
+  const passHostBtn = e.target.closest(".btn-pass-host");
+  if (passHostBtn) {
+    e.stopPropagation();
+    handlePassHost(passHostBtn.dataset.pid);
+    return;
+  }
   const kickBtn = e.target.closest(".btn-kick");
   if (kickBtn) {
     e.stopPropagation();

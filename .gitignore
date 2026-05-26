@@ -1,3 +1,16 @@
 js/firebase.config.js
 node_modules/
 coverage/
+
+# Claude Code — configuración local del usuario (no compartir)
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+*.swp
+*.bak
+*.orig
