@@ -35,7 +35,7 @@ export function onTilt(callback, thresholdDeg = 30, neutralBand = 14) {
   let armed     = false;
   let lastFired = null;
   const COOLDOWN_MS   = 800;
-  const LANDSCAPE_MIN = 60; // |gamma| mínimo para considerar pose landscape
+  const LANDSCAPE_MIN = 75; // |gamma| mínimo para considerar pose landscape
 
   function handler(e) {
     if (e.beta  != null) axes.beta.last  = e.beta;
