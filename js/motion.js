@@ -16,40 +16,49 @@ export async function requestMotionPermission() {
 }
 
 // Llama a callback({ up: bool, down: bool }) cada vez que detecta un tilt.
-// Usa ±90° como pose canónica (teléfono en landscape sobre la frente,
-// bloqueado a portrait por CSS). Sin ventana de calibración: el primer
-// evento con ambos ejes disponibles fija el eje dominante (el que esté
-// más cerca de ±90) y su referencia canónica. Los eventos siguientes
-// detectan desviaciones desde esa referencia fija.
 //
-// Convención de signos: delta = ref − valor.
-// delta > 0 → valor bajó desde ref → "adelante" → correcto (up: true).
-// delta < 0 → valor subió desde ref → "atrás"   → paso  (down: true).
+// Flujo:
+//   1. Espera a que |gamma| > LANDSCAPE_MIN (≈60°): el jugador llevó el
+//      teléfono de portrait a landscape (a la frente).
+//   2. Calibra con el valor REAL de beta y gamma en ese momento (no asume ±90).
+//   3. Detecta desviaciones respecto de esa pose de referencia en ambos ejes;
+//      el eje con mayor desviación absoluta es el dominante.
+//
+// Convención: delta = baseline − valor.
+// delta > 0 → correcto (up: true).
+// delta < 0 → paso    (down: true).
 export function onTilt(callback, thresholdDeg = 30, neutralBand = 14) {
-  const axes = { beta: { last: null }, gamma: { last: null } };
-  let dominantAxis = null; // 'beta' | 'gamma', fijado en el primer evento
-  let canonicalRef = null; // ±90 según el signo del eje dominante en pose inicial
-  let armed        = true;
-  let lastFired    = null;
-  const COOLDOWN_MS = 800;
+  const axes = {
+    beta:  { baseline: null, last: null },
+    gamma: { baseline: null, last: null },
+  };
+  let armed     = false;
+  let lastFired = null;
+  const COOLDOWN_MS   = 800;
+  const LANDSCAPE_MIN = 60; // |gamma| mínimo para considerar pose landscape
 
   function handler(e) {
     if (e.beta  != null) axes.beta.last  = e.beta;
     if (e.gamma != null) axes.gamma.last = e.gamma;
 
-    // Primer evento con ambos ejes: fijar eje dominante y referencia canónica.
-    // El eje con mayor valor absoluto es el de landscape (cerca de ±90).
-    if (dominantAxis === null) {
-      const b = axes.beta.last, g = axes.gamma.last;
-      if (b === null || g === null) return;
-      dominantAxis = Math.abs(b) >= Math.abs(g) ? "beta" : "gamma";
-      canonicalRef = axes[dominantAxis].last >= 0 ? 90 : -90;
-      return; // este evento solo sirve para fijar la referencia
+    const b = axes.beta.last, g = axes.gamma.last;
+    if (b === null || g === null) return;
+
+    // Calibrar solo cuando el teléfono esté claramente en landscape.
+    // Mientras el jugador toca "Empezar" con el teléfono en portrait,
+    // |gamma| es pequeño y este bloque devuelve sin hacer nada.
+    if (axes.beta.baseline === null) {
+      if (Math.abs(g) > LANDSCAPE_MIN) {
+        axes.beta.baseline  = b;
+        axes.gamma.baseline = g;
+        armed = true;
+      }
+      return;
     }
 
-    const v   = axes[dominantAxis].last;
-    if (v === null) return;
-    const dom = canonicalRef - v;
+    const dBeta  = axes.beta.baseline  - b;
+    const dGamma = axes.gamma.baseline - g;
+    const dom = Math.abs(dBeta) >= Math.abs(dGamma) ? dBeta : dGamma;
     const now = Date.now();
 
     if (Math.abs(dom) < neutralBand) { armed = true; return; }

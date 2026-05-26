@@ -2,114 +2,120 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { onTilt } from "../../js/motion.js";
 
-// Simula un evento deviceorientation con beta variable y gamma=0.
-// En pose canónica landscape, beta es el eje dominante (|beta|≈90 > |gamma|≈0).
-function fireBeta(beta) {
+// Dispara un evento deviceorientation con los valores dados.
+function fireOrientation(beta, gamma) {
   const ev = new Event("deviceorientation");
   ev.beta  = beta;
-  ev.gamma = 0;
+  ev.gamma = gamma;
   ev.alpha = 0;
   window.dispatchEvent(ev);
 }
 
-// El primer evento fija el eje dominante y la referencia canónica (sin disparar).
-// setup() encapsula ese primer evento para que los tests arranquen listos.
-function setup(cb, canonicalBeta = 90) {
+// setup() envía el primer evento en pose landscape (|gamma|=90 > LANDSCAPE_MIN=60).
+// Ese evento solo calibra la referencia, no dispara.
+function setup(cb, beta = 0, gamma = -90) {
   const cleanup = onTilt(cb);
-  fireBeta(canonicalBeta);
+  fireOrientation(beta, gamma);
   return cleanup;
 }
 
 describe("onTilt", () => {
   let cleanup;
 
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { if (cleanup) { cleanup(); cleanup = null; } vi.useRealTimers(); });
 
-  afterEach(() => {
-    if (cleanup) cleanup();
-    cleanup = null;
-    vi.useRealTimers();
-  });
-
-  it("dispara inmediatamente sin ventana de calibración", () => {
+  it("no dispara mientras el teléfono está en portrait (|gamma| < 60)", () => {
     const cb = vi.fn();
-    cleanup = setup(cb); // primer evento fija referencia (beta=90)
-    fireBeta(50);        // delta = 90-50 = 40 > threshold → correcto
-    expect(cb).toHaveBeenCalledWith({ up: true, down: false });
+    cleanup = onTilt(cb);
+
+    // Portrait: |gamma|=0, no calibra
+    fireOrientation(90, 0);
+    // Inclinación grande en portrait, no debe disparar
+    fireOrientation(40, 0);
+
+    expect(cb).not.toHaveBeenCalled();
   });
 
-  it("dispara 'paso' cuando el valor supera la pose canónica", () => {
+  it("calibra automáticamente cuando el teléfono pasa a landscape", () => {
     const cb = vi.fn();
-    cleanup = setup(cb);
-    fireBeta(130); // delta = 90-130 = -40 → paso
+    cleanup = onTilt(cb);
+
+    // Portrait inicial
+    fireOrientation(90, 0);
+    // Transición a landscape: |gamma|=90 > 60 → calibra (no dispara)
+    fireOrientation(0, -90);
+    // Ahora sí detecta tilts
+    fireOrientation(0, -50); // dGamma = -90-(-50) = -40 → paso
     expect(cb).toHaveBeenCalledWith({ up: false, down: true });
   });
 
-  it("dispara 'correcto' cuando el valor cae por debajo de la pose canónica", () => {
+  it("dispara 'correcto' cuando gamma cae por debajo del baseline", () => {
     const cb = vi.fn();
-    cleanup = setup(cb);
-    fireBeta(50); // delta = 90-50 = 40 → correcto
+    cleanup = setup(cb, 0, -90); // baseline: beta=0, gamma=-90
+    fireOrientation(0, -130);    // dGamma = -90-(-130) = 40 → up:true
     expect(cb).toHaveBeenCalledWith({ up: true, down: false });
+  });
+
+  it("dispara 'paso' cuando gamma sube por encima del baseline", () => {
+    const cb = vi.fn();
+    cleanup = setup(cb, 0, -90);
+    fireOrientation(0, -50); // dGamma = -90-(-50) = -40 → down:true
+    expect(cb).toHaveBeenCalledWith({ up: false, down: true });
   });
 
   it("requiere volver a la zona neutral antes del próximo tilt", () => {
     const cb = vi.fn();
-    cleanup = setup(cb);
-    fireBeta(130); // dispara paso
+    cleanup = setup(cb, 0, -90);
+    fireOrientation(0, -50); // dispara paso
     expect(cb).toHaveBeenCalledTimes(1);
 
-    vi.advanceTimersByTime(900); // cooldown
+    vi.advanceTimersByTime(900);
 
-    // Sigue lejos de canonical → armed sigue false, no dispara
-    fireBeta(125);
+    // Sigue lejos del baseline → no re-dispara
+    fireOrientation(0, -55);
     expect(cb).toHaveBeenCalledTimes(1);
 
-    // Vuelve cerca de canonical → re-arme
-    fireBeta(88); // |90-88| = 2 < neutralBand(14) → armed = true
-    fireBeta(130); // ahora sí dispara
+    // Vuelve cerca del baseline → re-arme
+    fireOrientation(0, -88); // |(-90)-(-88)| = 2 < 14 → neutral
+    fireOrientation(0, -50); // dispara de nuevo
     expect(cb).toHaveBeenCalledTimes(2);
   });
 
   it("respeta el cooldown entre tilts consecutivos", () => {
     const cb = vi.fn();
-    cleanup = setup(cb);
-    fireBeta(130); // dispara
+    cleanup = setup(cb, 0, -90);
+    fireOrientation(0, -50); // dispara
     expect(cb).toHaveBeenCalledTimes(1);
 
-    // Vuelve a neutral e intenta de nuevo antes del cooldown
-    fireBeta(88); // neutral → armed = true
-    fireBeta(130); // dentro del cooldown → no dispara
+    fireOrientation(0, -88); // neutral → armed
+    fireOrientation(0, -50); // cooldown activo → no dispara
     expect(cb).toHaveBeenCalledTimes(1);
 
     vi.advanceTimersByTime(900);
-    fireBeta(88); // neutral
-    fireBeta(130);
+    fireOrientation(0, -88); // neutral
+    fireOrientation(0, -50);
     expect(cb).toHaveBeenCalledTimes(2);
   });
 
   it("la función de cleanup detiene la escucha", () => {
     const cb = vi.fn();
-    cleanup = setup(cb);
+    cleanup = setup(cb, 0, -90);
     cleanup();
     cleanup = null;
-    fireBeta(50);
+    fireOrientation(0, -50);
     expect(cb).not.toHaveBeenCalled();
   });
 
-  it("ignora eventos hasta tener ambos ejes disponibles", () => {
+  it("ignora eventos sin datos de gamma", () => {
     const cb = vi.fn();
     cleanup = onTilt(cb);
-
-    // Evento sin datos — dominantAxis sigue null
     const ev = new Event("deviceorientation");
     ev.beta  = null;
     ev.gamma = null;
     window.dispatchEvent(ev);
-
-    // Primer evento válido: solo fija la referencia, no dispara
-    fireBeta(130);
+    // Primer evento válido en landscape: solo calibra, no dispara
+    fireOrientation(0, -90);
     expect(cb).not.toHaveBeenCalled();
   });
 });
