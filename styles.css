@@ -1754,11 +1754,43 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   width: 100%;
   text-align: center;
 }
-.quien-tilt-hint {
-  font-size: clamp(1.4rem, 8vmin, 4.5rem);
-  color: var(--texto-secundario);
+.quien-zona {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  border-radius: 12px;
+  transition: background 0.1s;
+}
+.quien-zona-paso     { background: rgba(239, 68,  68,  0.12); }
+.quien-zona-correcto { background: rgba(16,  185, 129, 0.12); }
+.quien-zona-paso:active     { background: rgba(239, 68,  68,  0.35); }
+.quien-zona-correcto:active { background: rgba(16,  185, 129, 0.35); }
+.quien-zona-icon {
+  font-size: clamp(2.5rem, 14vmin, 7rem);
+  line-height: 1;
+}
+.quien-zona-label {
+  font-family: 'Bebas Neue', cursive;
+  font-size: clamp(1.2rem, 7vmin, 4rem);
   letter-spacing: 0.12em;
-  font-weight: 600;
+}
+.quien-zona-paso     .quien-zona-icon,
+.quien-zona-paso     .quien-zona-label { color: var(--incorrecto); }
+.quien-zona-correcto .quien-zona-icon,
+.quien-zona-correcto .quien-zona-label { color: var(--correcto); }
+.quien-info-centro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2vmin;
+  padding: 2vmin 0;
 }
 .quien-score-live {
   font-family: 'Bebas Neue', cursive;

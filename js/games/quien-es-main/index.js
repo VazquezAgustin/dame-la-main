@@ -6,7 +6,7 @@ import { db } from "../../firebase.js";
 import {
   ref, update, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { requestMotionPermission, onTilt, lockOrientation, unlockOrientation } from "../../motion.js";
+import { lockOrientation, unlockOrientation } from "../../motion.js";
 import { playCorrect, playIncorrect, playTick } from "../../audio.js";
 
 // ── Contexto inyectado por main.js via initGame() ────────────────
@@ -19,7 +19,6 @@ const isHost      = () => _ctx.getIsHost();
 let _timerInterval  = null;
 let _tiltCleanup    = null;
 let _tiltInFlight   = false;
-let _motionGranted  = false;
 let _lastTimerTick  = -1;
 
 function _clearTimers() {
@@ -109,7 +108,7 @@ function _getActiveName(s) {
 
 // Pinta la pantalla del jugador activo de verde (correcto) o rojo (paso)
 // durante ~0.5s. La animación se reinicia removiendo la clase y forzando
-// reflow antes de re-aplicarla, así dos tilts seguidos vuelven a flashear.
+// reflow antes de re-aplicarla, así dos taps seguidos vuelven a flashear.
 function _flashScreen(kind) {
   const el = document.getElementById("quien-flash");
   if (!el) return;
@@ -168,7 +167,7 @@ export function renderReady(s) {
   const activeName = _getActiveName(s);
 
   document.getElementById("quien-ready-desc").textContent = amIActive
-    ? "Sostené el celular en horizontal sobre tu frente, con la pantalla hacia tus amigos. Inclinálo hacia adelante si adivinaste, hacia atrás si pasás."
+    ? "Sostené el celular en horizontal sobre tu frente, con la pantalla hacia tus amigos. Tocá la zona verde (abajo) si adivinaste, la roja (arriba) si pasás."
     : `${activeName} va a adivinar. Preparate para dar pistas cuando veas la pantalla.`;
 
   const btn = document.getElementById("btn-quien-begin");
@@ -203,7 +202,7 @@ function renderActive(s) {
     document.getElementById("quien-score-live").textContent = `✓ ${correct}   ✗ ${paso}`;
 
     _startActiveTimer(duration);
-    _setupTilt(s);
+    _setupTapZones();
   } else {
     _showPanel("quien-passive");
     document.getElementById("quien-passive-title").textContent =
@@ -358,12 +357,12 @@ function _startPassiveTimer(s, duration) {
   }, 300);
 }
 
-// ── Tilt ─────────────────────────────────────────────────────────
+// ── Tap zones ────────────────────────────────────────────────────
 
-function _setupTilt(s) {
+function _setupTapZones() {
   if (_tiltCleanup) return;
 
-  _tiltCleanup = onTilt(async ({ up, down }) => {
+  async function handleTap(up) {
     if (_tiltInFlight) return;
     const state = _ctx.getState();
     const round = state?.currentRound;
@@ -400,11 +399,25 @@ function _setupTilt(s) {
       await _daoRecordResult(getRoomCode(), index, famoso, result, nextIndex);
       if (isLast) await _daoTimeExpired(getRoomCode());
     } catch (e) {
-      console.error("Error recording tilt:", e);
+      console.error("Error recording tap:", e);
     } finally {
       _tiltInFlight = false;
     }
-  });
+  }
+
+  const zonaCorrecto = document.getElementById("btn-quien-correcto");
+  const zonaPaso     = document.getElementById("btn-quien-paso");
+
+  const onCorrecto = (e) => { e.preventDefault(); handleTap(true);  };
+  const onPaso     = (e) => { e.preventDefault(); handleTap(false); };
+
+  zonaCorrecto?.addEventListener("touchstart", onCorrecto, { passive: false });
+  zonaPaso    ?.addEventListener("touchstart", onPaso,     { passive: false });
+
+  _tiltCleanup = () => {
+    zonaCorrecto?.removeEventListener("touchstart", onCorrecto);
+    zonaPaso    ?.removeEventListener("touchstart", onPaso);
+  };
 }
 
 // ── Action handlers ──────────────────────────────────────────────
@@ -429,8 +442,6 @@ async function _handleBeginRound() {
   const btn = document.getElementById("btn-quien-begin");
   if (btn) btn.disabled = true;
   try {
-    const perm = await requestMotionPermission();
-    _motionGranted = perm === "granted";
     await _daoBeginRound(getRoomCode());
   } catch (e) {
     console.error(e);
@@ -509,6 +520,5 @@ export default {
 
   cleanup() {
     _clearTimers();
-    _motionGranted = false;
   },
 };
