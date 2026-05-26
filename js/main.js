@@ -375,14 +375,22 @@ async function handleKick(playerId) {
 
 function subscribeToRoom(code) {
   if (unsubscribe) unsubscribe();
+  let _nullTimer = null;
   unsubscribe = GameDAO.subscribe(code, (gameState) => {
     if (!gameState) {
-      localStorage.removeItem("roomCode");
-      localStorage.removeItem("myName");
-      setError("Sala no encontrada");
-      showScreen("screen-inicio");
+      // Firebase puede disparar null momentáneamente cuando set() reemplaza el nodo
+      // (e.g. al reiniciar partida). Esperamos antes de tratar como "sala eliminada".
+      if (_nullTimer) return;
+      _nullTimer = setTimeout(() => {
+        _nullTimer = null;
+        localStorage.removeItem("roomCode");
+        localStorage.removeItem("myName");
+        setError("Sala no encontrada");
+        showScreen("screen-inicio");
+      }, 1500);
       return;
     }
+    if (_nullTimer) { clearTimeout(_nullTimer); _nullTimer = null; }
     render(gameState);
   });
 }
