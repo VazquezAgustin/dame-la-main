@@ -17,48 +17,38 @@ export async function requestMotionPermission() {
 
 // Llama a callback({ up: bool, down: bool }) cada vez que detecta un tilt.
 //
-// Flujo:
-//   1. Espera a que |gamma| > LANDSCAPE_MIN (≈60°): el jugador llevó el
-//      teléfono de portrait a landscape (a la frente).
-//   2. Calibra con el valor REAL de beta y gamma en ese momento (no asume ±90).
-//   3. Detecta desviaciones respecto de esa pose de referencia en ambos ejes;
-//      el eje con mayor desviación absoluta es el dominante.
+// La pose de juego es siempre horizontal sobre la frente (Heads Up), así que
+// los valores de referencia son fijos y conocidos:
+//   - beta ≈ 0  (horizontal = sin inclinación frente/atrás)
+//   - gamma ≈ ±90 (teléfono girado 90° desde portrait)
 //
-// Convención: delta = baseline − valor.
-// delta > 0 → correcto (up: true).
-// delta < 0 → paso    (down: true).
+// Flujo:
+//   1. Espera a que |gamma| > 75°: el teléfono está claramente en horizontal.
+//      Mientras el jugador toca "Empezar" en portrait (gamma ≈ 0), no hace nada.
+//   2. Una vez en landscape: detecta desviaciones de beta desde 0.
+//      beta < 0 → pantalla hacia el techo → correcto (up: true)
+//      beta > 0 → pantalla hacia el piso   → paso    (down: true)
 export function onTilt(callback, thresholdDeg = 30, neutralBand = 14) {
-  const axes = {
-    beta:  { baseline: null, last: null },
-    gamma: { baseline: null, last: null },
-  };
-  let armed     = false;
-  let lastFired = null;
+  let lastBeta      = null;
+  let lastGamma     = null;
+  let landscape     = false; // true cuando el teléfono llegó a pose horizontal
+  let armed         = true;
+  let lastFired     = null;
   const COOLDOWN_MS   = 800;
-  const LANDSCAPE_MIN = 75; // |gamma| mínimo para considerar pose landscape
+  const LANDSCAPE_MIN = 75;
+  const BETA_REF      = 0; // beta en pose horizontal = 0
 
   function handler(e) {
-    if (e.beta  != null) axes.beta.last  = e.beta;
-    if (e.gamma != null) axes.gamma.last = e.gamma;
+    if (e.beta  != null) lastBeta  = e.beta;
+    if (e.gamma != null) lastGamma = e.gamma;
+    if (lastBeta === null || lastGamma === null) return;
 
-    const b = axes.beta.last, g = axes.gamma.last;
-    if (b === null || g === null) return;
-
-    // Calibrar solo cuando el teléfono esté claramente en landscape.
-    // Mientras el jugador toca "Empezar" con el teléfono en portrait,
-    // |gamma| es pequeño y este bloque devuelve sin hacer nada.
-    if (axes.beta.baseline === null) {
-      if (Math.abs(g) > LANDSCAPE_MIN) {
-        axes.beta.baseline  = b;
-        axes.gamma.baseline = g;
-        armed = true;
-      }
-      return;
+    if (!landscape) {
+      if (Math.abs(lastGamma) > LANDSCAPE_MIN) landscape = true;
+      return; // esperar hasta que el teléfono esté horizontal
     }
 
-    const dBeta  = axes.beta.baseline  - b;
-    const dGamma = axes.gamma.baseline - g;
-    const dom = Math.abs(dBeta) >= Math.abs(dGamma) ? dBeta : dGamma;
+    const dom = BETA_REF - lastBeta; // positivo = beta bajó = pantalla hacia techo
     const now = Date.now();
 
     if (Math.abs(dom) < neutralBand) { armed = true; return; }
