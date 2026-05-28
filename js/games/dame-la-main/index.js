@@ -1482,6 +1482,10 @@ export default {
         }
       }
     } else if (s.status === "finished") {
+      document.getElementById("lightning-overlay").classList.remove("visible");
+      document.getElementById("estimacion-overlay").classList.remove("visible");
+      document.getElementById("vista-tablero").style.display = "none";
+      document.getElementById("vista-ruleta").style.display  = "none";
       renderFinished(s);
     }
   },

@@ -2,7 +2,7 @@ import { pickFamosos } from "./famosos.js";
 import {
   calcRoundScore, isGameOver, nextSelectorIndex, buildQuienInitialState,
 } from "./logica.js";
-import { db } from "../../firebase.js";
+import { db, GameDAO } from "../../firebase.js";
 import {
   ref, update, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -291,11 +291,30 @@ function renderGameFinished(s) {
   const btnNuevo = document.getElementById("btn-jugar-nuevo");
   if (btnNuevo) {
     btnNuevo.style.display = isHost() ? "block" : "none";
-    btnNuevo.onclick = () => {
-      localStorage.removeItem("roomCode");
-      location.reload();
-    };
+    btnNuevo.onclick = _handleJugarNuevo;
   }
+}
+
+async function _handleJugarNuevo() {
+  if (!isHost()) return;
+  const s = _ctx.getState();
+  const players = {};
+  (s.playerOrder || []).forEach(pid => {
+    const old = s.players?.[pid];
+    if (old) players[pid] = { ...old, score: 0 };
+  });
+  await GameDAO.createRoom(getRoomCode(), {
+    createdAt:       Date.now(),
+    hostId:          myPlayerId(),
+    status:          "lobby",
+    gameType:        "quien-es-main",
+    quienConfig:     s.quienConfig || { roundsPerPlayer: 2, famososPerRound: 8, roundDuration: 60 },
+    selectorIndex:   0,
+    roundsCompleted: 0,
+    currentRound:    null,
+    players,
+    playerOrder:     s.playerOrder || [],
+  });
 }
 
 // ── Timers ───────────────────────────────────────────────────────
