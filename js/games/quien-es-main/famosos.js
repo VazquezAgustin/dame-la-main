@@ -12,6 +12,13 @@ export const FAMOSOS = [
   "The Weeknd", "Billie Eilish", "Dua Lipa", "Ariana Grande", "Miley Cyrus",
   "Michael Jackson", "Elvis Presley", "Madonna", "Jennifer Lopez", "Celia Cruz",
   "Alejandro Sanz", "Enrique Iglesias", "Julio Iglesias", "Marc Anthony", "Pitbull",
+  "Chayanne", "Ricky Martin", "Luis Miguel",
+
+  // ── Rock y leyendas musicales ─────────────────────────────────
+  "Freddie Mercury", "John Lennon", "Paul McCartney", "David Bowie",
+  "Bob Dylan", "Bob Marley", "Kurt Cobain", "Mick Jagger",
+  "Elton John", "Bono", "Axl Rose", "Jimi Hendrix", "Slash",
+  "Ludwig van Beethoven", "Wolfgang Amadeus Mozart", "Johann Sebastian Bach",
 
   // ── Fútbol ────────────────────────────────────────────────────
   "Lionel Messi", "Cristiano Ronaldo", "Kylian Mbappé", "Neymar",
@@ -24,6 +31,10 @@ export const FAMOSOS = [
   // ── Otros deportes ────────────────────────────────────────────
   "Rafael Nadal", "Carlos Alcaraz", "Novak Djokovic", "Roger Federer",
   "Pau Gasol", "Sergio García", "Jon Rahm",
+  "Serena Williams", "Michael Jordan", "LeBron James", "Kobe Bryant",
+  "Stephen Curry", "Manu Ginóbili", "Lewis Hamilton", "Max Verstappen",
+  "Fernando Alonso", "Marc Márquez", "Valentino Rossi",
+  "Mike Tyson", "Muhammad Ali", "Usain Bolt", "Michael Phelps", "Tiger Woods",
 
   // ── Streamers / YouTubers ─────────────────────────────────────
   "Ibai Llanos", "AuronPlay", "TheGrefg", "ElRubius", "Vegetta777",
@@ -35,6 +46,11 @@ export const FAMOSOS = [
   "Tom Cruise", "Leonardo DiCaprio", "Brad Pitt", "Angelina Jolie",
   "Scarlett Johansson", "Zendaya", "Ryan Reynolds", "Will Smith",
   "Meryl Streep", "Margot Robbie",
+  "Robert De Niro", "Al Pacino", "Morgan Freeman", "Samuel L. Jackson",
+  "Tom Hanks", "Johnny Depp", "Keanu Reeves", "Robert Downey Jr.",
+  "Hugh Jackman", "Denzel Washington", "Anthony Hopkins",
+  "Julia Roberts", "Nicole Kidman", "Antonio Banderas",
+  "Quentin Tarantino", "Steven Spielberg", "Christopher Nolan", "Martin Scorsese",
 
   // ── Personajes ficticios ──────────────────────────────────────
   "Harry Potter", "Hermione Granger", "Darth Vader", "Batman",
@@ -47,6 +63,11 @@ export const FAMOSOS = [
   "Napoleón Bonaparte", "Cleopatra", "Mahatma Gandhi",
   "Madre Teresa", "Nelson Mandela", "Marie Curie", "Isaac Newton",
   "Leonardo da Vinci", "Vincent van Gogh", "Frida Kahlo",
+  "Nikola Tesla", "Stephen Hawking", "Galileo Galilei",
+  "Sócrates", "Aristóteles", "Platón",
+  "Winston Churchill", "Abraham Lincoln", "John F. Kennedy",
+  "Julio César", "Cristóbal Colón", "Miguel de Cervantes",
+  "Pablo Picasso", "Salvador Dalí", "Steve Jobs",
 ];
 
 // Devuelve un array aleatorio de `count` famosos sin repetir.
