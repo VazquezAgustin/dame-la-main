@@ -2048,6 +2048,15 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   white-space: nowrap;
 }
 
+/* Escenario de dibujo (canvas + paleta). En portrait: columna (canvas arriba,
+   tools abajo, como antes). En landscape del dibujante: fila (paleta al lado). */
+.picto-stage {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  width: 100%;
+}
+
 /* Canvas */
 .picto-canvas-wrap {
   position: relative;
@@ -2095,6 +2104,59 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
 .picto-tool:active { transform: scale(0.92); }
 .picto-color { border: 2px solid rgba(255,255,255,0.2); }
 .picto-color.active { border-color: var(--texto); transform: scale(1.12); }
+
+/* ── Vista landscape del dibujante ───────────────────────────────────
+   Igual técnica que #quien-active: el viewport sigue siendo portrait (rotación
+   bloqueada) y rotamos el panel -90° para que el dibujante use el celular en
+   horizontal, con el board grande y la paleta en una columna a la izquierda.
+   El mapeo del puntero se invierte en JS (_pushPoint) para mantener la sync. */
+#picto-active.picto-landscape {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vh;
+  height: 100vw;
+  max-width: none;
+  transform-origin: 0 0;
+  transform: rotate(-90deg) translate(-100%, 0);
+  z-index: 200;
+  background: var(--fondo);
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2vmin 3vmin;
+}
+#picto-active.picto-landscape .picto-topbar { flex: 0 0 auto; }
+#picto-active.picto-landscape .picto-stage {
+  flex: 1 1 auto;
+  flex-direction: row;        /* paleta (izq.) + canvas (centro) */
+  min-height: 0;
+  align-items: stretch;
+  gap: 10px;
+}
+#picto-active.picto-landscape #picto-tools {
+  flex: 0 0 auto;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  overflow: hidden;
+}
+#picto-active.picto-landscape #picto-tools .picto-tool { width: 36px; height: 36px; }
+#picto-active.picto-landscape .picto-color.active { transform: scale(1.0); border-width: 3px; }
+#picto-active.picto-landscape .picto-canvas-wrap {
+  width: auto;
+  height: 100%;
+  aspect-ratio: 4 / 3;
+  max-width: 100%;
+  margin: 0 auto;
+}
+#picto-active.picto-landscape .picto-chat { flex: 0 0 auto; max-height: 16vw; }
+#picto-active.picto-landscape .picto-guess-form { display: none; } /* el dibujante no adivina */
 
 /* Chat de adivinanzas */
 .picto-chat {

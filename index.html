@@ -310,19 +310,22 @@
         <span class="picto-word-hint" id="picto-word-hint"></span>
         <span class="picto-drawer-badge" id="picto-drawer-badge"></span>
       </div>
-      <div class="picto-canvas-wrap" id="picto-canvas-wrap">
-        <canvas id="picto-canvas"></canvas>
-      </div>
-      <!-- Herramientas: solo visibles para el dibujante -->
-      <div class="picto-tools" id="picto-tools" style="display:none">
-        <button type="button" class="picto-tool picto-color active" data-color="#0a0a1a" style="background:#0a0a1a"></button>
-        <button type="button" class="picto-tool picto-color" data-color="#ef4444" style="background:#ef4444"></button>
-        <button type="button" class="picto-tool picto-color" data-color="#10b981" style="background:#10b981"></button>
-        <button type="button" class="picto-tool picto-color" data-color="#3b82f6" style="background:#3b82f6"></button>
-        <button type="button" class="picto-tool picto-color" data-color="#f59e0b" style="background:#f59e0b"></button>
-        <button type="button" class="picto-tool picto-color" data-color="#7c3aed" style="background:#7c3aed"></button>
-        <button type="button" class="picto-tool" id="picto-undo">↶</button>
-        <button type="button" class="picto-tool" id="picto-clear">🗑️</button>
+      <!-- Escenario de dibujo: en landscape, paleta (izq.) + canvas en fila -->
+      <div class="picto-stage" id="picto-stage">
+        <!-- Herramientas: solo visibles para el dibujante -->
+        <div class="picto-tools" id="picto-tools" style="display:none">
+          <button type="button" class="picto-tool picto-color active" data-color="#0a0a1a" style="background:#0a0a1a"></button>
+          <button type="button" class="picto-tool picto-color" data-color="#ef4444" style="background:#ef4444"></button>
+          <button type="button" class="picto-tool picto-color" data-color="#10b981" style="background:#10b981"></button>
+          <button type="button" class="picto-tool picto-color" data-color="#3b82f6" style="background:#3b82f6"></button>
+          <button type="button" class="picto-tool picto-color" data-color="#f59e0b" style="background:#f59e0b"></button>
+          <button type="button" class="picto-tool picto-color" data-color="#7c3aed" style="background:#7c3aed"></button>
+          <button type="button" class="picto-tool" id="picto-undo">↶</button>
+          <button type="button" class="picto-tool" id="picto-clear">🗑️</button>
+        </div>
+        <div class="picto-canvas-wrap" id="picto-canvas-wrap">
+          <canvas id="picto-canvas"></canvas>
+        </div>
       </div>
       <!-- Chat de adivinanzas -->
       <div class="picto-chat" id="picto-chat"></div>
