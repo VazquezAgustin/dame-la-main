@@ -1,6 +1,7 @@
 import { GameDAO, firebaseConfigurado } from "./firebase.js";
 import DameLaMainGame    from "./games/dame-la-main/index.js";
 import QuienEsMainGame   from "./games/quien-es-main/index.js";
+import PictionaryGame    from "./games/pictionary/index.js";
 import { ACTIVE_THEME }  from "./theme.config.js";
 
 // ── Temática (colores + microcopys) ───────────────────────────────
@@ -23,6 +24,7 @@ if (ACTIVE_THEME === "mundial") {
 const GAMES = {
   "dame-la-main":  DameLaMainGame,
   "quien-es-main": QuienEsMainGame,
+  "pictionary":    PictionaryGame,
 };
 function getGame(s) {
   return GAMES[s?.gameType ?? "dame-la-main"] ?? DameLaMainGame;
@@ -311,6 +313,10 @@ async function handleCreateRoom() {
       buildConfig.roundsPerPlayer = parseInt(document.getElementById("quien-rounds-slider")?.value || "2", 10);
       buildConfig.famososPerRound = parseInt(document.getElementById("quien-famosos-slider")?.value || "8", 10);
       buildConfig.roundDuration   = parseInt(document.getElementById("quien-duration-slider")?.value || "60", 10);
+    } else if (selectedGameType === "pictionary") {
+      buildConfig.roundsPerPlayer = parseInt(document.getElementById("picto-rounds-slider")?.value || "2", 10);
+      buildConfig.drawSeconds     = parseInt(document.getElementById("picto-duration-slider")?.value || "80", 10);
+      buildConfig.categoria       = document.querySelector("#picto-cat-selector .picto-cat-option.active")?.dataset.cat || "mixto";
     }
 
     const gameState   = game.buildInitialState(buildConfig);
@@ -508,6 +514,8 @@ document.querySelectorAll(".game-option").forEach(opt => {
       selected === "dame-la-main" ? "block" : "none";
     document.getElementById("quien-es-main-options").style.display =
       selected === "quien-es-main" ? "block" : "none";
+    document.getElementById("pictionary-options").style.display =
+      selected === "pictionary" ? "block" : "none";
   });
 });
 
