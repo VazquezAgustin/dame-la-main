@@ -80,7 +80,7 @@
           </div>
         </div>
         <div class="form-group">
-          <label>Longitud de la partida (30 preguntas)</label>
+          <label>Longitud de la partida</label>
           <div class="length-sliders" id="length-sliders">
             <div class="length-slider-row" data-slot="base">
               <span class="length-slider-label">📋 Modo base</span>
@@ -88,16 +88,17 @@
               <span class="length-slider-value">18</span>
             </div>
             <div class="length-slider-row" data-slot="lightning">
-              <span class="length-slider-label">⚡ Lightning</span>
-              <input type="range" min="0" max="24" value="6" class="length-slider-input">
-              <span class="length-slider-value">6</span>
+              <span class="length-slider-label">⚡ Lightning (por jugador)</span>
+              <input type="range" min="0" max="5" value="2" class="length-slider-input">
+              <span class="length-slider-value">2</span>
             </div>
             <div class="length-slider-row" data-slot="estimacion">
               <span class="length-slider-label">🎯 Estimación</span>
-              <input type="range" min="0" max="24" value="6" class="length-slider-input">
+              <input type="range" min="0" max="12" value="6" class="length-slider-input">
               <span class="length-slider-value">6</span>
             </div>
           </div>
+          <span id="length-total-hint" class="length-total-hint"></span>
         </div>
       </div>
 
