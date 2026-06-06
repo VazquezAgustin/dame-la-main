@@ -34,24 +34,23 @@ export const PALABRAS_SIMPLES = [
 
 // ── Películas y series (populares, conocidas en España/Argentina) ──
 export const PELICULAS_Y_SERIES = [
-  // Películas
-  "El Padrino", "Titanic", "Matrix", "Frozen", "Toy Story",
-  "El Rey León", "Jurassic Park", "Avatar", "Shrek", "Coco",
-  "Buscando a Nemo", "Harry Potter", "El Señor de los Anillos", "Star Wars",
-  "Volver al Futuro", "Forrest Gump", "Rocky", "Tiburón", "E.T.",
-  "Piratas del Caribe", "Spider-Man", "Batman", "Los Vengadores",
-  "El Resplandor", "Pesadilla antes de Navidad", "La La Land",
-  "Parásitos", "Joker", "Gladiador", "Encanto", "Up",
-  "Intensamente", "Monsters Inc", "Cars", "Ratatouille", "Wall-E",
-  "El Laberinto del Fauno", "Relatos Salvajes", "El Secreto de sus Ojos",
-  // Series
-  "La Casa de Papel", "Stranger Things", "Breaking Bad", "Game of Thrones",
-  "The Office", "Friends", "Los Simpsons", "El Chavo del Ocho",
-  "Rick y Morty", "The Mandalorian", "Wednesday", "Dark",
-  "Élite", "Narcos", "Peaky Blinders", "Black Mirror",
-  "Los Soprano", "Lost", "The Walking Dead", "El Marginal",
-  "Casados con Hijos", "Chiquititas", "Patito Feo", "Floricienta",
-  "Merlí", "La Que Se Avecina", "Aquí no hay quien viva",
+  // Animadas / infantiles (icónicas y muy fáciles de dibujar)
+  "Frozen", "Toy Story", "El Rey León", "Shrek", "Coco",
+  "Buscando a Nemo", "Up", "Cars", "Ratatouille", "Los Increíbles",
+  "Los Minions", "La Sirenita", "La Bella y la Bestia", "Aladdín", "Blancanieves",
+  "El Libro de la Selva", "Madagascar", "La Era de Hielo", "Kung Fu Panda", "Enredados",
+  "Encanto", "Bambi", "Pinocho", "Dumbo", "101 Dálmatas",
+  "Wall-E", "Monsters Inc", "Peter Pan", "El Grinch",
+  // Películas (taquillazos globales)
+  "Titanic", "Star Wars", "Harry Potter", "El Señor de los Anillos", "Jurassic Park",
+  "Spider-Man", "Batman", "Superman", "Piratas del Caribe", "Avatar",
+  "Los Vengadores", "King Kong", "Tiburón", "E.T.", "Volver al Futuro",
+  "Rocky", "Indiana Jones", "Terminator", "La Máscara", "Forrest Gump",
+  "El Mago de Oz", "Cazafantasmas",
+  // Series (súper masivas)
+  "Los Simpsons", "Friends", "La Casa de Papel", "Stranger Things", "Juego de Tronos",
+  "Breaking Bad", "The Office", "El Chavo del Ocho", "Bob Esponja", "Pokémon",
+  "Dragon Ball", "Peppa Pig",
 ];
 
 // Devuelve `count` palabras al azar sin repetir, según la categoría:
