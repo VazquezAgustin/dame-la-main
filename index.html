@@ -55,6 +55,11 @@
             <span class="game-name">¿Quién es Main?</span>
             <span class="game-desc">Adivina el famoso</span>
           </button>
+          <button type="button" class="game-option" data-game="pictionary">
+            <span class="game-icon">🎨</span>
+            <span class="game-name">Pictionary</span>
+            <span class="game-desc">Dibujá y adiviná</span>
+          </button>
         </div>
       </div>
 
@@ -116,6 +121,31 @@
           <div class="length-slider-row">
             <input type="range" min="30" max="120" value="60" step="10" id="quien-duration-slider" class="length-slider-input">
             <span id="quien-duration-value" class="length-slider-value">60s</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="pictionary-options" style="display:none">
+        <div class="form-group">
+          <label>Rondas por jugador</label>
+          <div class="length-slider-row">
+            <input type="range" min="1" max="4" value="2" id="picto-rounds-slider" class="length-slider-input">
+            <span id="picto-rounds-value" class="length-slider-value">2</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Tiempo para dibujar</label>
+          <div class="length-slider-row">
+            <input type="range" min="40" max="150" value="80" step="10" id="picto-duration-slider" class="length-slider-input">
+            <span id="picto-duration-value" class="length-slider-value">80s</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Categoría de palabras</label>
+          <div class="game-selector" id="picto-cat-selector">
+            <button type="button" class="picto-cat-option active" data-cat="mixto">Mixto</button>
+            <button type="button" class="picto-cat-option" data-cat="simples">Simples</button>
+            <button type="button" class="picto-cat-option" data-cat="pelis">Pelis y series</button>
           </div>
         </div>
       </div>
@@ -250,6 +280,64 @@
       <div class="quien-result-list" id="quien-result-list"></div>
       <button class="btn btn-primario btn-prominente" id="btn-quien-siguiente" style="display:none">Siguiente turno ▶</button>
       <p class="esperando-msg" id="quien-wait-siguiente" style="display:none">Esperando al host...</p>
+    </div>
+
+  </div>
+
+  <!-- Pictionary -->
+  <div id="vista-pictionary" style="display:none">
+
+    <!-- Entre rondas (host inicia) -->
+    <div id="picto-between" class="picto-panel">
+      <div class="quien-ronda-info" id="picto-ronda-info"></div>
+      <div class="quien-next-player" id="picto-next-player"></div>
+      <button class="btn btn-primario btn-prominente" id="btn-picto-start-round">🎨 Comenzar ronda</button>
+      <p class="esperando-msg" id="picto-wait-host" style="display:none">Esperando que el host inicie...</p>
+    </div>
+
+    <!-- Elección de palabra (solo el dibujante) -->
+    <div id="picto-choose" class="picto-panel" style="display:none">
+      <div class="quien-ready-title" id="picto-choose-title">Elegí qué dibujar</div>
+      <p class="esperando-msg" id="picto-choose-desc" style="display:none"></p>
+      <div class="picto-word-choices" id="picto-word-choices"></div>
+    </div>
+
+    <!-- Ronda activa: canvas + chat (lo ven todos) -->
+    <div id="picto-active" class="picto-panel-wide" style="display:none">
+      <div class="picto-topbar">
+        <span class="picto-timer" id="picto-timer">—</span>
+        <span class="picto-word-hint" id="picto-word-hint"></span>
+        <span class="picto-drawer-badge" id="picto-drawer-badge"></span>
+      </div>
+      <div class="picto-canvas-wrap" id="picto-canvas-wrap">
+        <canvas id="picto-canvas"></canvas>
+      </div>
+      <!-- Herramientas: solo visibles para el dibujante -->
+      <div class="picto-tools" id="picto-tools" style="display:none">
+        <button type="button" class="picto-tool picto-color active" data-color="#0a0a1a" style="background:#0a0a1a"></button>
+        <button type="button" class="picto-tool picto-color" data-color="#ef4444" style="background:#ef4444"></button>
+        <button type="button" class="picto-tool picto-color" data-color="#10b981" style="background:#10b981"></button>
+        <button type="button" class="picto-tool picto-color" data-color="#3b82f6" style="background:#3b82f6"></button>
+        <button type="button" class="picto-tool picto-color" data-color="#f59e0b" style="background:#f59e0b"></button>
+        <button type="button" class="picto-tool picto-color" data-color="#7c3aed" style="background:#7c3aed"></button>
+        <button type="button" class="picto-tool" id="picto-undo">↶</button>
+        <button type="button" class="picto-tool" id="picto-clear">🗑️</button>
+      </div>
+      <!-- Chat de adivinanzas -->
+      <div class="picto-chat" id="picto-chat"></div>
+      <form class="picto-guess-form" id="picto-guess-form" style="display:none">
+        <input type="text" id="picto-guess-input" placeholder="Escribí tu palabra..." maxlength="40" autocomplete="off">
+        <button type="submit" class="btn btn-primario" id="picto-guess-send">Enviar</button>
+      </form>
+    </div>
+
+    <!-- Resultado de la ronda (todos) -->
+    <div id="picto-round-result" class="picto-panel" style="display:none">
+      <div class="quien-result-title">¡Ronda terminada!</div>
+      <div class="picto-result-word" id="picto-result-word"></div>
+      <div class="quien-result-list" id="picto-result-list"></div>
+      <button class="btn btn-primario btn-prominente" id="btn-picto-siguiente" style="display:none">Siguiente turno ▶</button>
+      <p class="esperando-msg" id="picto-wait-siguiente" style="display:none">Esperando al host...</p>
     </div>
 
   </div>
