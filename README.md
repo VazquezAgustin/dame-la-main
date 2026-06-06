@@ -92,12 +92,38 @@ Click en **Publicar**.
 
 ---
 
+## Temática (mundialista ⚽ / clásica)
+
+El juego trae dos temáticas que conviven y se alternan con **un solo flag**:
+
+- `"mundial"` — temática mundialista (fútbol / Copa del Mundo), paleta **celeste y blanco**.
+- `"classic"` — temática original (paleta violeta/dorado, banco de preguntas argentino).
+
+Para cambiar de una a otra, editá una sola línea en **`js/theme.config.js`**:
+
+```javascript
+export const ACTIVE_THEME = "mundial"; // "mundial" | "classic"
+```
+
+> **Rollback post-Mundial:** poné `"classic"` y listo — vuelven los colores y las preguntas
+> originales. La temática clásica queda preservada intacta en `js/preguntas.classic.js`.
+
+El flag controla:
+- **Colores** (`styles.css`, bloque `[data-theme="mundial"]`, aplicado por `js/main.js`).
+- **Banco de preguntas** (`js/preguntas.js` selecciona entre `preguntas.classic.js` y `preguntas.mundial.js`).
+- **Microcopys** (subtítulo, texto del buzzer, descripción del juego).
+
+---
+
 ## Personalizar preguntas
 
-Editá `js/preguntas.js`. Hay dos pools:
+Las preguntas viven en dos bancos según la temática: `js/preguntas.classic.js` y
+`js/preguntas.mundial.js`. Editá el que corresponda a la temática activa (`js/theme.config.js`).
+El resto del juego importa siempre desde `js/preguntas.js` (selector). Cada banco exporta:
 
 - **`QUESTIONS`** — preguntas del tablero principal. Cada categoría tiene exactamente 5 preguntas (valores 200, 400, 600, 800, 1000).
 - **`LIGHTNING_QUESTIONS`** — preguntas del modo relámpago (respuesta rápida, sin valor fijo).
+- **`ESTIMATION_QUESTIONS`** — preguntas de estimación (respuesta numérica).
 
 Formato del tablero:
 ```javascript
