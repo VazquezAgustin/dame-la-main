@@ -1,6 +1,23 @@
 import { GameDAO, firebaseConfigurado } from "./firebase.js";
 import DameLaMainGame    from "./games/dame-la-main/index.js";
 import QuienEsMainGame   from "./games/quien-es-main/index.js";
+import { ACTIVE_THEME }  from "./theme.config.js";
+
+// ── Temática (colores + microcopys) ───────────────────────────────
+// Un solo flag (js/theme.config.js) controla todo. Rollback = "classic".
+document.documentElement.dataset.theme = ACTIVE_THEME;
+{
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = ACTIVE_THEME === "mundial" ? "#1f86d0" : "#7c3aed";
+}
+if (ACTIVE_THEME === "mundial") {
+  const sub = document.querySelector(".subtitulo");
+  if (sub) sub.textContent = "La trivia del Mundial ⚽";
+  const buzz = document.getElementById("btn-buzzer");
+  if (buzz) buzz.textContent = "⚽ ¡PULSA!";
+  const desc = document.querySelector('.game-option[data-game="dame-la-main"] .game-desc');
+  if (desc) desc.textContent = "Trivia mundialista";
+}
 
 // ── Registro de juegos disponibles ────────────────────────────────
 const GAMES = {

@@ -2,7 +2,9 @@
 :root {
   --fondo: #0a0a1a;
   --primario: #7c3aed;
+  --primario-rgb: 124, 58, 237; /* mismo tono que --primario, para rgba() de glows */
   --primario-glow: #a855f7;
+  --primario-glow-rgb: 168, 85, 247; /* mismo tono que --primario-glow, para rgba() */
   --acento: #f59e0b;
   --correcto: #10b981;
   --incorrecto: #ef4444;
@@ -17,6 +19,27 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ═══ TEMÁTICA MUNDIALISTA (celeste y blanco) ══════════════════
+   Se activa con <html data-theme="mundial"> (lo setea js/main.js
+   según js/theme.config.js). Para el rollback post-Mundial basta
+   con poner ACTIVE_THEME = "classic": este bloque deja de aplicar
+   y vuelve la paleta violeta original. */
+[data-theme="mundial"] {
+  --fondo: #08131f;            /* noche de estadio (navy profundo) */
+  --primario: #1f86d0;         /* celeste */
+  --primario-rgb: 31, 134, 208;
+  --primario-glow: #7cc4f2;    /* celeste claro */
+  --primario-glow-rgb: 124, 196, 242;
+  --acento: #f5c518;           /* dorado trofeo */
+  --buzzer: #1f86d0;
+  --buzzer-active: #135f97;
+  --celda-normal: #0f2c47;
+  --celda-hover: #17436b;
+  --celda-jugada: #0a1828;
+  --texto: #f8fafc;
+  --texto-secundario: #9fb6cc;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -49,7 +72,7 @@ body {
   font-family: 'Bebas Neue', cursive;
   font-size: clamp(3.5rem, 14vw, 7rem);
   color: var(--texto);
-  text-shadow: 0 0 40px var(--primario-glow), 0 0 80px rgba(124,58,237,0.4);
+  text-shadow: 0 0 40px var(--primario-glow), 0 0 80px rgba(var(--primario-rgb),0.4);
   animation: entrada 0.8s ease-out;
   line-height: 1;
 }
@@ -89,11 +112,11 @@ body {
 .btn-primario {
   background: var(--primario);
   color: white;
-  box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+  box-shadow: 0 4px 20px rgba(var(--primario-rgb),0.4);
 }
 .btn-primario:hover:not(:disabled) {
   background: var(--primario-glow);
-  box-shadow: 0 4px 30px rgba(168,85,247,0.6);
+  box-shadow: 0 4px 30px rgba(var(--primario-glow-rgb),0.6);
 }
 
 .btn-secundario {
@@ -101,7 +124,7 @@ body {
   color: var(--texto);
   border: 2px solid var(--primario);
 }
-.btn-secundario:hover:not(:disabled) { background: rgba(124,58,237,0.15); }
+.btn-secundario:hover:not(:disabled) { background: rgba(var(--primario-rgb),0.15); }
 
 .btn-correcto {
   background: var(--correcto);
@@ -168,7 +191,7 @@ body {
 input[type="text"] {
   padding: 12px 14px;
   background: rgba(255,255,255,0.05);
-  border: 2px solid rgba(124,58,237,0.3);
+  border: 2px solid rgba(var(--primario-rgb),0.3);
   border-radius: 10px;
   color: var(--texto);
   font-size: 1rem;
@@ -191,7 +214,7 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   flex: 1;
   padding: 10px;
   background: transparent;
-  border: 2px solid rgba(124,58,237,0.3);
+  border: 2px solid rgba(var(--primario-rgb),0.3);
   border-radius: 8px;
   color: var(--texto-secundario);
   font-family: 'Inter', sans-serif;
@@ -269,7 +292,7 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   gap: 12px;
   padding: 12px 14px;
   background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(124,58,237,0.2);
+  border: 1px solid rgba(var(--primario-rgb),0.2);
   border-radius: 10px;
   animation: slide-in 0.3s ease-out;
 }
@@ -300,8 +323,8 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
 .turno-indicador {
   text-align: center;
   padding: 10px 14px;
-  background: rgba(124,58,237,0.1);
-  border: 1px solid rgba(124,58,237,0.25);
+  background: rgba(var(--primario-rgb),0.1);
+  border: 1px solid rgba(var(--primario-rgb),0.25);
   border-radius: 10px;
   font-size: 0.88rem;
 }
@@ -344,11 +367,11 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   color: var(--acento);
   line-height: 1;
 }
-.celda.clickeable { cursor: pointer; border-color: rgba(124,58,237,0.25); opacity: 1; }
+.celda.clickeable { cursor: pointer; border-color: rgba(var(--primario-rgb),0.25); opacity: 1; }
 .celda.clickeable:hover {
   background: var(--celda-hover);
   transform: scale(1.06);
-  box-shadow: 0 4px 20px rgba(124,58,237,0.35);
+  box-shadow: 0 4px 20px rgba(var(--primario-rgb),0.35);
   border-color: var(--primario-glow);
 }
 .celda.jugada {
@@ -371,18 +394,18 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   gap: 4px;
   padding: 12px 8px;
   background: rgba(255,255,255,0.04);
-  border: 2px solid rgba(124,58,237,0.3);
+  border: 2px solid rgba(var(--primario-rgb),0.3);
   border-radius: 10px;
   color: var(--texto);
   font-family: 'Inter', sans-serif;
   cursor: pointer;
   transition: all 0.18s;
 }
-.mode-option:hover { background: rgba(124,58,237,0.12); }
+.mode-option:hover { background: rgba(var(--primario-rgb),0.12); }
 .mode-option.active {
-  background: rgba(124,58,237,0.22);
+  background: rgba(var(--primario-rgb),0.22);
   border-color: var(--primario-glow);
-  box-shadow: 0 0 0 1px var(--primario-glow), 0 4px 20px rgba(168,85,247,0.25);
+  box-shadow: 0 0 0 1px var(--primario-glow), 0 4px 20px rgba(var(--primario-glow-rgb),0.25);
 }
 .mode-option .mode-icon  { font-size: 1.5rem; }
 .mode-option .mode-name  { font-weight: 700; font-size: 0.95rem; }
@@ -425,16 +448,16 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   width: min(320px, 88vw);
   height: min(320px, 88vw);
   margin: 8px auto 4px;
-  filter: drop-shadow(0 8px 30px rgba(124,58,237,0.35));
+  filter: drop-shadow(0 8px 30px rgba(var(--primario-rgb),0.35));
   transition: filter 0.3s;
 }
 .ruleta-stage.windup {
-  filter: drop-shadow(0 8px 30px rgba(124,58,237,0.55))
-          drop-shadow(0 0 20px rgba(168,85,247,0.6));
+  filter: drop-shadow(0 8px 30px rgba(var(--primario-rgb),0.55))
+          drop-shadow(0 0 20px rgba(var(--primario-glow-rgb),0.6));
   animation: windup-wobble 0.5s cubic-bezier(0.36, 1.6, 0.36, 1);
 }
 .ruleta-stage.spinning {
-  filter: drop-shadow(0 8px 40px rgba(168,85,247,0.7))
+  filter: drop-shadow(0 8px 40px rgba(var(--primario-glow-rgb),0.7))
           drop-shadow(0 0 24px rgba(245,158,11,0.55));
   animation: spinning-glow 0.45s ease-in-out infinite alternate;
 }
@@ -452,7 +475,7 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
 }
 @keyframes spinning-glow {
   from { box-shadow: none; }
-  to   { box-shadow: 0 0 0 4px rgba(168,85,247,0.15), 0 0 32px rgba(245,158,11,0.3); }
+  to   { box-shadow: 0 0 0 4px rgba(var(--primario-glow-rgb),0.15), 0 0 32px rgba(245,158,11,0.3); }
 }
 @keyframes bonus-glow {
   from { filter: drop-shadow(0 8px 40px rgba(245,158,11,0.7)); }
@@ -588,10 +611,10 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   pointer-events: none;
   opacity: 0;
   padding: 14px 22px;
-  background: linear-gradient(135deg, #1e1b4b, #312e81);
+  background: linear-gradient(135deg, var(--celda-normal), var(--celda-hover));
   border: 2px solid var(--primario-glow);
   border-radius: 14px;
-  box-shadow: 0 0 30px rgba(168,85,247,0.6), 0 6px 20px rgba(0,0,0,0.5);
+  box-shadow: 0 0 30px rgba(var(--primario-glow-rgb),0.6), 0 6px 20px rgba(0,0,0,0.5);
   text-align: center;
   min-width: 60%;
   max-width: 88%;
@@ -803,7 +826,7 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
 .respuesta-box {
   display: none;
   padding: 18px;
-  background: rgba(124,58,237,0.08);
+  background: rgba(var(--primario-rgb),0.08);
   border: 2px solid var(--primario);
   border-radius: 14px;
   text-align: center;
@@ -1000,8 +1023,8 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   align-items: center;
   gap: 10px;
   padding: 8px 11px;
-  background: rgba(124, 58, 237, 0.12);
-  border: 1px solid rgba(124, 58, 237, 0.35);
+  background: rgba(var(--primario-rgb), 0.12);
+  border: 1px solid rgba(var(--primario-rgb), 0.35);
   border-radius: 8px;
   margin-bottom: 4px;
 }
@@ -1154,8 +1177,8 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes pulse-buzzer {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0.7); }
-  50%       { box-shadow: 0 0 0 22px rgba(124,58,237,0); transform: scale(1.03); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--primario-rgb),0.7); }
+  50%       { box-shadow: 0 0 0 22px rgba(var(--primario-rgb),0); transform: scale(1.03); }
 }
 @keyframes flash-correct {
   0%, 100% { background: transparent; }
@@ -1675,10 +1698,10 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   transition: border-color 0.2s, background 0.2s;
   color: var(--texto);
 }
-.game-option:hover { border-color: rgba(124,58,237,0.5); }
+.game-option:hover { border-color: rgba(var(--primario-rgb),0.5); }
 .game-option.active {
   border-color: var(--primario);
-  background: rgba(124,58,237,0.15);
+  background: rgba(var(--primario-rgb),0.15);
 }
 .game-option .game-icon { font-size: 1.8rem; line-height: 1; }
 .game-option .game-name {
