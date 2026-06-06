@@ -9,4 +9,4 @@
 // 🔁 ROLLBACK POST-MUNDIAL: cambiá esta única línea a "classic" y listo.
 // La temática clásica queda preservada intacta en js/preguntas.classic.js.
 // ═══════════════════════════════════════════════════════════════
-export const ACTIVE_THEME = "mundial"; // "mundial" | "classic"
+export const ACTIVE_THEME = "classic"; // "mundial" | "classic"
