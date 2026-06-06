@@ -9,6 +9,7 @@ import {
   ref, update, serverTimestamp, runTransaction,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { playCorrect, playIncorrect, playTick } from "../../audio.js";
+import { lockOrientation, unlockOrientation } from "../../motion.js";
 
 // ── Contexto inyectado por main.js via initGame() ────────────────
 let _ctx = null;
@@ -34,6 +35,12 @@ let _nextSeq = 0;               // contador local de trazos (el dibujante es ún
 let _flushTimer = null;
 const FLUSH_MS = 120;
 
+// Vista landscape del dibujante: el panel se rota -90° (técnica de "Quien soy")
+// para que dibuje con el celular en horizontal. Solo afecta lo VISUAL: el mapeo
+// del puntero se invierte en _pushPoint para que los trazos se guarden en el
+// marco canónico que ven los adivinadores (en portrait).
+let _drawerLandscape = false;
+
 // Cursores del renderer incremental: cuántos puntos de cada trazo ya pinté.
 let _renderedCounts = {};
 let _renderedClearAt = -1;
@@ -43,6 +50,20 @@ function _clearTimers() {
   _stopFlush();
   _lastTimerTick = -1;
   _finishInFlight = false;
+  // Salir de la fase de dibujo (entre-rondas, elección, resultado, cleanup):
+  // desactivar la vista landscape y liberar la orientación.
+  _setDrawerLandscape(false);
+}
+
+// Activa/desactiva la vista landscape rotada del dibujante. Devuelve true si
+// el estado cambió (para forzar re-setup del canvas).
+function _setDrawerLandscape(on) {
+  if (on === _drawerLandscape) return false;
+  _drawerLandscape = on;
+  document.getElementById("picto-active")?.classList.toggle("picto-landscape", on);
+  if (on) lockOrientation("portrait");
+  else unlockOrientation();
+  return true;
 }
 
 // ── DAO inline — operaciones Firebase específicas de Pictionary ──
@@ -173,10 +194,11 @@ function _setupCanvas() {
   _canvas = document.getElementById("picto-canvas");
   const wrap = document.getElementById("picto-canvas-wrap");
   if (!_canvas || !wrap) return;
-  const rect = wrap.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  _cssW = rect.width || 320;
-  _cssH = rect.height || 240;
+  // offsetWidth/Height son independientes de transform (CSS rotate): dan el
+  // tamaño local correcto tanto en la vista landscape rotada como en portrait.
+  _cssW = _canvas.offsetWidth  || 320;
+  _cssH = _canvas.offsetHeight || 240;
   _canvas.width = Math.round(_cssW * dpr);
   _canvas.height = Math.round(_cssH * dpr);
   _cctx = _canvas.getContext("2d");
@@ -263,11 +285,35 @@ function _onUp() {
 function _pushPoint(e, drawLocal) {
   if (!_canvas) return;
   const rect = _canvas.getBoundingClientRect();
-  const nx = (e.clientX - rect.left) / _cssW;
-  const ny = (e.clientY - rect.top) / _cssW;   // width-based en ambos ejes
+  // En la vista landscape el canvas está rotado -90° (rotate(-90deg) con
+  // transform-origin 0 0). Invertimos el mapeo viewport→local para que los
+  // trazos se guarden en el marco canónico (mismo que ven los adivinadores).
+  let lx, ly;
+  if (_drawerLandscape) {
+    lx = rect.bottom - e.clientY;   // 0.._cssW
+    ly = e.clientX  - rect.left;    // 0.._cssH
+  } else {
+    lx = e.clientX - rect.left;
+    ly = e.clientY - rect.top;
+  }
+  const nx = lx / _cssW;
+  const ny = ly / _cssW;            // width-based en ambos ejes (canónico)
   const n = _curPts.length;
   _curPts.push(Math.round(nx * 1e4) / 1e4, Math.round(ny * 1e4) / 1e4);
   if (drawLocal && n >= 2) _drawSegment(_curPts[n - 2], _curPts[n - 1], nx, ny, _curColor, _curWidth);
+}
+
+let _resizeRaf = 0;
+function _handleViewportChange() {
+  if (!_canvasReady) return;
+  const round = _ctx?.getState()?.currentRound;
+  if (!round || round.phase !== "drawing") return;
+  if (_resizeRaf) cancelAnimationFrame(_resizeRaf);
+  _resizeRaf = requestAnimationFrame(() => {
+    _resizeRaf = 0;
+    _setupCanvas();                    // recalcula _cssW/_cssH + limpia + resetea cursores
+    _renderStrokesIncremental(round);  // repinta todos los trazos desde cero
+  });
 }
 
 function _startFlush() {
@@ -368,6 +414,10 @@ export function renderDrawing(s) {
   const round = s.currentRound;
   const amDrawer = round.drawerId === myPlayerId();
   const meGuessed = !!round.guessed?.[myPlayerId()];
+
+  // Solo el dibujante ve la vista landscape. Si cambió, re-setear el canvas
+  // (cambian las dimensiones) antes de medir.
+  if (_setDrawerLandscape(amDrawer)) _canvasReady = false;
 
   if (!_canvasReady) {
     _setupCanvas();
@@ -681,6 +731,11 @@ export default {
       window.addEventListener("pointerup", _onUp);
       window.addEventListener("pointercancel", _onUp);
     }
+
+    // Al cambiar el tamaño/orientación del viewport, re-setear el canvas
+    // (recalcula dimensiones) y repintar todos los trazos desde cero.
+    window.addEventListener("resize", _handleViewportChange);
+    window.addEventListener("orientationchange", _handleViewportChange);
   },
 
   buildInitialState(config) {
