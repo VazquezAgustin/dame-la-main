@@ -4,7 +4,7 @@ import {
 } from "../../preguntas.js";
 import {
   generateRoomCode, isBoardComplete, countAnsweredCells, esc, getQuestion,
-  categoryHasUnplayed, availableCategories, rebalanceLengths as rebalanceLengthsFn,
+  categoryHasUnplayed, availableCategories,
 } from "../../logica.js";
 import {
   playBuzzer, playCorrect, playIncorrect, playEstimacion, playLightning,
@@ -60,35 +60,43 @@ let _lightningTriggered  = false;
 let _estimacionTriggered = false;
 
 // ── Sliders de longitud ───────────────────────────────────────────
-const TOTAL_LENGTH  = 30;
+// Cada slider es independiente (sin rebalanceo). Lightning se mide en
+// "preguntas por jugador" (0 = desactivado, o 2..5); base y estimación son
+// totales. El total real de la partida es dinámico porque lightning escala
+// con la cantidad de jugadores (recién conocida al disparar el modo).
 const LENGTH_BOUNDS = {
   base:       { min: 6,  max: 30 },
-  lightning:  { min: 0,  max: 24 },
-  estimacion: { min: 0,  max: 24 },
+  lightning:  { min: 0,  max: 5  },
+  estimacion: { min: 0,  max: 12 },
 };
-let _lengthState = { base: 18, lightning: 6, estimacion: 6 };
+let _lengthState = { base: 18, lightning: 2, estimacion: 6 };
 
-function _readLengthSliders() {
-  const rows = document.querySelectorAll("#length-sliders .length-slider-row");
-  const out  = {};
-  rows.forEach(row => {
-    out[row.dataset.slot] = parseInt(row.querySelector(".length-slider-input").value, 10);
-  });
-  return out;
+// Aplica el cambio de un slider sin rebalancear los demás. Para lightning,
+// "snapea" el valor 1 a 2 (mínimo válido cuando está activo).
+function _updateLengthSlider(slot, rawValue) {
+  const b   = LENGTH_BOUNDS[slot] || { min: 0, max: 99 };
+  let value = Math.max(b.min, Math.min(b.max, rawValue));
+  if (slot === "lightning" && value === 1) value = 2;
+  _lengthState[slot] = value;
+
+  const row = document.querySelector(`[data-slot="${slot}"]`);
+  if (row) {
+    row.querySelector(".length-slider-input").value = value;
+    row.querySelector(".length-slider-value").textContent = value;
+  }
+  _updateLengthHint();
 }
 
-function _writeLengthSliders(values) {
-  Object.entries(values).forEach(([slot, val]) => {
-    const row = document.querySelector(`[data-slot="${slot}"]`);
-    if (!row) return;
-    row.querySelector(".length-slider-input").value = val;
-    row.querySelector(".length-slider-value").textContent = val;
-  });
-}
-
-function _rebalanceLengths(slot, newValue) {
-  _lengthState = rebalanceLengthsFn(_lengthState, LENGTH_BOUNDS, slot, newValue);
-  _writeLengthSliders(_lengthState);
+// Muestra el desglose de la longitud (el total es dinámico: lightning depende
+// de la cantidad de jugadores, desconocida al crear la sala).
+function _updateLengthHint() {
+  const hint = document.getElementById("length-total-hint");
+  if (!hint) return;
+  const { base, estimacion, lightning } = _lengthState;
+  const partes = [`📋 ${base} tablero`];
+  if (estimacion > 0) partes.push(`🎯 ${estimacion} estimación`);
+  partes.push(lightning > 0 ? `⚡ ${lightning}/jugador` : `⚡ off`);
+  hint.textContent = partes.join(" · ");
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -484,6 +492,7 @@ function renderLightning(s) {
   const playerCount = order.length;
   const playerIndex = lm.currentSlot % playerCount;
   const round       = Math.floor(lm.currentSlot / playerCount) + 1;
+  const perPlayer   = lm.perPlayer || 2;
   const currentPId  = order[playerIndex];
   const pName       = esc(s.players?.[currentPId]?.name || "?");
   const isMyTurnLM  = currentPId === myPlayerId();
@@ -498,7 +507,7 @@ function renderLightning(s) {
       <div class="lightning-announcing">
         <div class="lightning-big-title">⚡<br>MODO<br>RELÁMPAGO</div>
         <p class="lightning-desc">
-          Cada jugador responde <strong>2 preguntas</strong>.<br>
+          Cada jugador responde <strong>${perPlayer} ${perPlayer === 1 ? "pregunta" : "preguntas"}</strong>.<br>
           <strong>10 segundos</strong> por pregunta.<br>
           Correcto: <strong>+200 pts</strong> · Incorrecto: sin penalización
         </p>
@@ -513,7 +522,7 @@ function renderLightning(s) {
       <div class="lightning-player-turn ${isMyTurnLM ? "mi-turno" : ""}">
         ${isMyTurnLM ? "¡Es tu turno!" : pName}
       </div>
-      <div class="lightning-round-badge">Ronda ${round}/2 · Pregunta ${lm.currentSlot + 1}/${lm.totalSlots}</div>
+      <div class="lightning-round-badge">Ronda ${round}/${perPlayer} · Pregunta ${lm.currentSlot + 1}/${lm.totalSlots}</div>
       <div class="lightning-timer-row">
         <div class="lightning-timer-circle" id="lightning-timer-circle">
           <span class="lightning-timer-num" id="lightning-timer-num">10</span>
@@ -550,7 +559,7 @@ function renderLightning(s) {
     const color  = result?.correct ? "var(--correcto)" : "var(--texto-secundario)";
     contentEl.innerHTML = `
       <div class="lightning-player-turn ${isMyTurnLM ? "mi-turno" : ""}">${pName}</div>
-      <div class="lightning-round-badge">Ronda ${round}/2 · Pregunta ${lm.currentSlot + 1}/${lm.totalSlots}</div>
+      <div class="lightning-round-badge">Ronda ${round}/${perPlayer} · Pregunta ${lm.currentSlot + 1}/${lm.totalSlots}</div>
       <div class="lightning-question-text">${esc(qData.question)}</div>
       <div class="respuesta-box visible">
         <div class="respuesta-label">Respuesta correcta</div>
@@ -1307,7 +1316,10 @@ async function _handleEstimacionSiguiente() {
 async function _triggerLightningMode(selectorIndexOnEntry, skipCell = null) {
   const s          = getState();
   const order      = s.playerOrder || [];
-  const totalSlots = s.gameLength?.lightning ?? (order.length * 2);
+  // El slider lightning es "preguntas por jugador" (clamp defensivo 2..5).
+  // totalSlots escala con la cantidad real de jugadores → todos juegan lo mismo.
+  const perPlayer  = Math.min(5, Math.max(2, s.gameLength?.lightning ?? 2));
+  const totalSlots = perPlayer * order.length;
   const usedIndices = s.lightningUsedIndices || [];
   const fullPool    = LIGHTNING_QUESTIONS.map((_, i) => i);
   const available   = fullPool.filter(i => !usedIndices.includes(i));
@@ -1319,7 +1331,7 @@ async function _triggerLightningMode(selectorIndexOnEntry, skipCell = null) {
     : [...new Set([...usedIndices, ...questionIndices])];
 
   await GameDAO.startLightningMode(roomCode(), {
-    active: true, currentSlot: 0, totalSlots, phase: "announcing",
+    active: true, currentSlot: 0, totalSlots, perPlayer, phase: "announcing",
     questionIndices, questionResult: null, openedAt: null,
   }, selectorIndexOnEntry, skipCell, nextUsedIndices);
 }
@@ -1400,13 +1412,14 @@ export default {
   initGame(ctx) {
     _ctx = ctx;
 
-    // Sliders de longitud
+    // Sliders de longitud (independientes, sin rebalanceo)
     document.querySelectorAll("#length-sliders .length-slider-input").forEach(input => {
       input.addEventListener("input", e => {
         const slot = e.target.closest(".length-slider-row").dataset.slot;
-        _rebalanceLengths(slot, parseInt(e.target.value, 10));
+        _updateLengthSlider(slot, parseInt(e.target.value, 10));
       });
     });
+    _updateLengthHint();
 
     // Mode selector
     document.querySelectorAll(".mode-option").forEach(opt => {

@@ -433,6 +433,12 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   color: var(--acento);
   text-align: right;
 }
+.length-total-hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--texto-secundario);
+}
 
 /* ═══ RULETA ═══════════════════════════════════════════════════ */
 #vista-ruleta {
