@@ -2058,6 +2058,9 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   width: 100%;
   height: 100%;
   cursor: crosshair;
+  touch-action: none;            /* clave en móvil: el dedo dibuja, no scrollea */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Herramientas de dibujo */
