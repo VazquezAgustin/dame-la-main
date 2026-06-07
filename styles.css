@@ -2028,12 +2028,33 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   text-align: left;
 }
 .picto-timer.urgente { color: var(--incorrecto); }
+.picto-word-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.picto-word-cat {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--primario-glow);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.picto-word-cat:empty {
+  display: none;
+}
 .picto-word-hint {
   font-family: 'Bebas Neue', cursive;
   font-size: 1.4rem;
   letter-spacing: 0.18em;
   color: var(--texto);
-  flex: 1;
+  max-width: 100%;
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;

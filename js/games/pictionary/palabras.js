@@ -53,6 +53,25 @@ export const PELICULAS_Y_SERIES = [
   "Dragon Ball", "Peppa Pig",
 ];
 
+// Etiquetas legibles de la categoría a la que pertenece una palabra.
+export const CATEGORIA_LABEL = {
+  simples: "Palabra simple",
+  pelis:   "Película o serie",
+};
+
+// Clasifica una palabra según el banco al que pertenece. Sirve para mostrarle
+// al que adivina una pista de qué tipo de cosa está dibujada (sin revelar la
+// palabra). Útil sobre todo en modo "mixto", donde la palabra puede venir de
+// cualquiera de los dos bancos.
+export function palabraCategoria(word = "") {
+  return PELICULAS_Y_SERIES.includes(word) ? "pelis" : "simples";
+}
+
+// Etiqueta legible de la categoría de una palabra (ej: "Película o serie").
+export function palabraCategoriaLabel(word = "") {
+  return CATEGORIA_LABEL[palabraCategoria(word)] || "Palabra simple";
+}
+
 // Devuelve `count` palabras al azar sin repetir, según la categoría:
 //   "simples" → solo palabras simples
 //   "pelis"   → solo películas y series

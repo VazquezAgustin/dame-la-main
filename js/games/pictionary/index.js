@@ -1,4 +1,4 @@
-import { pickPalabras } from "./palabras.js";
+import { pickPalabras, palabraCategoriaLabel } from "./palabras.js";
 import {
   isCorrectGuess, calcGuesserScore, calcDrawerScore,
   isRoundOver, isGameOver, nextSelectorIndex, maskWord,
@@ -436,6 +436,11 @@ export function renderDrawing(s) {
   // Hint de la palabra: el dibujante ve la palabra; el resto, enmascarada.
   const hint = document.getElementById("picto-word-hint");
   hint.textContent = amDrawer ? (round.word || "") : maskWord(round.word || "");
+
+  // Categoría de la palabra: pista de qué tipo de cosa se está dibujando
+  // (ej: "Película o serie"). Visible para todos, sin revelar la palabra.
+  const catEl = document.getElementById("picto-word-cat");
+  if (catEl) catEl.textContent = round.word ? palabraCategoriaLabel(round.word) : "";
 
   const badge = document.getElementById("picto-drawer-badge");
   badge.textContent = amDrawer ? "Estás dibujando" : `✏️ ${s.players?.[round.drawerId]?.name || "?"}`;
