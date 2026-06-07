@@ -3,6 +3,8 @@ import {
   PALABRAS_SIMPLES,
   PELICULAS_Y_SERIES,
   pickPalabras,
+  palabraCategoria,
+  palabraCategoriaLabel,
 } from "../../js/games/pictionary/palabras.js";
 
 const POOLS = { PALABRAS_SIMPLES, PELICULAS_Y_SERIES };
@@ -65,5 +67,33 @@ describe("pickPalabras", () => {
   it("respeta la categoría 'pelis'", () => {
     const set = new Set(PELICULAS_Y_SERIES);
     for (const p of pickPalabras(15, "pelis")) expect(set.has(p)).toBe(true);
+  });
+});
+
+describe("palabraCategoria", () => {
+  it("clasifica una película/serie como 'pelis'", () => {
+    expect(palabraCategoria(PELICULAS_Y_SERIES[0])).toBe("pelis");
+    expect(palabraCategoria("Frozen")).toBe("pelis");
+  });
+
+  it("clasifica una palabra simple como 'simples'", () => {
+    expect(palabraCategoria(PALABRAS_SIMPLES[0])).toBe("simples");
+    expect(palabraCategoria("perro")).toBe("simples");
+  });
+
+  it("trata una palabra desconocida o vacía como 'simples'", () => {
+    expect(palabraCategoria("xyz123")).toBe("simples");
+    expect(palabraCategoria("")).toBe("simples");
+    expect(palabraCategoria()).toBe("simples");
+  });
+});
+
+describe("palabraCategoriaLabel", () => {
+  it("devuelve la etiqueta legible de una película/serie", () => {
+    expect(palabraCategoriaLabel("Frozen")).toBe("Película o serie");
+  });
+
+  it("devuelve la etiqueta legible de una palabra simple", () => {
+    expect(palabraCategoriaLabel("perro")).toBe("Palabra simple");
   });
 });
