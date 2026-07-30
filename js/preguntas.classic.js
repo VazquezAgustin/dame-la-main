@@ -29,454 +29,483 @@ export const QUESTIONS = {
   "Geografía Argentina": [
     {
       value: 200,
-      question: "¿Cuál es la capital de la Argentina?",
-      answer: "Buenos Aires",
+      question: "¿Qué cordillera forma el límite natural con Chile?",
+      answer: "Los Andes",
     },
     {
       value: 400,
-      question: "¿Qué océano baña las costas argentinas?",
-      answer: "El Atlántico",
+      question:
+        "¿Qué río ancho separa a la Argentina del Uruguay frente a Buenos Aires?",
+      answer: "El Río de la Plata",
     },
     {
       value: 600,
-      question: "¿Cuál es el pico más alto de Argentina y de América?",
-      answer: "El Aconcagua",
+      question:
+        "¿Cómo se llama la gran llanura fértil del centro del país, corazón agrícola?",
+      answer: "La Pampa (llanura pampeana)",
     },
     {
       value: 800,
-      question: "¿Con cuántos países limita la Argentina?",
-      answer: "5 (Chile, Bolivia, Paraguay, Brasil y Uruguay)",
+      question: "¿Cuál es la provincia argentina más extensa en superficie?",
+      answer: "Buenos Aires",
     },
     {
       value: 1000,
-      question: "¿Cuál es el río más largo de la Argentina?",
-      answer: "El Paraná",
+      question:
+        "¿Qué enorme salar, atracción turística, se extiende entre Jujuy y Salta?",
+      answer: "Las Salinas Grandes",
     },
   ],
   "Historia Argentina": [
     {
       value: 200,
-      question: "¿Qué se celebra el 25 de Mayo?",
-      answer: "La Revolución de Mayo (1810)",
+      question: "¿En qué año fue la Revolución de Mayo?",
+      answer: "1810",
     },
     {
       value: 400,
-      question: "¿Qué se conmemora el 9 de Julio?",
-      answer: "La Declaración de la Independencia (1816)",
+      question:
+        "¿Qué guerra enfrentó a la Argentina con el Reino Unido en 1982?",
+      answer: "La Guerra de Malvinas",
     },
     {
       value: 600,
-      question: "¿En qué ciudad se declaró la Independencia en 1816?",
-      answer: "San Miguel de Tucumán",
+      question:
+        "¿Qué primera dama impulsó la ley del voto femenino, sancionada en 1947?",
+      answer: "Eva Perón (Evita)",
     },
     {
       value: 800,
-      question: "¿En qué año volvió la democracia con Raúl Alfonsín?",
-      answer: "1983",
+      question:
+        "¿Cómo se llamó la medida de fines de 2001 que limitó el retiro de dinero de los bancos?",
+      answer: "El corralito",
     },
     {
       value: 1000,
       question:
-        "¿Cómo se llamó el plan económico de 1985 que reemplazó al peso por el austral?",
-      answer: "El Plan Austral",
+        "¿Qué presidente fue derrocado en 1930, en el primer golpe militar del país?",
+      answer: "Hipólito Yrigoyen",
     },
   ],
   "Próceres y Patriotas": [
     {
       value: 200,
-      question: "¿Quién creó la Bandera Argentina?",
-      answer: "Manuel Belgrano",
+      question:
+        "¿A qué prócer se recuerda cada 17 de agosto, aniversario de su muerte?",
+      answer: "José de San Martín",
     },
     {
       value: 400,
       question:
-        "¿Qué prócer cruzó los Andes para liberar Chile y Perú?",
-      answer: "José de San Martín",
+        "¿Qué militar salteño lideró la 'guerra gaucha' contra los realistas en el norte?",
+      answer: "Martín Miguel de Güemes",
     },
     {
       value: 600,
       question:
-        "¿Quién fue el primer presidente bajo la Constitución de 1853?",
-      answer: "Justo José de Urquiza",
+        "¿Quién fue el secretario de la Primera Junta y autor del 'Plan de Operaciones'?",
+      answer: "Mariano Moreno",
     },
     {
       value: 800,
       question:
-        "¿Qué presidente es llamado 'el padre del aula' por impulsar la educación?",
-      answer: "Domingo Faustino Sarmiento",
+        "¿Qué pensador escribió 'Bases', la obra que inspiró la Constitución de 1853?",
+      answer: "Juan Bautista Alberdi",
     },
     {
       value: 1000,
-      question: "¿Quién escribió la letra del Himno Nacional Argentino?",
-      answer: "Vicente López y Planes",
+      question:
+        "¿Qué general cordobés de las guerras civiles era apodado 'el Manco'?",
+      answer: "José María Paz",
     },
   ],
   "Fútbol Argentino": [
     {
       value: 200,
-      question: "¿Qué club es conocido como 'El Xeneize'?",
-      answer: "Boca Juniors",
+      question: "¿Cómo se llama el clásico entre Boca y River?",
+      answer: "El Superclásico",
     },
     {
       value: 400,
-      question: "¿Qué club es conocido como 'El Millonario'?",
-      answer: "River Plate",
+      question: "¿Qué club es conocido como 'El Ciclón'?",
+      answer: "San Lorenzo",
     },
     {
       value: 600,
-      question: "¿Cómo se llama el clásico de Avellaneda?",
-      answer: "Independiente vs Racing",
+      question: "¿Qué club platense tiene el apodo 'El Lobo'?",
+      answer: "Gimnasia y Esgrima La Plata",
     },
     {
       value: 800,
       question:
-        "¿Qué club argentino ganó la primera Copa Libertadores del país, en 1964?",
+        "¿Qué club argentino es el máximo ganador de la Copa Libertadores, con 7 títulos?",
       answer: "Independiente",
     },
     {
       value: 1000,
-      question: "¿Cómo se llama el estadio donde es local Boca Juniors?",
-      answer: "La Bombonera (Estadio Alberto J. Armando)",
+      question:
+        "¿Qué equipo argentino ganó la Copa Intercontinental de 1968 ante el Manchester United?",
+      answer: "Estudiantes de La Plata",
     },
   ],
   "Maradona y Messi": [
     {
       value: 200,
-      question: "¿En qué club debutó Maradona en primera división?",
-      answer: "Argentinos Juniors",
+      question: "¿En qué ciudad nació Lionel Messi?",
+      answer: "Rosario",
     },
     {
       value: 400,
-      question: "¿En qué club italiano fue ídolo absoluto Maradona?",
-      answer: "Napoli",
+      question:
+        "¿Cómo se conoce al gol que Maradona hizo con la mano a Inglaterra en 1986?",
+      answer: "La Mano de Dios",
     },
     {
       value: 600,
-      question: "¿En qué club europeo se formó y consagró Messi?",
-      answer: "FC Barcelona",
+      question:
+        "¿En qué club argentino jugó Messi de chico antes de irse a España?",
+      answer: "Newell's Old Boys",
     },
     {
       value: 800,
-      question: "¿En qué club de Estados Unidos juega Messi desde 2023?",
-      answer: "Inter Miami",
+      question: "¿A qué club francés llegó Messi en 2021?",
+      answer: "Paris Saint-Germain (PSG)",
     },
     {
       value: 1000,
-      question: "¿En qué año Maradona ganó el Mundial como jugador?",
-      answer: "1986",
+      question: "¿Qué club argentino dirigía Maradona cuando falleció en 2020?",
+      answer: "Gimnasia y Esgrima La Plata",
     },
   ],
   "Rock Nacional": [
     {
       value: 200,
-      question: "¿Quién fue el cantante y líder de Soda Stereo?",
-      answer: "Gustavo Cerati",
+      question: "¿Qué banda canta 'De música ligera'?",
+      answer: "Soda Stereo",
     },
     {
       value: 400,
-      question: "¿De qué banda es la canción 'Matador'?",
-      answer: "Los Fabulosos Cadillacs",
+      question: "¿Quién cantaba 'Rasguña las piedras' al frente de Sui Generis?",
+      answer: "Charly García",
     },
     {
       value: 600,
-      question: "¿Qué músico es apodado 'El Flaco'?",
-      answer: "Luis Alberto Spinetta",
+      question:
+        "¿Qué banda liderada por el Indio Solari marcó los años 80 y 90 del rock argentino?",
+      answer: "Patricio Rey y sus Redonditos de Ricota",
     },
     {
       value: 800,
-      question: "¿De qué banda de los 80 era líder Luca Prodan?",
-      answer: "Sumo",
+      question: "¿Qué banda lideró Luis Alberto Spinetta a fines de los 60?",
+      answer: "Almendra",
     },
     {
       value: 1000,
       question:
-        "¿Qué banda formó Charly García junto a David Lebón a fines de los 70?",
-      answer: "Serú Girán",
+        "¿Qué banda formó Andrés Calamaro en España junto a Ariel Rot?",
+      answer: "Los Rodríguez",
     },
   ],
   "Tango y Folklore": [
     {
       value: 200,
-      question: "¿Qué baile es el emblema musical del Río de la Plata?",
-      answer: "El tango",
+      question: "¿Qué instrumento de fuelle es el alma del tango?",
+      answer: "El bandoneón",
     },
     {
       value: 400,
-      question: "¿Qué ídolo máximo del tango falleció en un accidente en 1935?",
-      answer: "Carlos Gardel",
+      question:
+        "¿En qué barrio porteño está el Caminito, postal turística del tango?",
+      answer: "La Boca",
     },
     {
       value: 600,
-      question: "¿Qué festival de folklore se celebra cada enero en Córdoba?",
-      answer: "El Festival de Cosquín",
+      question:
+        "¿Qué tango de Gerardo Matos Rodríguez es el más famoso del mundo?",
+      answer: "La Cumparsita",
     },
     {
       value: 800,
       question:
-        "¿Qué compositor revolucionó el tango con 'Libertango' y 'Adiós Nonino'?",
-      answer: "Astor Piazzolla",
+        "¿En qué ciudad cordobesa se hace el festival de doma y folklore más famoso del país?",
+      answer: "Jesús María",
     },
     {
       value: 1000,
       question:
-        "¿Qué cantora folklórica es conocida como 'La Negra' e interpretó 'Alfonsina y el Mar'?",
-      answer: "Mercedes Sosa",
+        "¿Qué músico y poeta, autor de 'Luna tucumana' y 'Los ejes de mi carreta', es el máximo referente del folklore?",
+      answer: "Atahualpa Yupanqui",
     },
   ],
   "Comida y Bebida": [
     {
       value: 200,
-      question: "¿Qué infusión típica se toma con bombilla?",
-      answer: "El mate",
+      question:
+        "¿Qué comida de masa rellena y horneada tiene versiones salteña y tucumana?",
+      answer: "La empanada",
     },
     {
       value: 400,
-      question: "¿Qué dulce untable es un emblema de la Argentina?",
-      answer: "El dulce de leche",
+      question:
+        "¿Qué guiso espeso con maíz blanco se come tradicionalmente el 25 de Mayo?",
+      answer: "El locro",
     },
     {
       value: 600,
       question:
-        "¿Qué dulce de dos tapas rellenas de dulce de leche y bañadas es típico?",
-      answer: "El alfajor",
+        "¿Cómo se llama la milanesa cubierta con salsa de tomate, jamón y queso?",
+      answer: "Milanesa a la napolitana",
     },
     {
       value: 800,
-      question: "¿Qué bebida con fernet es típica de Córdoba?",
-      answer: "Fernet con Coca",
+      question:
+        "¿Qué provincia produce la enorme mayoría de la yerba mate del país?",
+      answer: "Misiones",
     },
     {
       value: 1000,
       question:
-        "¿Qué corte de carne con forma alargada y triangular es típico del asado?",
-      answer: "El vacío",
+        "¿Cómo se llama el postre clásico de queso con dulce de membrillo?",
+      answer: "Postre vigilante (queso y dulce)",
     },
   ],
   "Tele y Cine Argentino": [
     {
       value: 200,
-      question: "¿En qué canal se emite Gran Hermano Argentina?",
-      answer: "Telefe",
+      question: "¿Qué conductor estuvo al frente de 'ShowMatch' durante años?",
+      answer: "Marcelo Tinelli",
     },
     {
       value: 400,
       question:
-        "¿Qué actor protagonizó 'El Secreto de sus Ojos' y 'Relatos Salvajes'?",
-      answer: "Ricardo Darín",
+        "¿Qué película de Damián Szifrón, de 2014, está formada por seis historias?",
+      answer: "Relatos Salvajes",
     },
     {
       value: 600,
       question:
-        "¿Qué película argentina ganó el Oscar a mejor film extranjero en 2010?",
-      answer: "El Secreto de sus Ojos",
+        "¿Qué comedia de 1985 dirigida por Alejandro Doria es un clásico sobre una familia y una abuela desaparecida?",
+      answer: "Esperando la carroza",
     },
     {
       value: 800,
       question:
-        "¿Qué película argentina de 1985 sobre la dictadura ganó el Oscar extranjero ese año?",
-      answer: "La Historia Oficial",
+        "¿Qué director argentino filmó 'El Hijo de la Novia' y 'El Secreto de sus Ojos'?",
+      answer: "Juan José Campanella",
     },
     {
       value: 1000,
-      question: "¿Qué productora creó Chiquititas y Casi Ángeles?",
-      answer: "Cris Morena",
+      question:
+        "¿Qué telenovela juvenil de Cris Morena dio origen al grupo Erreway?",
+      answer: "Rebelde Way",
     },
   ],
   "Famosos Argentinos": [
     {
       value: 200,
-      question: "¿Qué Papa argentino fue elegido en 2013?",
-      answer: "Francisco (Jorge Bergoglio)",
+      question:
+        "¿Qué basquetbolista argentino ganó cuatro anillos de la NBA con los San Antonio Spurs?",
+      answer: "Emanuel 'Manu' Ginóbili",
     },
     {
       value: 400,
       question:
-        "¿Qué productor musical argentino es famoso por sus 'Music Sessions'?",
-      answer: "Bizarrap",
+        "¿Qué actriz y cantante argentina se hizo famosa protagonizando 'Violetta'?",
+      answer: "Tini Stoessel",
     },
     {
       value: 600,
-      question: "¿Qué tenista argentino ganó el US Open en 2009?",
-      answer: "Juan Martín del Potro",
+      question:
+        "¿Qué cocinero argentino es mundialmente conocido por cocinar con fuego y leña?",
+      answer: "Francis Mallmann",
     },
     {
       value: 800,
-      question:
-        "¿Qué piloto argentino ganó 5 títulos de Fórmula 1 en los años 50?",
-      answer: "Juan Manuel Fangio",
+      question: "¿Qué historietista argentino creó a Mafalda?",
+      answer: "Quino (Joaquín Salvador Lavado)",
     },
     {
       value: 1000,
-      question: "¿Qué escritor argentino es autor de 'Ficciones' y 'El Aleph'?",
-      answer: "Jorge Luis Borges",
+      question:
+        "¿Qué pianista y director de orquesta argentino condujo la Ópera Estatal de Berlín?",
+      answer: "Daniel Barenboim",
     },
   ],
   "Provincias y Ciudades": [
     {
       value: 200,
-      question: "¿En qué provincia está la ciudad de Bariloche?",
-      answer: "Río Negro",
+      question: "¿En qué provincia está la ciudad de Mar del Plata?",
+      answer: "Buenos Aires",
     },
     {
       value: 400,
-      question: "¿Cuál es la segunda ciudad más poblada de la Argentina?",
-      answer: "Córdoba",
+      question: "¿Cuál es la capital de la provincia de Tucumán?",
+      answer: "San Miguel de Tucumán",
     },
     {
       value: 600,
-      question: "¿En qué provincia están las Cataratas del Iguazú?",
-      answer: "Misiones",
+      question:
+        "¿En qué provincia está el Cerro de los Siete Colores, en Purmamarca?",
+      answer: "Jujuy",
     },
     {
       value: 800,
-      question: "¿Cuál es la capital de la provincia de Santa Fe?",
-      answer: "La ciudad de Santa Fe (no Rosario)",
+      question: "¿Cuál es la provincia más pequeña de la Argentina?",
+      answer: "Tucumán",
     },
     {
       value: 1000,
-      question: "¿Cuántas provincias tiene la Argentina, sin contar la CABA?",
-      answer: "23",
+      question: "¿Cuál es la capital de la provincia de Chubut?",
+      answer: "Rawson (no Trelew ni Comodoro)",
     },
   ],
   "Naturaleza Argentina": [
     {
       value: 200,
-      question: "¿Qué animal parecido a una llama es símbolo de la Patagonia?",
-      answer: "El guanaco",
+      question:
+        "¿Qué ave corredora, parecida a un avestruz, vive en la Pampa y la Patagonia?",
+      answer: "El ñandú",
     },
     {
       value: 400,
-      question: "¿Qué glaciar famoso está en la provincia de Santa Cruz?",
-      answer: "El Perito Moreno",
+      question:
+        "¿Cuál es el roedor más grande del mundo, habitante de los humedales argentinos?",
+      answer: "El carpincho",
     },
     {
       value: 600,
-      question: "¿Cuál es el ave nacional de la Argentina?",
-      answer: "El hornero",
+      question: "¿En qué provincia están los Esteros del Iberá?",
+      answer: "Corrientes",
     },
     {
       value: 800,
       question:
-        "¿Cuál es el felino más grande de la Argentina, que habita el norte?",
-      answer: "El yaguareté",
+        "¿En qué provincia está el Parque Nacional Talampaya, con sus paredones rojos?",
+      answer: "La Rioja",
     },
     {
       value: 1000,
       question:
-        "¿Qué península de Chubut es famosa por sus ballenas y pingüinos?",
-      answer: "Península Valdés",
+        "¿Qué parque de San Juan es conocido como el 'Valle de la Luna'?",
+      answer: "Ischigualasto",
     },
   ],
   "Tradiciones y Costumbres": [
     {
       value: 200,
-      question: "¿Qué se come tradicionalmente los días 29 de cada mes?",
-      answer: "Ñoquis",
+      question:
+        "¿Qué comida reúne a las familias los domingos alrededor de la parrilla?",
+      answer: "El asado",
     },
     {
       value: 400,
-      question: "¿Cómo se llama el jinete del campo, símbolo de la tradición?",
-      answer: "El gaucho",
+      question:
+        "¿Qué juego de cartas se juega cantando 'envido' y 'quiero retruco'?",
+      answer: "El truco",
     },
     {
       value: 600,
-      question: "¿Qué obra de José Hernández narra la vida de un gaucho?",
-      answer: "El Martín Fierro",
+      question:
+        "¿Cómo se llama el pantalón amplio que usa el gaucho junto a las botas?",
+      answer: "La bombacha (de campo)",
     },
     {
       value: 800,
-      question: "¿Qué baile folklórico se baila en pareja agitando pañuelos?",
-      answer: "La zamba",
+      question:
+        "¿Qué ciudad entrerriana es famosa por su carnaval con carrozas y comparsas?",
+      answer: "Gualeguaychú",
     },
     {
       value: 1000,
-      question: "¿Qué día se celebra el Día de la Tradición en la Argentina?",
-      answer: "El 10 de noviembre",
+      question:
+        "¿Qué celebración del norte andino agradece a la tierra cada 1 de agosto?",
+      answer: "El Día de la Pachamama",
     },
   ],
   "Ciencia y Premios Nobel": [
     {
       value: 200,
-      question: "¿Cuántos Premios Nobel ganó la Argentina en total?",
-      answer: "5",
+      question:
+        "¿Cómo se llama el principal organismo científico del Estado argentino?",
+      answer: "El CONICET",
     },
     {
       value: 400,
       question:
-        "¿Qué argentino ganó el Nobel de Química en 1970 por el estudio de los azúcares?",
-      answer: "Luis Federico Leloir",
+        "¿Qué científico argentino ganó el Nobel de Medicina en 1947, el primero del país?",
+      answer: "Bernardo Houssay",
     },
     {
       value: 600,
       question:
-        "¿Qué argentino ganó el Nobel de la Paz en 1980 por la defensa de los derechos humanos?",
-      answer: "Adolfo Pérez Esquivel",
+        "¿Qué empresa argentina de Bariloche construye satélites y reactores nucleares?",
+      answer: "INVAP",
     },
     {
       value: 800,
-      question: "¿Qué médico argentino desarrolló el bypass coronario?",
-      answer: "René Favaloro",
+      question:
+        "¿Qué argentino ganó el Nobel de Medicina en 1984 por los anticuerpos monoclonales?",
+      answer: "César Milstein",
     },
     {
       value: 1000,
       question:
-        "¿Qué argentino fue el primer latinoamericano en ganar el Nobel de la Paz, en 1936?",
-      answer: "Carlos Saavedra Lamas",
+        "¿Cómo se llama la central nuclear argentina inaugurada en 1974, la primera de América Latina?",
+      answer: "Atucha I",
     },
   ],
   "Lunfardo y Dichos": [
     {
       value: 200,
-      question: "¿Qué significa 'laburar' en lunfardo?",
-      answer: "Trabajar",
+      question: "¿Qué significa 'guita'?",
+      answer: "Dinero, plata",
     },
     {
       value: 400,
-      question: "¿Qué significa 'morfar' en lunfardo?",
-      answer: "Comer",
+      question: "¿Qué significa 'chamuyar'?",
+      answer: "Hablar para convencer o seducir",
     },
     {
       value: 600,
-      question: "¿Qué significa 'quilombo'?",
-      answer: "Lío, desorden",
+      question: "¿Qué significa 'tener fiaca'?",
+      answer: "Tener pereza o desgano",
     },
     {
       value: 800,
-      question: "¿Qué significa 'estar al pedo'?",
-      answer: "No tener nada que hacer (estar ocioso)",
+      question: "¿Qué significa 'bondi'?",
+      answer: "El colectivo (el bus)",
     },
     {
       value: 1000,
-      question: "¿Qué significa 'hacer la gamba'?",
-      answer: "Ayudar / dar una mano",
+      question: "¿Qué significa que un empleado sea un 'ñoqui'?",
+      answer: "Que cobra un sueldo sin trabajar",
     },
   ],
   "Símbolos Patrios": [
     {
       value: 200,
-      question: "¿De qué colores es la Bandera Argentina?",
-      answer: "Celeste y blanca (con el sol amarillo)",
+      question: "¿Qué día se celebra el Día de la Bandera?",
+      answer: "El 20 de junio",
     },
     {
       value: 400,
-      question: "¿Qué figura está en el centro de la Bandera Argentina?",
-      answer: "El Sol de Mayo",
+      question: "¿En qué ciudad está el Monumento Nacional a la Bandera?",
+      answer: "Rosario",
     },
     {
       value: 600,
-      question: "¿Cuál es la flor nacional de la Argentina?",
-      answer: "El ceibo (la flor del ceibo)",
+      question: "¿Qué ramas rodean el óvalo del Escudo Nacional?",
+      answer: "Ramas de laurel",
     },
     {
       value: 800,
-      question:
-        "¿Qué gorro rojo, símbolo de libertad, aparece en el Escudo Nacional?",
-      answer: "El gorro frigio",
+      question: "¿Cuántos rayos tiene el Sol de Mayo de la bandera?",
+      answer: "32 (16 rectos y 16 flamígeros)",
     },
     {
       value: 1000,
-      question: "¿Quién compuso la música del Himno Nacional Argentino?",
-      answer: "Blas Parera",
+      question: "¿Qué día se celebra el Día de la Escarapela?",
+      answer: "El 18 de mayo",
     },
   ],
 };
@@ -487,71 +516,75 @@ export const QUESTIONS = {
 // ═══════════════════════════════════════════════════════════════
 export const LIGHTNING_QUESTIONS = [
   // — Geografía y provincias —
-  { question: "¿Cuál es la capital de la provincia de Córdoba?", answer: "Córdoba" },
-  { question: "¿En qué provincia está la ciudad de Mendoza?", answer: "Mendoza" },
-  { question: "¿En qué provincia está la ciudad de Rosario?", answer: "Santa Fe" },
-  { question: "¿Cuál es la provincia más al norte de la Argentina?", answer: "Jujuy" },
-  { question: "¿Qué cordillera recorre el oeste argentino?", answer: "Los Andes" },
-  { question: "¿Cómo se llama la gran llanura agrícola del centro del país?", answer: "La Pampa" },
-  { question: "¿Cuál es la ciudad más austral de la Argentina?", answer: "Ushuaia" },
-  { question: "¿Qué estrecho separa el continente de Tierra del Fuego?", answer: "El Estrecho de Magallanes" },
-  { question: "¿En qué provincia están las salinas del norte?", answer: "Jujuy / Salta" },
+  { question: "¿Cuál es la capital de la provincia de Entre Ríos?", answer: "Paraná" },
+  { question: "¿Cuál es la capital de la provincia de Misiones?", answer: "Posadas" },
+  { question: "¿Cuál es la capital de la provincia de Santa Cruz?", answer: "Río Gallegos" },
+  { question: "¿Cuál es la capital de la provincia de La Pampa?", answer: "Santa Rosa" },
+  { question: "¿En qué provincia está la ciudad de Ushuaia?", answer: "Tierra del Fuego" },
+  { question: "¿En qué provincia está El Calafate?", answer: "Santa Cruz" },
+  { question: "¿Cuál es la provincia más poblada de la Argentina?", answer: "Buenos Aires" },
+  { question: "¿Qué provincia es famosa por el vino Malbec?", answer: "Mendoza" },
+  { question: "¿Qué ciudad de la costa bonaerense es 'La Feliz'?", answer: "Mar del Plata" },
 
   // — Historia y próceres —
-  { question: "¿Qué día patrio se celebra el 9 de Julio?", answer: "La Independencia" },
-  { question: "¿Quién condujo el cruce de los Andes?", answer: "José de San Martín" },
-  { question: "¿En qué ciudad ondeó por primera vez la bandera?", answer: "Rosario" },
-  { question: "¿Qué primera dama impulsó el voto femenino?", answer: "Eva Perón (Evita)" },
-  { question: "¿Cómo se llama la plaza frente a la Casa Rosada?", answer: "Plaza de Mayo" },
-  { question: "¿De qué color es la Casa de Gobierno?", answer: "Rosa (Casa Rosada)" },
-  { question: "¿Qué prócer ganó la Batalla de Tucumán en 1812?", answer: "Manuel Belgrano" },
+  { question: "¿Qué presidente renunció en diciembre de 2001?", answer: "Fernando de la Rúa" },
+  { question: "¿Contra qué país fue la Guerra de Malvinas?", answer: "El Reino Unido" },
+  { question: "¿Qué se conmemora el 24 de marzo?", answer: "El Día de la Memoria (golpe de 1976)" },
+  { question: "¿Qué se conmemora el 2 de abril?", answer: "Los veteranos y caídos en Malvinas" },
+  { question: "¿Qué ley de 1912 estableció el voto secreto y obligatorio?", answer: "La Ley Sáenz Peña" },
+  { question: "¿Cómo se llama la casa de gobierno argentina?", answer: "La Casa Rosada" },
+  { question: "¿Qué presidente fue llamado 'el primer trabajador'?", answer: "Juan Domingo Perón" },
+  { question: "¿Qué caudillo riojano fue apodado 'el Tigre de los Llanos'?", answer: "Facundo Quiroga" },
 
   // — Fútbol —
-  { question: "¿Qué club es 'El Millonario'?", answer: "River Plate" },
-  { question: "¿Qué club es 'El Xeneize'?", answer: "Boca Juniors" },
-  { question: "¿Cómo se llama el clásico entre Boca y River?", answer: "El Superclásico" },
-  { question: "¿Cómo se llama el estadio de Boca?", answer: "La Bombonera" },
-  { question: "¿Quién es el capitán campeón en Qatar 2022?", answer: "Lionel Messi" },
-  { question: "¿Quién es el arquero apodado 'Dibu'?", answer: "Emiliano Martínez" },
-  { question: "¿Quién dirige a la Selección campeona del mundo?", answer: "Lionel Scaloni" },
-  { question: "¿En qué club italiano fue ídolo Maradona?", answer: "Napoli" },
+  { question: "¿Qué club es 'La Academia'?", answer: "Racing Club" },
+  { question: "¿Qué club es 'El Rojo'?", answer: "Independiente" },
+  { question: "¿Qué club es 'El Bicho'?", answer: "Argentinos Juniors" },
+  { question: "¿Qué club rosarino es 'Canalla'?", answer: "Rosario Central" },
+  { question: "¿Cómo se llama el estadio de River Plate?", answer: "El Monumental" },
+  { question: "¿En qué país se jugó el Mundial 2022?", answer: "Qatar" },
+  { question: "¿A qué selección le ganó Argentina la final de Qatar 2022?", answer: "Francia" },
+  { question: "¿Quién fue el DT campeón del mundo en 1978?", answer: "César Luis Menotti" },
+  { question: "¿Quién fue el DT campeón del mundo en 1986?", answer: "Carlos Salvador Bilardo" },
+  { question: "¿Qué arquero fue elegido el mejor del Mundial 2022?", answer: "Emiliano 'Dibu' Martínez" },
 
-  // — Comida, mate y tradiciones —
-  { question: "¿Con qué recipiente se toma el mate?", answer: "El mate (calabaza)" },
-  { question: "¿Qué planta se usa para el mate?", answer: "La yerba mate" },
-  { question: "¿Qué dulce untable es emblema del país?", answer: "El dulce de leche" },
-  { question: "¿Qué dulce se hace con dos tapas y dulce de leche?", answer: "El alfajor" },
-  { question: "¿Qué se come tradicionalmente los 29 de cada mes?", answer: "Ñoquis" },
+  // — Comida y bebida —
+  { question: "¿Cómo se llaman las masas dulces del desayuno argentino?", answer: "Las facturas" },
+  { question: "¿Cómo se llama el chorizo servido dentro de un pan?", answer: "El choripán" },
+  { question: "¿Cómo se le dice a quien sirve el mate en la ronda?", answer: "El cebador" },
+  { question: "¿Qué salsa de perejil, ajo y ají acompaña al asado?", answer: "El chimichurri" },
+  { question: "¿Qué bebida amarga italiana se popularizó en Córdoba con gaseosa?", answer: "El fernet" },
 
   // — Música —
-  { question: "¿Quién cantaba en Soda Stereo?", answer: "Gustavo Cerati" },
-  { question: "¿De qué banda es 'Matador'?", answer: "Los Fabulosos Cadillacs" },
-  { question: "¿Qué banda lideró Spinetta a fines de los 60?", answer: "Almendra" },
-  { question: "¿Quién lideró Sumo?", answer: "Luca Prodan" },
-  { question: "¿Qué cantora folklórica es 'La Negra'?", answer: "Mercedes Sosa" },
-  { question: "¿Qué baile nació en el Río de la Plata?", answer: "El tango" },
-  { question: "¿Qué ídolo del tango murió en 1935?", answer: "Carlos Gardel" },
+  { question: "¿Qué género musical es típico de Córdoba?", answer: "El cuarteto" },
+  { question: "¿Quién es 'La Mona' del cuarteto?", answer: "Carlos 'La Mona' Jiménez" },
+  { question: "¿Qué banda canta 'Mil horas'?", answer: "Los Abuelos de la Nada" },
+  { question: "¿Quién canta 'Yo vengo a ofrecer mi corazón'?", answer: "Fito Páez" },
+  { question: "¿Qué banda canta 'La Argentinidad al Palo'?", answer: "Bersuit Vergarabat" },
+  { question: "¿Qué instrumento toca principalmente Charly García?", answer: "El piano (teclados)" },
+  { question: "¿Quiénes compusieron 'Alfonsina y el mar'?", answer: "Ariel Ramírez y Félix Luna" },
 
   // — Tele, cine y famosos —
-  { question: "¿En qué canal va Gran Hermano Argentina?", answer: "Telefe" },
-  { question: "¿Qué actor protagonizó 'Relatos Salvajes'?", answer: "Ricardo Darín" },
-  { question: "¿Qué Papa es argentino?", answer: "Francisco" },
-  { question: "¿Qué productor es famoso por las 'Music Sessions'?", answer: "Bizarrap" },
-  { question: "¿Qué tenista argentino ganó el US Open 2009?", answer: "Juan Martín del Potro" },
-  { question: "¿Qué piloto argentino fue 5 veces campeón de F1?", answer: "Juan Manuel Fangio" },
-  { question: "¿Qué escritor argentino escribió 'Ficciones'?", answer: "Jorge Luis Borges" },
+  { question: "¿Qué personaje de Quino odia la sopa?", answer: "Mafalda" },
+  { question: "¿Qué historieta de Dante Quinterno tiene un indio tehuelche millonario?", answer: "Patoruzú" },
+  { question: "¿Qué actor protagonizó 'Nueve Reinas'?", answer: "Ricardo Darín" },
+  { question: "¿Qué conductora de almuerzos es apodada 'La Chiqui'?", answer: "Mirtha Legrand" },
+  { question: "¿Cómo se llama la selección argentina de rugby?", answer: "Los Pumas" },
+  { question: "¿Cómo se llama la selección argentina de hockey femenino?", answer: "Las Leonas" },
 
   // — Naturaleza y símbolos —
-  { question: "¿Cuál es el ave nacional argentina?", answer: "El hornero" },
-  { question: "¿Cuál es la flor nacional argentina?", answer: "El ceibo" },
-  { question: "¿Qué figura está en el centro de la bandera?", answer: "El Sol de Mayo" },
-  { question: "¿Qué glaciar famoso está en Santa Cruz?", answer: "El Perito Moreno" },
-  { question: "¿Cómo se llama el jinete del campo argentino?", answer: "El gaucho" },
+  { question: "¿Qué ballena visita Puerto Madryn cada año?", answer: "La ballena franca austral" },
+  { question: "¿Qué pingüino anida en Punta Tombo?", answer: "El pingüino de Magallanes" },
+  { question: "¿Qué planta gigante de la Pampa da sombra y no es un árbol?", answer: "El ombú" },
+  { question: "¿De qué colores es la escarapela argentina?", answer: "Celeste y blanca" },
+  { question: "¿Qué día se celebra la Independencia argentina?", answer: "El 9 de julio" },
 
   // — Lunfardo —
-  { question: "¿Qué significa 'laburar'?", answer: "Trabajar" },
-  { question: "¿Qué significa 'morfar'?", answer: "Comer" },
-  { question: "¿Qué significa 'pibe'?", answer: "Chico / joven" },
+  { question: "¿Qué significa 'mango'?", answer: "Un peso (dinero)" },
+  { question: "¿Qué significa 'chabón'?", answer: "Tipo, muchacho" },
+  { question: "¿Qué significa 'pilcha'?", answer: "La ropa" },
+  { question: "¿Qué significa 'birra'?", answer: "Cerveza" },
+  { question: "¿Qué significa 'trucho'?", answer: "Falso, de mala calidad" },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -559,33 +592,34 @@ export const LIGHTNING_QUESTIONS = [
 // ═══════════════════════════════════════════════════════════════
 export const ESTIMATION_QUESTIONS = [
   // — Historia —
-  { question: "¿En qué año fue la Revolución de Mayo?", answer: 1810 },
-  { question: "¿En qué año se declaró la Independencia argentina?", answer: 1816 },
-  { question: "¿En qué año volvió la democracia con Alfonsín?", answer: 1983 },
-  { question: "¿En qué año fue la crisis del 'corralito'?", answer: 2001 },
-  { question: "¿En qué año votaron las mujeres por primera vez en Argentina?", answer: 1951 },
-  { question: "¿En qué año fue elegido el Papa Francisco?", answer: 2013 },
+  { question: "¿En qué año fundó Juan de Garay la ciudad de Buenos Aires?", answer: 1580 },
+  { question: "¿En qué año se sancionó la Constitución Nacional?", answer: 1853 },
+  { question: "¿En qué año se aprobó la Ley Sáenz Peña del voto secreto?", answer: 1912 },
+  { question: "¿En qué año asumió Perón su primera presidencia?", answer: 1946 },
+  { question: "¿En qué año murió Eva Perón?", answer: 1952 },
+  { question: "¿En qué año fue el Cordobazo?", answer: 1969 },
+  { question: "¿En qué año empezó la última dictadura militar?", answer: 1976 },
+  { question: "¿Cuántos años duró la última dictadura militar?", answer: 7 },
+  { question: "¿En qué año fue la Guerra de Malvinas?", answer: 1982 },
 
   // — Fútbol —
-  { question: "¿En qué año Argentina ganó su primer Mundial?", answer: 1978 },
-  { question: "¿En qué año Argentina ganó el Mundial con Maradona en México?", answer: 1986 },
-  { question: "¿En qué año Argentina ganó el Mundial de Qatar?", answer: 2022 },
-  { question: "¿En qué año Argentina ganó la Copa América en el Maracaná?", answer: 2021 },
-  { question: "¿En qué año murió Diego Maradona?", answer: 2020 },
-  { question: "¿En qué año nació Lionel Messi?", answer: 1987 },
-  { question: "¿Cuántos Balones de Oro tiene Messi hasta 2024?", answer: 8 },
-  { question: "¿Cuántas Copas América ganó Argentina hasta 2024?", answer: 16 },
-  { question: "¿En qué año se fundó Boca Juniors?", answer: 1905 },
-  { question: "¿En qué año se fundó River Plate?", answer: 1901 },
-  { question: "¿Cuántas estrellas tiene la camiseta argentina desde 2022?", answer: 3 },
+  { question: "¿Cuántos Mundiales ganó la Selección Argentina?", answer: 3 },
+  { question: "¿Cuántos goles hizo Messi en el Mundial de Qatar 2022?", answer: 7 },
+  { question: "¿En qué año Argentina perdió la final del Mundial ante Alemania en Brasil?", answer: 2014 },
+  { question: "¿En qué año Argentina le ganó la Finalissima a Italia?", answer: 2022 },
+  { question: "¿En qué año nació Diego Maradona?", answer: 1960 },
+  { question: "¿En qué año debutó Messi en la Selección mayor?", answer: 2005 },
+  { question: "¿En qué año se fundó Racing Club?", answer: 1903 },
 
   // — Geografía y datos —
-  { question: "¿Cuántas provincias tiene Argentina (sin contar CABA)?", answer: 23 },
-  { question: "¿Con cuántos países limita Argentina?", answer: 5 },
-  { question: "¿Cuántos metros mide el Aconcagua (aprox)?", answer: 6961 },
-  { question: "¿Cuántos Premios Nobel ganó Argentina en total?", answer: 5 },
+  { question: "¿Cuántos habitantes tiene la Argentina, en millones (censo 2022)?", answer: 46 },
+  { question: "¿Cuántos kilómetros mide la Argentina de norte a sur (aprox)?", answer: 3700 },
+  { question: "¿Cuántos metros mide el Obelisco de Buenos Aires?", answer: 67 },
+  { question: "¿Cuántas líneas de subte tiene la ciudad de Buenos Aires?", answer: 6 },
+  { question: "¿En qué año se inauguró el Obelisco?", answer: 1936 },
+  { question: "¿En qué año se inauguró el subte de Buenos Aires?", answer: 1913 },
 
-  // — Cultura —
-  { question: "¿En qué año fue la primera edición de Gran Hermano Argentina?", answer: 2001 },
-  { question: "¿En qué año murió Carlos Gardel?", answer: 1935 },
+  // — Cultura y ciencia —
+  { question: "¿Cuántos Premios Nobel de ciencias ganó la Argentina?", answer: 3 },
+  { question: "¿En qué año se hizo la primera edición del Festival de Cosquín?", answer: 1961 },
 ];
