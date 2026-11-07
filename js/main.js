@@ -2,6 +2,7 @@ import { GameDAO, firebaseConfigurado } from "./firebase.js";
 import DameLaMainGame    from "./games/dame-la-main/index.js";
 import QuienEsMainGame   from "./games/quien-es-main/index.js";
 import PictionaryGame    from "./games/pictionary/index.js";
+import NumeroMainGame    from "./games/numero-main/index.js";
 import { ACTIVE_THEME }  from "./theme.config.js";
 
 // ── Temática (colores + microcopys) ───────────────────────────────
@@ -25,6 +26,7 @@ const GAMES = {
   "dame-la-main":  DameLaMainGame,
   "quien-es-main": QuienEsMainGame,
   "pictionary":    PictionaryGame,
+  "numero-main":   NumeroMainGame,
 };
 function getGame(s) {
   return GAMES[s?.gameType ?? "dame-la-main"] ?? DameLaMainGame;
@@ -510,12 +512,10 @@ document.querySelectorAll(".game-option").forEach(opt => {
     document.querySelectorAll(".game-option").forEach(o => o.classList.remove("active"));
     opt.classList.add("active");
     const selected = opt.dataset.game;
-    document.getElementById("dame-la-main-options").style.display =
-      selected === "dame-la-main" ? "block" : "none";
-    document.getElementById("quien-es-main-options").style.display =
-      selected === "quien-es-main" ? "block" : "none";
-    document.getElementById("pictionary-options").style.display =
-      selected === "pictionary" ? "block" : "none";
+    Object.keys(GAMES).forEach(id => {
+      const el = document.getElementById(`${id}-options`);
+      if (el) el.style.display = selected === id ? "block" : "none";
+    });
   });
 });
 

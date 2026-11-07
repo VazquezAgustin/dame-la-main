@@ -48,3 +48,33 @@ IDs diferentes).
 - [ ] **Join a mitad de ronda**: una pestaña nueva entra mientras se dibuja y ve el **dibujo completo** al instante.
 - [ ] Si el **dibujante se desconecta**, el host cierra la ronda (fallback).
 - [ ] Reconexión: cerrar y reabrir una pestaña del mismo jugador mantiene su estado.
+
+---
+
+## 🔢 ¿Qué número soy? — verificación multi-pestaña
+
+### Setup y reparto
+- [ ] En "Crear sala" aparece la tarjeta **🔢 ¿Qué número soy?** y la sala se crea con `gameType: "numero-main"`.
+- [ ] El host inicia → ve "Repartir números"; el resto, "Esperando que el host reparta...".
+- [ ] Al repartir, cada pestaña ve la **cobertura**; al tocarla ve su número. Los números **no se repiten**.
+
+### Visualización
+- [ ] En un celular real en vertical el número se lee bien desde lejos y no hay scroll horizontal.
+- [ ] El **subrayado** deja clara la orientación (probar 6, 9, 66, 69, 96, 99).
+- [ ] La pantalla **no se apaga** mientras se muestra el número (Android Chrome / iOS Safari 16.4+).
+- [ ] "🙈 Ocultar" vuelve a tapar el número.
+
+### Host y puntos
+- [ ] "✓ Alguien adivinó" abre la lista con todos y sus números (el del host aparece como "?").
+- [ ] Marcar suma 300 / 200 / 100 según el orden y el jugador ve "¡Adivinaste!" con su número en verde.
+- [ ] Tocar de nuevo a un jugador marcado pide confirmación y **desmarca** (resta los puntos).
+- [ ] Cuando todos adivinaron, "Nueva ronda" late.
+- [ ] "Nueva ronda" reparte números nuevos y vuelve a cubrir todas las pantallas.
+- [ ] No hay indicador de turno de preguntas en ninguna pantalla.
+
+### Casos borde
+- [ ] Recargar la pestaña de un jugador mantiene su número (vuelve a pedir tocar la cobertura).
+- [ ] Un jugador que se une a mitad de ronda ve "Esperá a la próxima ronda".
+- [ ] Si se cierra la pestaña del host, el nuevo host ve la barra de controles.
+- [ ] "Terminar" → podio → "Jugar de nuevo" vuelve al lobby con el mismo juego.
+

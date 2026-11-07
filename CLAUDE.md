@@ -32,6 +32,18 @@ dame-la-pasta/
 
 ---
 
+## Modo extra: ¿Qué número soy? (`numero-main`)
+
+Juego alternativo seleccionable al crear la sala (`gameType: "numero-main"`). Código en `js/games/numero-main/` (`logica.js` puro + `index.js` con render, handlers y DAO inline, igual que `quien-es-main`).
+
+- Cada jugador recibe un número 1–99 distinto dentro de la ronda. Lo ve gigante en su pantalla (vertical, subrayado para distinguir 6/9) tras tocar una **cobertura** local; lo muestran a los demás sin mirarlo.
+- Las preguntas y respuestas ocurren en voz alta; la app **no maneja turnos de pregunta**.
+- El host marca quién adivinó (hoja "¿Quién adivinó?"): 300/200/100 puntos por orden de acierto. "Nueva ronda" reparte números nuevos; "Terminar" va al podio.
+- Datos: `numeroRoundNumber` y `numeroRound: { numbers: {pid: n}, guessed: {pid: {position, points}} }`.
+- El estado de la cobertura y de la hoja es solo local (no va a Firebase). Wake Lock mantiene la pantalla encendida mientras el número está visible.
+
+---
+
 ## Firebase — configuración
 
 ### Setup inicial
