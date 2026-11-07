@@ -63,6 +63,8 @@ IDs diferentes).
 - [ ] El **subrayado** deja clara la orientación (probar 6, 9, 66, 69, 96, 99).
 - [ ] La pantalla **no se apaga** mientras se muestra el número (Android Chrome / iOS Safari 16.4+).
 - [ ] "🙈 Ocultar" vuelve a tapar el número.
+- [ ] Al tocar la cobertura aparece **"¡Dá vuelta el celular!"** con cuenta 3·2·1 (con tick y vibración en Android) y recién después se muestra el número.
+- [ ] En iPhone (con barra de inicio) la barra del host no queda tapada por el marcador.
 
 ### Host y puntos
 - [ ] "✓ Alguien adivinó" abre la lista con todos y sus números (el del host aparece como "?").

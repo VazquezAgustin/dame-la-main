@@ -4,6 +4,10 @@ import {
 import { db, GameDAO } from "../../firebase.js";
 import { ref, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { esc } from "../../logica.js";
+import { playTick } from "../../audio.js";
+
+// Segundos de cuenta regresiva entre tocar la cobertura y mostrar el número
+export const COUNTDOWN_SECONDS = 3;
 
 // ── Contexto inyectado por main.js via initGame() ────────────────
 let _ctx = null;
@@ -17,10 +21,40 @@ let _revealedRound = -1;   // ronda para la que este jugador ya tocó la cobertu
 let _sheetOpen     = false;
 let _lastKey       = null; // dirty-check del render
 let _wakeLock      = null;
+let _countdownRound = -1;  // ronda para la que corre la cuenta regresiva (-1 = ninguna)
+let _countdownLeft  = 0;
+let _countdownTimer = null;
 
 export function _setTestContext(ctx) { _ctx = ctx; }
 export function _resetTestState() {
+  _clearCountdown();
   _revealedRound = -1; _sheetOpen = false; _lastKey = null; _wakeLock = null;
+}
+
+// ── Cuenta regresiva local: tocar la cobertura → 3·2·1 → número ──
+function _clearCountdown() {
+  if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
+  _countdownRound = -1;
+  _countdownLeft  = 0;
+}
+
+function _startCountdown(roundNum) {
+  if (_countdownTimer) return;
+  _countdownRound = roundNum;
+  _countdownLeft  = COUNTDOWN_SECONDS;
+  _rerender();
+  _countdownTimer = setInterval(() => {
+    _countdownLeft--;
+    if (_countdownLeft <= 0) {
+      _clearCountdown();
+      _revealedRound = roundNum;
+      _rerender();
+      return;
+    }
+    try { playTick(); } catch (_) {}
+    try { navigator.vibrate?.(60); } catch (_) {}
+    _rerender();
+  }, 1000);
 }
 
 // ── Inline DAO — operaciones Firebase específicas de este juego ──
@@ -115,9 +149,14 @@ export function renderRound(s) {
   const revealed = _revealedRound === roundNum;
   const sheetOpen = host && _sheetOpen;
 
+  // Si el host repartió una ronda nueva a mitad de la cuenta, se cancela
+  if (_countdownRound !== -1 && _countdownRound !== roundNum) _clearCountdown();
+  const countingDown = _countdownRound === roundNum && !revealed;
+
   const key = JSON.stringify({
     mode: "round", roundNum, numbers, guessed, order,
     names: order.map(pid => players[pid]?.name), host, revealed, sheetOpen,
+    countdown: countingDown ? _countdownLeft : null,
   });
   if (key === _lastKey) return;
   _lastKey = key;
@@ -129,10 +168,20 @@ export function renderRound(s) {
 
   // Escenario del número propio
   const hasNumber = myNumber !== undefined;
-  const showCover = hasNumber && !myGuess && !revealed;
+  const showCount = hasNumber && !myGuess && countingDown;
+  const showCover = hasNumber && !myGuess && !revealed && !showCount;
   const showNum   = hasNumber && (!!myGuess || revealed);
 
   _show("numero-cover", showCover, "flex");
+  _show("numero-countdown", showCount, "flex");
+  if (showCount) {
+    const cEl = document.getElementById("numero-countdown-num");
+    cEl.textContent = _countdownLeft;
+    // reiniciar la animación de pulso en cada tick
+    cEl.classList.remove("tick");
+    void cEl.offsetWidth;
+    cEl.classList.add("tick");
+  }
   _show("numero-esperar", !hasNumber, "block");
   const numEl = document.getElementById("numero-gigante");
   numEl.style.display = showNum ? "block" : "none";
@@ -284,6 +333,7 @@ async function _handleJugarNuevo() {
     if (old) players[pid] = { ...old, score: 0 };
   });
   try {
+    _clearCountdown();
     _revealedRound = -1; _sheetOpen = false; _lastKey = null;
     await GameDAO.createRoom(getRoomCode(), {
       createdAt:   Date.now(),
@@ -313,10 +363,11 @@ export default {
     on("btn-numero-adivino",      () => { _sheetOpen = true;  _rerender(); });
     on("btn-numero-sheet-cerrar", () => { _sheetOpen = false; _rerender(); });
     on("numero-cover", () => {
-      _revealedRound = _ctx.getState()?.numeroRoundNumber ?? -1;
-      _rerender();
+      const round = _ctx.getState()?.numeroRoundNumber;
+      if (round === undefined) return;
+      _startCountdown(round);
     });
-    on("btn-numero-ocultar", () => { _revealedRound = -1; _rerender(); });
+    on("btn-numero-ocultar", () => { _clearCountdown(); _revealedRound = -1; _rerender(); });
 
     // Lista del sheet: delegación (se re-renderiza)
     document.getElementById("numero-sheet-list")?.addEventListener("click", (e) => {
@@ -339,11 +390,12 @@ export default {
   },
 
   render(s) {
-    if (s.status === "finished") { _releaseWakeLock(); renderGameFinished(s); return; }
+    if (s.status === "finished") { _clearCountdown(); _releaseWakeLock(); renderGameFinished(s); return; }
     renderCurrent(s);
   },
 
   cleanup() {
+    _clearCountdown();
     _releaseWakeLock();
   },
 };
