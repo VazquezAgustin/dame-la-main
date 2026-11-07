@@ -14,6 +14,16 @@ Réplica web del concurso "Dame la Main" de Ibai Llanos. Juego de trivia multiju
 6. El que pulsa dice su respuesta en voz alta y toca "Mostrar respuesta"
 7. El host decide si fue correcto o no
 
+### 🔢 ¿Qué número soy?
+
+Al crear la sala se puede elegir este juego en lugar del tablero.
+
+1. El host toca **Repartir números**: cada jugador recibe un número del 1 al 99 (sin repetir dentro de la ronda)
+2. Cada uno toca la pantalla de cobertura para mostrar su número **sin mirarlo** y gira el celular hacia los demás
+3. Los jugadores se turnan (por su cuenta, la app no maneja turnos) para hacer preguntas de sí o no y acotar su número: "¿con este número me puedo jubilar?"
+4. Cuando alguien adivina, el host toca **Alguien adivinó** y lo marca: suma 300 / 200 / 100 puntos según el orden de acierto
+5. **Nueva ronda** reparte números nuevos; **Terminar** muestra el podio
+
 ---
 
 ## Configuración de Firebase
@@ -149,7 +159,8 @@ dame-la-pasta/
 │   ├── firebase.config.js          ← credenciales reales (NO subir al repo)
 │   ├── firebase.js                 ← DAO + implementación Firebase
 │   ├── juego.js                    ← lógica del juego y render
-│   └── preguntas.js                ← pool de categorías y banco de preguntas
+│   ├── preguntas.js                ← pool de categorías y banco de preguntas
+│   └── games/numero-main/          ← ¿Qué número soy? (logica.js + index.js)
 └── README.md
 ```
 

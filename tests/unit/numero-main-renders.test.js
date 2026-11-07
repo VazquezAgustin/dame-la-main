@@ -1,0 +1,228 @@
+// @vitest-environment jsdom
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
+// Mockear el SDK de Firebase desde CDN (no se puede importar en Node)
+vi.mock("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js", () => ({
+  ref: () => ({}),
+  update: vi.fn(async () => {}),
+  serverTimestamp: () => 0,
+}));
+
+// Mockear js/firebase.js (importa firebase.config.js — gitignored)
+vi.mock("../../js/firebase.js", () => ({
+  db: {},
+  GameDAO: {},
+  firebaseConfigurado: false,
+}));
+
+import NumeroGame, {
+  _setTestContext, _resetTestState, renderBetween, renderRound,
+} from "../../js/games/numero-main/index.js";
+
+const HOST = "p_host";
+const OTRO = "p_otro";
+const ROOM = "TEST01";
+
+function mountDom() {
+  document.body.innerHTML = `
+    <div id="vista-tablero"></div>
+    <div id="vista-ruleta"></div>
+    <div id="pregunta-overlay"></div>
+    <div id="vista-numero-main" style="display:none">
+      <div id="numero-between">
+        <button id="btn-numero-repartir" style="display:none"></button>
+        <p id="numero-wait-host" style="display:none"></p>
+      </div>
+      <div id="numero-round" style="display:none">
+        <div class="numero-topbar"><span id="numero-ronda"></span></div>
+        <div id="numero-stage">
+          <div id="numero-cover"></div>
+          <div id="numero-gigante" style="display:none"></div>
+          <div id="numero-adivinado" style="display:none"></div>
+          <div id="numero-esperar" style="display:none"></div>
+        </div>
+        <button id="btn-numero-ocultar" style="display:none"></button>
+        <div id="numero-host-bar" style="display:none">
+          <button id="btn-numero-adivino"></button>
+          <button id="btn-numero-nueva-ronda"></button>
+          <button id="btn-numero-terminar"></button>
+        </div>
+        <div id="numero-sheet" style="display:none">
+          <div id="numero-sheet-list"></div>
+          <button id="btn-numero-sheet-cerrar"></button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function baseState(extra = {}) {
+  return {
+    hostId: HOST,
+    gameType: "numero-main",
+    status: "playing",
+    players: {
+      [HOST]: { name: "Host", score: 0, connected: true },
+      [OTRO]: { name: "Otro", score: 0, connected: true },
+    },
+    playerOrder: [HOST, OTRO],
+    numeroRoundNumber: 1,
+    numeroRound: { numbers: { [HOST]: 18, [OTRO]: 73 }, guessed: null },
+    ...extra,
+  };
+}
+
+let holder;
+function setup({ isHost = true, myId = HOST, state = baseState() } = {}) {
+  mountDom();
+  _resetTestState();
+  holder = { s: state };
+  const ctx = {
+    getMyPlayerId: () => myId,
+    getRoomCode:   () => ROOM,
+    getIsHost:     () => isHost,
+    getState:      () => holder.s,
+    triggerFlash:  vi.fn(),
+  };
+  _setTestContext(ctx);
+  NumeroGame.initGame(ctx);
+  return ctx;
+}
+
+const $ = (id) => document.getElementById(id);
+
+describe("¿Qué número soy? — entre rondas", () => {
+  it("el host ve 'Repartir números' y no el mensaje de espera", () => {
+    setup();
+    renderBetween(baseState({ numeroRound: null }));
+    expect($("btn-numero-repartir").style.display).toBe("block");
+    expect($("numero-wait-host").style.display).toBe("none");
+  });
+
+  it("un jugador que no es host ve el mensaje de espera", () => {
+    setup({ isHost: false, myId: OTRO });
+    renderBetween(baseState({ numeroRound: null }));
+    expect($("btn-numero-repartir").style.display).toBe("none");
+    expect($("numero-wait-host").style.display).toBe("block");
+  });
+});
+
+describe("¿Qué número soy? — ronda en curso", () => {
+  it("al principio muestra la cobertura y no el número", () => {
+    setup();
+    renderRound(baseState());
+    expect($("numero-cover").style.display).toBe("flex");
+    expect($("numero-gigante").style.display).toBe("none");
+    expect($("numero-ronda").textContent).toBe("Ronda 1");
+  });
+
+  it("tocar la cobertura muestra MI número y no el de otro", () => {
+    setup();
+    renderRound(baseState());
+    $("numero-cover").click();
+    expect($("numero-cover").style.display).toBe("none");
+    expect($("numero-gigante").style.display).toBe("block");
+    expect($("numero-gigante").textContent).toBe("18");
+    expect(document.body.textContent).not.toContain("73");
+  });
+
+  it("'Ocultar' vuelve a mostrar la cobertura", () => {
+    setup();
+    renderRound(baseState());
+    $("numero-cover").click();
+    $("btn-numero-ocultar").click();
+    expect($("numero-cover").style.display).toBe("flex");
+    expect($("numero-gigante").style.display).toBe("none");
+  });
+
+  it("al cambiar de ronda vuelve a aparecer la cobertura", () => {
+    setup();
+    renderRound(baseState());
+    $("numero-cover").click();
+    expect($("numero-gigante").style.display).toBe("block");
+
+    renderRound(baseState({
+      numeroRoundNumber: 2,
+      numeroRound: { numbers: { [HOST]: 5, [OTRO]: 40 }, guessed: null },
+    }));
+    expect($("numero-cover").style.display).toBe("flex");
+    expect($("numero-gigante").style.display).toBe("none");
+  });
+
+  it("la barra de host se ve solo para el host", () => {
+    setup();
+    renderRound(baseState());
+    expect($("numero-host-bar").style.display).toBe("flex");
+
+    setup({ isHost: false, myId: OTRO });
+    renderRound(baseState());
+    expect($("numero-host-bar").style.display).toBe("none");
+  });
+
+  it("quien ya adivinó ve su número en verde y el texto de acierto con puntos", () => {
+    setup({ isHost: false, myId: OTRO });
+    renderRound(baseState({
+      numeroRound: {
+        numbers: { [HOST]: 18, [OTRO]: 73 },
+        guessed: { [OTRO]: { position: 1, points: 300 } },
+      },
+    }));
+    expect($("numero-cover").style.display).toBe("none");
+    expect($("numero-gigante").textContent).toBe("73");
+    expect($("numero-gigante").classList.contains("adivinado")).toBe(true);
+    expect($("numero-adivinado").textContent).toContain("+300");
+    expect($("numero-adivinado").textContent).toContain("1.º");
+  });
+
+  it("un jugador sin número (se unió tarde) ve 'Esperá a la próxima ronda'", () => {
+    setup({ isHost: false, myId: "p_tarde" });
+    renderRound(baseState());
+    expect($("numero-esperar").style.display).toBe("block");
+    expect($("numero-cover").style.display).toBe("none");
+    expect($("numero-gigante").style.display).toBe("none");
+  });
+
+  it("no existe ningún elemento de turno en el DOM", () => {
+    setup();
+    renderRound(baseState());
+    expect($("numero-turno")).toBeNull();
+    expect($("btn-numero-sig-turno")).toBeNull();
+  });
+});
+
+describe("¿Qué número soy? — hoja '¿Quién adivinó?' (host)", () => {
+  it("lista a todos; el número propio del host aparece como '?'", () => {
+    setup();
+    renderRound(baseState());
+    $("btn-numero-adivino").click();
+    expect($("numero-sheet").style.display).toBe("flex");
+    const rows = document.querySelectorAll(".numero-sheet-row");
+    expect(rows).toHaveLength(2);
+    const rowHost = document.querySelector(`.numero-sheet-row[data-pid="${HOST}"] .numero-sheet-num`);
+    const rowOtro = document.querySelector(`.numero-sheet-row[data-pid="${OTRO}"] .numero-sheet-num`);
+    expect(rowHost.textContent).toBe("?");
+    expect(rowOtro.textContent).toBe("73");
+  });
+
+  it("'Cerrar' oculta la hoja", () => {
+    setup();
+    renderRound(baseState());
+    $("btn-numero-adivino").click();
+    $("btn-numero-sheet-cerrar").click();
+    expect($("numero-sheet").style.display).toBe("none");
+  });
+
+  it("'Nueva ronda' pulsa cuando todos adivinaron", () => {
+    setup();
+    renderRound(baseState({
+      numeroRound: {
+        numbers: { [HOST]: 18, [OTRO]: 73 },
+        guessed: {
+          [HOST]: { position: 1, points: 300 },
+          [OTRO]: { position: 2, points: 200 },
+        },
+      },
+    }));
+    expect($("btn-numero-nueva-ronda").classList.contains("pulse")).toBe(true);
+  });
+});

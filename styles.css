@@ -1688,10 +1688,11 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
 ══════════════════════════════════════════════════════════════ */
 .game-selector {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 .game-option {
-  flex: 1;
+  flex: 1 1 calc(50% - 5px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2225,4 +2226,192 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   width: 100%;
   max-height: 42vh;
   overflow-y: auto;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   ¿QUÉ NÚMERO SOY?
+   El número se muestra en vertical (sin rotar) y ocupa casi toda la
+   pantalla para leerse desde 2–3 metros.
+══════════════════════════════════════════════════════════════ */
+#vista-numero-main {
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.numero-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  width: 100%;
+  max-width: 420px;
+  min-height: 60vh;
+  text-align: center;
+}
+.numero-panel-full {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  flex: 1;
+  /* alto del viewport menos padding de #screen-game (12 + 60) */
+  min-height: calc(100dvh - 84px);
+}
+.numero-topbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 32px;
+  color: var(--texto-secundario);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.numero-stage {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 24px;
+  background: radial-gradient(circle at center, rgba(var(--primario-rgb),0.35), transparent 70%);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+}
+.numero-gigante {
+  font-family: 'Bebas Neue', cursive;
+  /* dos dígitos en Bebas ≈ 0.8em de ancho; el min() con dvh evita que se salga en pantallas bajas */
+  font-size: min(110vw, 52dvh);
+  line-height: 0.9;
+  color: var(--acento);
+  text-shadow: 0 0 40px rgba(245,158,11,0.55);
+  font-variant-numeric: tabular-nums;
+  /* El subrayado marca la base del número: evita confundir 6/9, 66/99, etc. si el celular queda dado vuelta */
+  text-decoration: underline;
+  text-decoration-thickness: 0.04em;
+  text-underline-offset: 0.08em;
+}
+.numero-gigante.adivinado { color: var(--correcto); text-shadow: 0 0 40px rgba(16,185,129,0.55); }
+.numero-adivinado {
+  position: absolute;
+  left: 0; right: 0; bottom: 14px;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--correcto);
+}
+.numero-esperar {
+  font-size: 1.2rem;
+  color: var(--texto-secundario);
+  text-align: center;
+  padding: 0 24px;
+}
+.numero-cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  background: var(--celda-normal);
+  text-align: center;
+  cursor: pointer;
+}
+.numero-cover-icon { font-size: 5rem; line-height: 1; }
+.numero-cover-text { font-size: 1.15rem; color: var(--texto); line-height: 1.4; }
+.numero-ocultar {
+  align-self: center;
+  background: transparent;
+  border: 1px solid rgba(var(--primario-rgb),0.4);
+  color: var(--texto-secundario);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.numero-host-bar {
+  display: flex;
+  gap: 8px;
+}
+.numero-host-bar .btn {
+  flex: 1;
+  min-height: 56px;
+  padding: 8px;
+  font-size: 0.85rem;
+  box-shadow: none;
+}
+.numero-host-bar .btn.pulse { animation: pulse-buzzer 1.2s infinite; }
+.numero-sheet {
+  position: fixed;
+  left: 0; right: 0;
+  bottom: 44px;
+  max-height: 70dvh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 14px;
+  background: rgba(10, 10, 26, 0.98);
+  border-top: 1px solid var(--primario);
+  border-radius: 20px 20px 0 0;
+  z-index: 150;
+  animation: numero-sheet-up 0.25s ease-out;
+}
+@keyframes numero-sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.numero-sheet-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.5rem;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+.numero-sheet-list { display: flex; flex-direction: column; gap: 6px; }
+.numero-sheet-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 12px;
+  background: var(--celda-normal);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--texto);
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  width: 100%;
+}
+.numero-sheet-row.hecho { border-color: var(--correcto); }
+.numero-sheet-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--primario);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.numero-sheet-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.numero-sheet-num {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.6rem;
+  color: var(--acento);
+  min-width: 2ch;
+  text-align: right;
+}
+.numero-sheet-estado { font-size: 0.8rem; color: var(--correcto); min-width: 84px; text-align: right; }
+@media (prefers-reduced-motion: reduce) {
+  .numero-host-bar .btn.pulse, .numero-sheet { animation: none; }
 }
