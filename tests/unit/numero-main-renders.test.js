@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // Mockear el SDK de Firebase desde CDN (no se puede importar en Node)
 vi.mock("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js", () => ({
@@ -14,6 +14,9 @@ vi.mock("../../js/firebase.js", () => ({
   GameDAO: {},
   firebaseConfigurado: false,
 }));
+
+// Mockear audio.js (depende de Web Audio API)
+vi.mock("../../js/audio.js", () => ({ playTick: vi.fn() }));
 
 import NumeroGame, {
   _setTestContext, _resetTestState, renderBetween, renderRound,
@@ -37,6 +40,7 @@ function mountDom() {
         <div class="numero-topbar"><span id="numero-ronda"></span></div>
         <div id="numero-stage">
           <div id="numero-cover"></div>
+          <div id="numero-countdown" style="display:none"><div id="numero-countdown-num"></div></div>
           <div id="numero-gigante" style="display:none"></div>
           <div id="numero-adivinado" style="display:none"></div>
           <div id="numero-esperar" style="display:none"></div>
@@ -108,6 +112,9 @@ describe("¿Qué número soy? — entre rondas", () => {
 });
 
 describe("¿Qué número soy? — ronda en curso", () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
   it("al principio muestra la cobertura y no el número", () => {
     setup();
     renderRound(baseState());
@@ -116,10 +123,26 @@ describe("¿Qué número soy? — ronda en curso", () => {
     expect($("numero-ronda").textContent).toBe("Ronda 1");
   });
 
-  it("tocar la cobertura muestra MI número y no el de otro", () => {
+  it("tocar la cobertura arranca la cuenta regresiva sin mostrar el número", () => {
     setup();
     renderRound(baseState());
     $("numero-cover").click();
+    expect($("numero-cover").style.display).toBe("none");
+    expect($("numero-countdown").style.display).toBe("flex");
+    expect($("numero-countdown-num").textContent).toBe("3");
+    expect($("numero-gigante").style.display).toBe("none");
+
+    vi.advanceTimersByTime(1000);
+    expect($("numero-countdown-num").textContent).toBe("2");
+    expect($("numero-gigante").style.display).toBe("none");
+  });
+
+  it("al terminar la cuenta muestra MI número y no el de otro", () => {
+    setup();
+    renderRound(baseState());
+    $("numero-cover").click();
+    vi.advanceTimersByTime(3000);
+    expect($("numero-countdown").style.display).toBe("none");
     expect($("numero-cover").style.display).toBe("none");
     expect($("numero-gigante").style.display).toBe("block");
     expect($("numero-gigante").textContent).toBe("18");
@@ -130,6 +153,7 @@ describe("¿Qué número soy? — ronda en curso", () => {
     setup();
     renderRound(baseState());
     $("numero-cover").click();
+    vi.advanceTimersByTime(3000);
     $("btn-numero-ocultar").click();
     expect($("numero-cover").style.display).toBe("flex");
     expect($("numero-gigante").style.display).toBe("none");
@@ -139,6 +163,7 @@ describe("¿Qué número soy? — ronda en curso", () => {
     setup();
     renderRound(baseState());
     $("numero-cover").click();
+    vi.advanceTimersByTime(3000);
     expect($("numero-gigante").style.display).toBe("block");
 
     renderRound(baseState({
@@ -147,6 +172,25 @@ describe("¿Qué número soy? — ronda en curso", () => {
     }));
     expect($("numero-cover").style.display).toBe("flex");
     expect($("numero-gigante").style.display).toBe("none");
+  });
+
+  it("si llega una ronda nueva durante la cuenta, se cancela y vuelve la cobertura", () => {
+    setup();
+    renderRound(baseState());
+    $("numero-cover").click();
+    vi.advanceTimersByTime(1000);
+
+    holder.s = baseState({
+      numeroRoundNumber: 2,
+      numeroRound: { numbers: { [HOST]: 5, [OTRO]: 40 }, guessed: null },
+    });
+    renderRound(holder.s);
+    expect($("numero-countdown").style.display).toBe("none");
+    expect($("numero-cover").style.display).toBe("flex");
+
+    vi.advanceTimersByTime(5000);
+    expect($("numero-gigante").style.display).toBe("none");
+    expect($("numero-cover").style.display).toBe("flex");
   });
 
   it("la barra de host se ve solo para el host", () => {
