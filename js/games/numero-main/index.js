@@ -1,5 +1,6 @@
 import {
-  assignNumbers, pointsForPosition, guessedCount, allGuessed, buildNumeroInitialState,
+  assignNumbersByRange, pointsForPosition, guessedCount, allGuessed, buildNumeroInitialState,
+  normalizeRange, formatNumero,
 } from "./logica.js";
 import { db, GameDAO } from "../../firebase.js";
 import { ref, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -60,11 +61,17 @@ function _startCountdown(roundNum) {
 // ── Inline DAO — operaciones Firebase específicas de este juego ──
 const _rRef = (code) => ref(db, `rooms/${code}`);
 
-async function _daoNewRound(roomCode, numbers, roundNumber) {
+// El rango se guarda dentro de la ronda: el número en pantalla no cambia si el host toca el toggle a mitad de ronda.
+async function _daoNewRound(roomCode, numbers, roundNumber, range) {
   await update(_rRef(roomCode), {
-    numeroRound: { numbers, guessed: null },
+    numeroRound: { numbers, guessed: null, range },
     numeroRoundNumber: roundNumber,
   });
+}
+
+// Cambia el tamaño de los números. Aplica desde la próxima ronda que se reparta.
+async function _daoSetRange(roomCode, range) {
+  await update(_rRef(roomCode), { numeroRange: range });
 }
 
 async function _daoMarkGuessed(roomCode, pid, position, points, currentScore) {
@@ -112,6 +119,19 @@ function _showNumeroView() {
   _show("vista-numero-main", true, "flex");
 }
 
+// Texto de ayuda según el rango (pantalla "entre rondas")
+const RANGE_DESC = {
+  chico:  "Cada uno recibe un número del 1 al 99. Mostralo a los demás sin mirarlo y adivinalo haciendo preguntas de sí o no.",
+  grande: "Cada uno recibe una cifra de hasta 100 millones (pensala como plata). Mostrala a los demás sin mirarla y adivinala preguntando, por ejemplo: «¿me alcanza para un auto?».",
+};
+const RANGE_NAME = { chico: "chicos", grande: "grandes" };
+
+// Marca como activo el botón del rango vigente en los toggles del host
+function _syncRangeButtons(range) {
+  document.querySelectorAll(".numero-range-btn").forEach(b =>
+    b.classList.toggle("active", b.dataset.range === range));
+}
+
 function _rerender() {
   _lastKey = null;
   const s = _ctx.getState();
@@ -125,9 +145,15 @@ export function renderBetween(s) {
   _show("numero-round", false);
   _releaseWakeLock();
 
-  const key = JSON.stringify({ mode: "between", host: isHost() });
+  const range = normalizeRange(s.numeroRange);
+  const key = JSON.stringify({ mode: "between", host: isHost(), range });
   if (key === _lastKey) return;
   _lastKey = key;
+
+  const desc = document.getElementById("numero-between-desc");
+  if (desc) desc.textContent = RANGE_DESC[range];
+  _show("numero-range-between", isHost(), "flex");
+  _syncRangeButtons(range);
 
   _show("btn-numero-repartir", isHost());
   _show("numero-wait-host", !isHost());
@@ -148,6 +174,9 @@ export function renderRound(s) {
   const guessed  = round.guessed || {};
   const revealed = _revealedRound === roundNum;
   const sheetOpen = host && _sheetOpen;
+  // Rango de ESTA ronda (para mostrar) y rango vigente para la próxima (toggle del host)
+  const roundRange = normalizeRange(round.range);
+  const nextRange  = normalizeRange(s.numeroRange);
 
   // Si el host repartió una ronda nueva a mitad de la cuenta, se cancela
   if (_countdownRound !== -1 && _countdownRound !== roundNum) _clearCountdown();
@@ -157,6 +186,7 @@ export function renderRound(s) {
     mode: "round", roundNum, numbers, guessed, order,
     names: order.map(pid => players[pid]?.name), host, revealed, sheetOpen,
     countdown: countingDown ? _countdownLeft : null,
+    roundRange, nextRange,
   });
   if (key === _lastKey) return;
   _lastKey = key;
@@ -164,7 +194,9 @@ export function renderRound(s) {
   const myNumber = numbers[me];
   const myGuess  = guessed[me];
 
-  document.getElementById("numero-ronda").textContent = `Ronda ${roundNum}`;
+  document.getElementById("numero-ronda").textContent = `Ronda ${roundNum} · Números ${RANGE_NAME[roundRange]}`;
+  _show("numero-range-host", host, "flex");
+  _syncRangeButtons(nextRange);
 
   // Escenario del número propio
   const hasNumber = myNumber !== undefined;
@@ -186,7 +218,8 @@ export function renderRound(s) {
   const numEl = document.getElementById("numero-gigante");
   numEl.style.display = showNum ? "block" : "none";
   if (showNum) {
-    numEl.textContent = myNumber;
+    numEl.textContent = formatNumero(myNumber, roundRange);
+    numEl.classList.toggle("grande", roundRange === "grande");
     numEl.classList.toggle("adivinado", !!myGuess);
   }
   const advEl = document.getElementById("numero-adivinado");
@@ -209,7 +242,7 @@ export function renderRound(s) {
       const p = players[pid];
       if (!p) return "";
       const g = guessed[pid];
-      const numTxt = pid === me ? "?" : (numbers[pid] ?? "—");
+      const numTxt = pid === me ? "?" : (formatNumero(numbers[pid], roundRange) || "—");
       return `
         <button type="button" class="numero-sheet-row${g ? " hecho" : ""}" data-pid="${esc(pid)}">
           <span class="numero-sheet-avatar">${esc((p.name || "?")[0].toUpperCase())}</span>
@@ -263,10 +296,11 @@ async function _handleRepartir() {
   [btnR, btnN].forEach(b => { if (b) b.disabled = true; });
   try {
     const order    = s.playerOrder || [];
-    const numbers  = assignNumbers(order);
+    const range    = normalizeRange(s.numeroRange);
+    const numbers  = assignNumbersByRange(order, range);
     const roundNum = (s.numeroRoundNumber || 0) + 1;
     _sheetOpen = false;
-    await _daoNewRound(getRoomCode(), numbers, roundNum);
+    await _daoNewRound(getRoomCode(), numbers, roundNum, range);
   } catch (e) {
     console.error(e);
   } finally {
@@ -311,6 +345,15 @@ async function _handleUnmarkGuessed(pid) {
   } catch (e) { console.error(e); }
 }
 
+async function _handleSetRange(range) {
+  if (!isHost()) return;
+  const s = _ctx.getState();
+  if (normalizeRange(s?.numeroRange) === range) return;
+  try {
+    await _daoSetRange(getRoomCode(), range);
+  } catch (e) { console.error(e); }
+}
+
 async function _handleTerminar() {
   if (!isHost()) return;
   if (!confirm("¿Terminar la partida?")) return;
@@ -339,7 +382,7 @@ async function _handleJugarNuevo() {
       createdAt:   Date.now(),
       hostId:      myPlayerId(),
       status:      "lobby",
-      ...buildNumeroInitialState(),
+      ...buildNumeroInitialState({ numeroRange: s.numeroRange }),
       players,
       playerOrder: s.playerOrder || [],
     });
@@ -369,6 +412,25 @@ export default {
     });
     on("btn-numero-ocultar", () => { _clearCountdown(); _revealedRound = -1; _rerender(); });
 
+    // Selector del tamaño de los números al crear la sala (pantalla de inicio, no depende del juego activo)
+    document.querySelectorAll("#numero-range-selector .numero-range-option").forEach(opt => {
+      opt.addEventListener("click", () => {
+        document.querySelectorAll("#numero-range-selector .numero-range-option").forEach(o => o.classList.remove("active"));
+        opt.classList.add("active");
+        const hint = document.getElementById("numero-range-hint");
+        if (hint) hint.textContent = opt.dataset.range === "grande"
+          ? "Cada jugador recibe una cifra de hasta 100 millones, que solo ven los demás. Preguntá cosas como «¿me alcanza para un auto?»."
+          : "Cada jugador recibe un número del 1 al 99 que solo ven los demás. Adivinalo haciendo preguntas de sí o no.";
+      });
+    });
+
+    // Toggles del host (entre rondas y durante la ronda): delegación
+    document.getElementById("vista-numero-main")?.addEventListener("click", (e) => {
+      const btn = e.target.closest(".numero-range-btn");
+      if (!btn || !_esActivo()) return;
+      _handleSetRange(btn.dataset.range);
+    });
+
     // Lista del sheet: delegación (se re-renderiza)
     document.getElementById("numero-sheet-list")?.addEventListener("click", (e) => {
       if (!_esActivo()) return;
@@ -385,8 +447,8 @@ export default {
     });
   },
 
-  buildInitialState() {
-    return buildNumeroInitialState();
+  buildInitialState(config) {
+    return buildNumeroInitialState(config);
   },
 
   render(s) {

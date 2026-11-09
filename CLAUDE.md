@@ -36,10 +36,11 @@ dame-la-pasta/
 
 Juego alternativo seleccionable al crear la sala (`gameType: "numero-main"`). Código en `js/games/numero-main/` (`logica.js` puro + `index.js` con render, handlers y DAO inline, igual que `quien-es-main`).
 
-- Cada jugador recibe un número 1–99 distinto dentro de la ronda. Lo ve gigante en su pantalla (vertical, subrayado para distinguir 6/9) tras tocar una **cobertura** local y una cuenta regresiva de 3s ("¡Dá vuelta el celular!"); lo muestran a los demás sin mirarlo.
+- **Rango de números** (`numeroRange: "chico" | "grande"`, se elige al crear la sala y el host puede cambiarlo entre rondas; salas sin el campo = `chico`). `chico`: 1–99. `grande`: cifras redondas de 100 a 100 millones pensadas como plata ("¿me alcanza para un auto?"), sorteadas log-uniforme (igual de probable 4.500 que 72.000.000) y redondeadas a 2 cifras significativas, sin armar un pool (`assignBigNumbers`). Se muestran con punto de miles (`formatNumero`). El cambio de rango aplica desde la próxima ronda que se reparta: cada ronda guarda su rango en `numeroRound.range` y el display usa ese, no `numeroRange`.
+- Cada jugador recibe un número distinto dentro de la ronda. Lo ve gigante en su pantalla (vertical, subrayado para distinguir 6/9) tras tocar una **cobertura** local y una cuenta regresiva de 3s ("¡Dá vuelta el celular!"); lo muestran a los demás sin mirarlo.
 - Las preguntas y respuestas ocurren en voz alta; la app **no maneja turnos de pregunta**.
 - El host marca quién adivinó (hoja "¿Quién adivinó?"): 300/200/100 puntos por orden de acierto. "Nueva ronda" reparte números nuevos; "Terminar" va al podio.
-- Datos: `numeroRoundNumber` y `numeroRound: { numbers: {pid: n}, guessed: {pid: {position, points}} }`.
+- Datos: `numeroRange`, `numeroRoundNumber` y `numeroRound: { numbers: {pid: n}, guessed: {pid: {position, points}}, range }`.
 - El estado de la cobertura y de la hoja es solo local (no va a Firebase). Wake Lock mantiene la pantalla encendida mientras el número está visible.
 
 ---

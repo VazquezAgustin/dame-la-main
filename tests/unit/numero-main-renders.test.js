@@ -18,6 +18,7 @@ vi.mock("../../js/firebase.js", () => ({
 // Mockear audio.js (depende de Web Audio API)
 vi.mock("../../js/audio.js", () => ({ playTick: vi.fn() }));
 
+import { update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import NumeroGame, {
   _setTestContext, _resetTestState, renderBetween, renderRound,
 } from "../../js/games/numero-main/index.js";
@@ -33,6 +34,11 @@ function mountDom() {
     <div id="pregunta-overlay"></div>
     <div id="vista-numero-main" style="display:none">
       <div id="numero-between">
+        <p id="numero-between-desc"></p>
+        <div id="numero-range-between" style="display:none">
+          <button class="numero-range-btn" data-range="chico"></button>
+          <button class="numero-range-btn" data-range="grande"></button>
+        </div>
         <button id="btn-numero-repartir" style="display:none"></button>
         <p id="numero-wait-host" style="display:none"></p>
       </div>
@@ -46,6 +52,10 @@ function mountDom() {
           <div id="numero-esperar" style="display:none"></div>
         </div>
         <button id="btn-numero-ocultar" style="display:none"></button>
+        <div id="numero-range-host" style="display:none">
+          <button class="numero-range-btn" data-range="chico"></button>
+          <button class="numero-range-btn" data-range="grande"></button>
+        </div>
         <div id="numero-host-bar" style="display:none">
           <button id="btn-numero-adivino"></button>
           <button id="btn-numero-nueva-ronda"></button>
@@ -120,7 +130,7 @@ describe("¿Qué número soy? — ronda en curso", () => {
     renderRound(baseState());
     expect($("numero-cover").style.display).toBe("flex");
     expect($("numero-gigante").style.display).toBe("none");
-    expect($("numero-ronda").textContent).toBe("Ronda 1");
+    expect($("numero-ronda").textContent).toBe("Ronda 1 · Números chicos");
   });
 
   it("tocar la cobertura arranca la cuenta regresiva sin mostrar el número", () => {
@@ -268,5 +278,108 @@ describe("¿Qué número soy? — hoja '¿Quién adivinó?' (host)", () => {
       },
     }));
     expect($("btn-numero-nueva-ronda").classList.contains("pulse")).toBe(true);
+  });
+});
+
+describe("¿Qué número soy? — rango de números", () => {
+  beforeEach(() => { vi.useFakeTimers(); update.mockClear(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  const grandeState = (extra = {}) => baseState({
+    numeroRange: "grande",
+    numeroRound: { numbers: { [HOST]: 4500000, [OTRO]: 20000 }, guessed: null, range: "grande" },
+    ...extra,
+  });
+
+  function reveal() {
+    $("numero-cover").click();
+    vi.advanceTimersByTime(3000);
+  }
+
+  it("rango grande: el número sale formateado y con la clase 'grande'", () => {
+    setup({ state: grandeState() });
+    renderRound(holder.s);
+    reveal();
+    expect($("numero-gigante").textContent).toBe("4.500.000");
+    expect($("numero-gigante").classList.contains("grande")).toBe(true);
+    expect($("numero-ronda").textContent).toBe("Ronda 1 · Números grandes");
+  });
+
+  it("rango chico: sin clase 'grande' y sin formato", () => {
+    setup();
+    renderRound(baseState());
+    reveal();
+    expect($("numero-gigante").textContent).toBe("18");
+    expect($("numero-gigante").classList.contains("grande")).toBe(false);
+  });
+
+  it("una sala vieja sin numeroRange ni round.range se comporta como chico", () => {
+    setup();
+    renderRound(baseState());
+    reveal();
+    expect($("numero-gigante").classList.contains("grande")).toBe(false);
+    expect($("numero-ronda").textContent).toContain("chicos");
+  });
+
+  it("la hoja del host muestra los números ajenos formateados", () => {
+    setup({ state: grandeState() });
+    renderRound(holder.s);
+    $("btn-numero-adivino").click();
+    const rowOtro = document.querySelector(`.numero-sheet-row[data-pid="${OTRO}"] .numero-sheet-num`);
+    expect(rowOtro.textContent).toBe("20.000");
+  });
+
+  it("cambiar numeroRange a mitad de ronda NO cambia el número en pantalla", () => {
+    setup({ state: grandeState() });
+    renderRound(holder.s);
+    reveal();
+    // el host pasa a "chico" para la próxima ronda; la ronda actual sigue siendo grande
+    holder.s = grandeState({ numeroRange: "chico" });
+    renderRound(holder.s);
+    expect($("numero-gigante").textContent).toBe("4.500.000");
+    expect($("numero-gigante").classList.contains("grande")).toBe(true);
+  });
+
+  it("el toggle del host marca como activo el rango de la próxima ronda", () => {
+    setup({ state: grandeState({ numeroRange: "chico" }) });
+    renderRound(holder.s);
+    const active = document.querySelector("#numero-range-host .numero-range-btn.active");
+    expect(active.dataset.range).toBe("chico");
+  });
+
+  it("el toggle durante la ronda es visible solo para el host", () => {
+    setup({ state: grandeState() });
+    renderRound(holder.s);
+    expect($("numero-range-host").style.display).toBe("flex");
+
+    setup({ isHost: false, myId: OTRO, state: grandeState() });
+    renderRound(holder.s);
+    expect($("numero-range-host").style.display).toBe("none");
+  });
+
+  it("entre rondas: el toggle es solo del host y la descripción cambia con el rango", () => {
+    setup();
+    renderBetween(baseState({ numeroRound: null, numeroRange: "grande" }));
+    expect($("numero-range-between").style.display).toBe("flex");
+    expect($("numero-between-desc").textContent).toContain("100 millones");
+
+    setup({ isHost: false, myId: OTRO });
+    renderBetween(baseState({ numeroRound: null }));
+    expect($("numero-range-between").style.display).toBe("none");
+    expect($("numero-between-desc").textContent).toContain("1 al 99");
+  });
+
+  it("tocar 'Grandes' escribe numeroRange en Firebase", () => {
+    setup();
+    renderBetween(baseState({ numeroRound: null }));
+    document.querySelector("#numero-range-between .numero-range-btn[data-range='grande']").click();
+    expect(update).toHaveBeenCalledWith({}, { numeroRange: "grande" });
+  });
+
+  it("un jugador que no es host no puede cambiar el rango", () => {
+    setup({ isHost: false, myId: OTRO });
+    renderBetween(baseState({ numeroRound: null }));
+    document.querySelector("#numero-range-between .numero-range-btn[data-range='grande']").click();
+    expect(update).not.toHaveBeenCalled();
   });
 });

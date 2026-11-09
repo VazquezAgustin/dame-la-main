@@ -132,7 +132,14 @@
       </div>
 
       <div id="numero-main-options" style="display:none">
-        <p class="length-total-hint">Cada jugador recibe un número del 1 al 99 que solo ven los demás. Adivinalo haciendo preguntas de sí o no.</p>
+        <div class="form-group">
+          <label>Tamaño de los números</label>
+          <div class="game-selector" id="numero-range-selector">
+            <button type="button" class="numero-range-option active" data-range="chico">🔢 Chicos (1–99)</button>
+            <button type="button" class="numero-range-option" data-range="grande">💰 Grandes (hasta 100 millones)</button>
+          </div>
+        </div>
+        <p class="length-total-hint" id="numero-range-hint">Cada jugador recibe un número del 1 al 99 que solo ven los demás. Adivinalo haciendo preguntas de sí o no.</p>
       </div>
 
       <div id="pictionary-options" style="display:none">
@@ -301,7 +308,14 @@
     <div id="numero-between" class="numero-panel">
       <div class="quien-ready-emoji">🔢</div>
       <div class="quien-ready-title">¿Qué número soy?</div>
-      <p class="quien-ready-desc">Cada uno recibe un número del 1 al 99. Mostralo a los demás sin mirarlo y adivinalo haciendo preguntas de sí o no.</p>
+      <p class="quien-ready-desc" id="numero-between-desc">Cada uno recibe un número del 1 al 99. Mostralo a los demás sin mirarlo y adivinalo haciendo preguntas de sí o no.</p>
+      <!-- Tamaño de los números: el host lo cambia, los demás solo lo ven -->
+      <div class="numero-range-toggle" id="numero-range-between" style="display:none">
+        <div class="numero-range-btns">
+          <button type="button" class="numero-range-btn" data-range="chico">🔢 Chicos</button>
+          <button type="button" class="numero-range-btn" data-range="grande">💰 Grandes</button>
+        </div>
+      </div>
       <button class="btn btn-primario btn-prominente" id="btn-numero-repartir" style="display:none">🎲 Repartir números</button>
       <p class="esperando-msg" id="numero-wait-host" style="display:none">Esperando que el host reparta los números...</p>
     </div>
@@ -328,6 +342,15 @@
         <div class="numero-esperar" id="numero-esperar" style="display:none">Esperá a la próxima ronda</div>
       </div>
       <button class="numero-ocultar" id="btn-numero-ocultar" style="display:none">🙈 Ocultar</button>
+
+      <!-- Tamaño de los números para la próxima ronda (solo host) -->
+      <div class="numero-range-toggle" id="numero-range-host" style="display:none">
+        <div class="numero-range-btns">
+          <button type="button" class="numero-range-btn" data-range="chico">🔢 Chicos</button>
+          <button type="button" class="numero-range-btn" data-range="grande">💰 Grandes</button>
+        </div>
+        <span class="numero-range-note">Se aplica en la próxima ronda</span>
+      </div>
 
       <!-- Controles del host (solo host) -->
       <div class="numero-host-bar" id="numero-host-bar" style="display:none">
