@@ -315,6 +315,8 @@ async function handleCreateRoom() {
       buildConfig.roundsPerPlayer = parseInt(document.getElementById("quien-rounds-slider")?.value || "2", 10);
       buildConfig.famososPerRound = parseInt(document.getElementById("quien-famosos-slider")?.value || "8", 10);
       buildConfig.roundDuration   = parseInt(document.getElementById("quien-duration-slider")?.value || "60", 10);
+    } else if (selectedGameType === "numero-main") {
+      buildConfig.numeroRange = document.querySelector("#numero-range-selector .numero-range-option.active")?.dataset.range || "chico";
     } else if (selectedGameType === "pictionary") {
       buildConfig.roundsPerPlayer = parseInt(document.getElementById("picto-rounds-slider")?.value || "2", 10);
       buildConfig.drawSeconds     = parseInt(document.getElementById("picto-duration-slider")?.value || "80", 10);

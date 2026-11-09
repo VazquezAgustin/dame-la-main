@@ -1956,7 +1956,7 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
    PICTIONARY — CONFIG + PANTALLA DE JUEGO
 ══════════════════════════════════════════════════════════════ */
 /* Selector de categoría de palabras (form de crear sala) */
-.picto-cat-option {
+.picto-cat-option, .numero-range-option {
   flex: 1;
   padding: 10px 6px;
   background: var(--celda-normal);
@@ -1969,8 +1969,8 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
 }
-.picto-cat-option:hover { border-color: rgba(var(--primario-rgb),0.5); }
-.picto-cat-option.active {
+.picto-cat-option:hover, .numero-range-option:hover { border-color: rgba(var(--primario-rgb),0.5); }
+.picto-cat-option.active, .numero-range-option.active {
   border-color: var(--primario);
   background: rgba(var(--primario-rgb),0.15);
 }
@@ -2299,6 +2299,14 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   text-decoration-thickness: 0.04em;
   text-underline-offset: 0.08em;
 }
+/* Rango grande: hasta 11 caracteres ("100.000.000"), que entren en 360px sin scroll horizontal */
+.numero-gigante.grande {
+  font-size: min(19vw, 30dvh);
+  line-height: 1;
+  max-width: 100%;
+  white-space: nowrap;
+  text-align: center;
+}
 .numero-gigante.adivinado { color: var(--correcto); text-shadow: 0 0 40px rgba(16,185,129,0.55); }
 .numero-adivinado {
   position: absolute;
@@ -2450,7 +2458,35 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   color: var(--acento);
   min-width: 2ch;
   text-align: right;
+  white-space: nowrap;
 }
+@media (max-width: 400px) { .numero-sheet-num { font-size: 1.3rem; } }
+
+/* Selector del tamaño de los números (entre rondas y barra del host) */
+.numero-range-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.numero-range-btns { display: flex; gap: 8px; }
+.numero-range-btn {
+  padding: 8px 14px;
+  background: var(--celda-normal);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  color: var(--texto);
+  font-family: 'Bebas Neue', cursive;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.numero-range-btn.active {
+  border-color: var(--primario);
+  background: rgba(var(--primario-rgb),0.15);
+}
+.numero-range-note { font-size: 0.75rem; color: var(--texto-secundario); }
+.numero-range-info { font-size: 0.9rem; color: var(--texto-secundario); text-align: center; }
 .numero-sheet-estado { font-size: 0.8rem; color: var(--correcto); min-width: 84px; text-align: right; }
 @media (prefers-reduced-motion: reduce) {
   .numero-host-bar .btn.pulse, .numero-sheet,
