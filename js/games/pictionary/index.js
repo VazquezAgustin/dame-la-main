@@ -166,7 +166,7 @@ function _chatKey(pid) {
 
 // ── Helpers de layout ────────────────────────────────────────────
 function _showPictoView() {
-  ["vista-tablero", "vista-ruleta", "vista-quien-es-main", "vista-numero-main"].forEach((id) => {
+  ["vista-tablero", "vista-ruleta", "vista-quien-es-main", "vista-numero-main", "vista-tipo-main"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.style.display = "none";
   });

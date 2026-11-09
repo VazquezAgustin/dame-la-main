@@ -3,6 +3,7 @@ import DameLaMainGame    from "./games/dame-la-main/index.js";
 import QuienEsMainGame   from "./games/quien-es-main/index.js";
 import PictionaryGame    from "./games/pictionary/index.js";
 import NumeroMainGame    from "./games/numero-main/index.js";
+import TipoMainGame      from "./games/tipo-main/index.js";
 import { ACTIVE_THEME }  from "./theme.config.js";
 
 // ── Temática (colores + microcopys) ───────────────────────────────
@@ -27,6 +28,7 @@ const GAMES = {
   "quien-es-main": QuienEsMainGame,
   "pictionary":    PictionaryGame,
   "numero-main":   NumeroMainGame,
+  "tipo-main":     TipoMainGame,
 };
 function getGame(s) {
   return GAMES[s?.gameType ?? "dame-la-main"] ?? DameLaMainGame;
