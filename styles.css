@@ -2516,3 +2516,39 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   .numero-host-bar .btn.pulse, .numero-sheet,
   .numero-countdown-icon, .numero-countdown-num.tick { animation: none; }
 }
+
+/* ═══ INFO DE JUEGO ═══════════════════════════════════════════ */
+.game-option { position: relative; }
+.info-btn {
+  position: absolute; top: 6px; right: 6px;
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.95rem; line-height: 1; color: var(--texto-secundario);
+  background: rgba(255,255,255,0.08); cursor: pointer;
+}
+.info-btn:hover { color: var(--texto); background: rgba(var(--primario-rgb),0.4); }
+.info-fab {
+  position: fixed; top: calc(10px + env(safe-area-inset-top, 0px)); right: 10px; z-index: 90;
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid rgba(var(--primario-rgb),0.6);
+  background: rgba(10,10,26,0.8); color: var(--texto);
+  font-size: 1.1rem; line-height: 1; cursor: pointer;
+}
+.info-overlay {
+  position: fixed; inset: 0; z-index: 9998;
+  background: rgba(10,10,26,0.9);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.info-overlay.visible { display: flex !important; }
+.info-box {
+  width: 100%; max-width: 380px; max-height: 90vh; overflow-y: auto;
+  background: var(--celda-normal); border: 1px solid var(--primario);
+  border-radius: 16px; padding: 22px 20px; text-align: center;
+}
+.info-icono { font-size: 2.6rem; line-height: 1; }
+.info-box h2 { font-family: 'Bebas Neue', cursive; font-size: 1.9rem; margin: 6px 0 4px; }
+.info-desc { color: var(--texto-secundario); font-size: 0.9rem; margin-bottom: 14px; }
+.info-pasos {
+  text-align: left; margin: 0 0 18px; padding-left: 1.3rem;
+  display: flex; flex-direction: column; gap: 8px; font-size: 0.9rem;
+}

@@ -46,26 +46,31 @@
         <label>Juego</label>
         <div class="game-selector" id="game-selector">
           <button type="button" class="game-option active" data-game="dame-la-main">
+            <span class="info-btn" role="button" tabindex="0" data-info="dame-la-main" aria-label="Cómo se juega">ⓘ</span>
             <span class="game-icon">📋</span>
             <span class="game-name">Dame la Main</span>
             <span class="game-desc">Trivia por categorías</span>
           </button>
           <button type="button" class="game-option" data-game="quien-es-main">
+            <span class="info-btn" role="button" tabindex="0" data-info="quien-es-main" aria-label="Cómo se juega">ⓘ</span>
             <span class="game-icon">🎭</span>
             <span class="game-name">¿Quién es Main?</span>
             <span class="game-desc">Adivina el famoso</span>
           </button>
           <button type="button" class="game-option" data-game="pictionary">
+            <span class="info-btn" role="button" tabindex="0" data-info="pictionary" aria-label="Cómo se juega">ⓘ</span>
             <span class="game-icon">🎨</span>
             <span class="game-name">Pictionary</span>
             <span class="game-desc">Dibujá y adiviná</span>
           </button>
           <button type="button" class="game-option" data-game="numero-main">
+            <span class="info-btn" role="button" tabindex="0" data-info="numero-main" aria-label="Cómo se juega">ⓘ</span>
             <span class="game-icon">🔢</span>
             <span class="game-name">¿Qué número soy?</span>
             <span class="game-desc">Adiviná tu número preguntando</span>
           </button>
           <button type="button" class="game-option" data-game="tipo-main">
+            <span class="info-btn" role="button" tabindex="0" data-info="tipo-main" aria-label="Cómo se juega">ⓘ</span>
             <span class="game-icon">🏷️</span>
             <span class="game-name">¿Qué tipo soy?</span>
             <span class="game-desc">Adiviná qué tipo de persona sos</span>
@@ -592,6 +597,18 @@
     <h2>Fuiste removido de la sala</h2>
     <p>El host te expulsó de la partida.</p>
     <button class="btn-primario" onclick="location.reload()">Volver al inicio</button>
+  </div>
+</div>
+
+<!-- ℹ️ Modal INFO de juego (se llena desde js/games/info.js) -->
+<button type="button" class="info-fab" id="btn-info-juego" aria-label="Cómo se juega" style="display:none">ⓘ</button>
+<div class="info-overlay" id="modal-info" style="display:none" role="dialog" aria-modal="true" aria-labelledby="info-titulo">
+  <div class="info-box">
+    <div class="info-icono" id="info-icono"></div>
+    <h2 id="info-titulo"></h2>
+    <p class="info-desc" id="info-desc"></p>
+    <ol class="info-pasos" id="info-pasos"></ol>
+    <button type="button" class="btn btn-primario" id="btn-info-cerrar" style="width:100%">¡Entendido!</button>
   </div>
 </div>
 

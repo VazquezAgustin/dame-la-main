@@ -4,6 +4,7 @@ import QuienEsMainGame   from "./games/quien-es-main/index.js";
 import PictionaryGame    from "./games/pictionary/index.js";
 import NumeroMainGame    from "./games/numero-main/index.js";
 import TipoMainGame      from "./games/tipo-main/index.js";
+import { GAME_INFO }     from "./games/info.js";
 import { ACTIVE_THEME }  from "./theme.config.js";
 
 // ── Temática (colores + microcopys) ───────────────────────────────
@@ -250,6 +251,7 @@ function render(s) {
 
   state  = s;
   isHost = myPlayerId === s.hostId;
+  document.getElementById("btn-info-juego").style.display = "";
 
   if (!myName && s.players?.[myPlayerId]?.name) {
     myName = s.players[myPlayerId].name;
@@ -522,6 +524,35 @@ document.querySelectorAll(".game-option").forEach(opt => {
     });
   });
 });
+
+// ── INFO de cada juego (modal) ────────────────────────────────────
+function abrirInfo(gameType) {
+  const info = GAME_INFO[gameType] ?? GAME_INFO["dame-la-main"];
+  document.getElementById("info-icono").textContent  = info.icono;
+  document.getElementById("info-titulo").textContent = info.titulo;
+  document.getElementById("info-desc").textContent   = info.descripcion;
+  const ol = document.getElementById("info-pasos");
+  ol.innerHTML = "";
+  info.pasos.forEach(p => { const li = document.createElement("li"); li.textContent = p; ol.appendChild(li); });
+  const m = document.getElementById("modal-info");
+  m.style.display = "";
+  m.classList.add("visible");
+}
+function cerrarInfo() {
+  const m = document.getElementById("modal-info");
+  m.classList.remove("visible");
+  m.style.display = "none";
+}
+// ⓘ en las tarjetas del selector (no debe seleccionar la tarjeta)
+document.querySelectorAll(".info-btn").forEach(b => {
+  const abrir = (e) => { e.stopPropagation(); e.preventDefault(); abrirInfo(b.dataset.info); };
+  b.addEventListener("click", abrir);
+  b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") abrir(e); });
+});
+// ⓘ flotante dentro de la sala: usa el juego de la sala actual
+document.getElementById("btn-info-juego").addEventListener("click", () => abrirInfo(state?.gameType ?? "dame-la-main"));
+document.getElementById("btn-info-cerrar").addEventListener("click", cerrarInfo);
+document.getElementById("modal-info").addEventListener("click", (e) => { if (e.target.id === "modal-info") cerrarInfo(); });
 
 // Auto-reconexión al recargar
 if (firebaseConfigurado) {
