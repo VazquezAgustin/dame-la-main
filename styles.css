@@ -2234,7 +2234,7 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
    El número se muestra en vertical (sin rotar) y ocupa casi toda la
    pantalla para leerse desde 2–3 metros.
 ══════════════════════════════════════════════════════════════ */
-#vista-numero-main {
+#vista-numero-main, #vista-tipo-main {
   flex: 1;
   flex-direction: column;
   align-items: center;
@@ -2488,6 +2488,30 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
 .numero-range-note { font-size: 0.75rem; color: var(--texto-secundario); }
 .numero-range-info { font-size: 0.9rem; color: var(--texto-secundario); text-align: center; }
 .numero-sheet-estado { font-size: 0.8rem; color: var(--correcto); min-width: 84px; text-align: right; }
+/* ── ¿Qué tipo soy? ── reutiliza los estilos de .numero-* ── */
+.tipo-palabra {
+  font-family: 'Bebas Neue', cursive;
+  font-size: min(20vw, 26dvh);
+  line-height: 0.95;
+  color: var(--acento);
+  text-shadow: 0 0 40px rgba(245,158,11,0.55);
+  text-align: center;
+  max-width: 100%;
+  padding: 0 12px;
+  overflow-wrap: anywhere;
+}
+.tipo-palabra.larga { font-size: min(13vw, 18dvh); }
+.tipo-palabra.adivinado { color: var(--correcto); text-shadow: 0 0 40px rgba(16,185,129,0.55); }
+.tipo-sheet-word {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--acento);
+  max-width: 40%;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 @media (prefers-reduced-motion: reduce) {
   .numero-host-bar .btn.pulse, .numero-sheet,
   .numero-countdown-icon, .numero-countdown-num.tick { animation: none; }

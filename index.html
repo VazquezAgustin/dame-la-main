@@ -65,6 +65,11 @@
             <span class="game-name">¿Qué número soy?</span>
             <span class="game-desc">Adiviná tu número preguntando</span>
           </button>
+          <button type="button" class="game-option" data-game="tipo-main">
+            <span class="game-icon">🏷️</span>
+            <span class="game-name">¿Qué tipo soy?</span>
+            <span class="game-desc">Adiviná qué tipo de persona sos</span>
+          </button>
         </div>
       </div>
 
@@ -140,6 +145,10 @@
           </div>
         </div>
         <p class="length-total-hint" id="numero-range-hint">Cada jugador recibe un número del 1 al 99 que solo ven los demás. Adivinalo haciendo preguntas de sí o no.</p>
+      </div>
+
+      <div id="tipo-main-options" style="display:none">
+        <p class="length-total-hint">Cada jugador recibe un tipo de persona (ej: «Falopero», «Infieles») que solo ven los demás. Adivinalo preguntando: «¿Maradona entra en mi categoría?».</p>
       </div>
 
       <div id="pictionary-options" style="display:none">
@@ -364,6 +373,56 @@
         <div class="numero-sheet-title">¿Quién adivinó?</div>
         <div class="numero-sheet-list" id="numero-sheet-list"></div>
         <button class="btn btn-secundario" id="btn-numero-sheet-cerrar">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ¿Qué tipo soy? -->
+  <div id="vista-tipo-main" style="display:none">
+
+    <!-- Antes de la primera ronda -->
+    <div id="tipo-between" class="numero-panel">
+      <div class="quien-ready-emoji">🏷️</div>
+      <div class="quien-ready-title">¿Qué tipo soy?</div>
+      <p class="quien-ready-desc">Cada uno recibe un tipo de persona (ej: «Falopero», «Infieles»). Mostralo a los demás sin mirarlo y adivinalo preguntando: «¿Maradona entra en mi categoría?».</p>
+      <button class="btn btn-primario btn-prominente" id="btn-tipo-repartir" style="display:none">🎲 Repartir categorías</button>
+      <p class="esperando-msg" id="tipo-wait-host" style="display:none">Esperando que el host reparta las categorías...</p>
+    </div>
+
+    <!-- Ronda en curso -->
+    <div id="tipo-round" class="numero-panel-full" style="display:none">
+      <div class="numero-topbar">
+        <span class="numero-ronda" id="tipo-ronda"></span>
+      </div>
+
+      <div class="numero-stage" id="tipo-stage">
+        <div class="numero-cover" id="tipo-cover">
+          <div class="numero-cover-icon">🙈</div>
+          <div class="numero-cover-text">Tu categoría está lista.<br>Girá el celular hacia los demás y tocá para mostrarla.</div>
+        </div>
+        <div class="numero-countdown" id="tipo-countdown" style="display:none">
+          <div class="numero-countdown-icon">🔄</div>
+          <div class="numero-countdown-text">¡Dá vuelta el celular!</div>
+          <div class="numero-countdown-num" id="tipo-countdown-num">3</div>
+        </div>
+        <div class="tipo-palabra" id="tipo-palabra" style="display:none"></div>
+        <div class="numero-adivinado" id="tipo-adivinado" style="display:none"></div>
+        <div class="numero-esperar" id="tipo-esperar" style="display:none">Esperá a la próxima ronda</div>
+      </div>
+      <button class="numero-ocultar" id="btn-tipo-ocultar" style="display:none">🙈 Ocultar</button>
+
+      <!-- Controles del host (solo host) -->
+      <div class="numero-host-bar" id="tipo-host-bar" style="display:none">
+        <button class="btn btn-correcto" id="btn-tipo-adivino">✓ Alguien adivinó</button>
+        <button class="btn btn-primario" id="btn-tipo-nueva-ronda">🔄 Nueva ronda</button>
+        <button class="btn btn-secundario" id="btn-tipo-terminar">🏁 Terminar</button>
+      </div>
+
+      <!-- Hoja para elegir quién adivinó (solo host) -->
+      <div class="numero-sheet" id="tipo-sheet" style="display:none">
+        <div class="numero-sheet-title">¿Quién adivinó?</div>
+        <div class="numero-sheet-list" id="tipo-sheet-list"></div>
+        <button class="btn btn-secundario" id="btn-tipo-sheet-cerrar">Cerrar</button>
       </div>
     </div>
   </div>

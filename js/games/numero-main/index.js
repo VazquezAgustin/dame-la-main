@@ -113,7 +113,7 @@ function _show(id, visible, display = "block") {
 }
 
 function _showNumeroView() {
-  ["vista-tablero", "vista-ruleta", "vista-quien-es-main", "vista-pictionary"].forEach(id => _show(id, false));
+  ["vista-tablero", "vista-ruleta", "vista-quien-es-main", "vista-pictionary", "vista-tipo-main"].forEach(id => _show(id, false));
   const overlay = document.getElementById("pregunta-overlay");
   if (overlay) overlay.classList.remove("visible");
   _show("vista-numero-main", true, "flex");

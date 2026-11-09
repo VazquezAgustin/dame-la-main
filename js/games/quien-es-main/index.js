@@ -91,7 +91,7 @@ function _showPanel(id) {
 }
 
 function _showQuienView() {
-  ["vista-tablero", "vista-ruleta", "vista-numero-main"].forEach(id => {
+  ["vista-tablero", "vista-ruleta", "vista-numero-main", "vista-tipo-main"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = "none";
   });
