@@ -26,9 +26,16 @@ dame-la-pasta/
 │   ├── firebase.config.js          ← credenciales reales (en .gitignore)
 │   ├── firebase.js                 ← DAO + implementación Firebase
 │   ├── juego.js                    ← lógica del juego, render y handlers
+│   ├── games/info.js               ← textos del INFO (cómo se juega) de cada juego
 │   └── preguntas.js                ← pool de categorías y banco de preguntas
 └── README.md
 ```
+
+---
+
+## INFO de cada juego
+
+`js/games/info.js` exporta `GAME_INFO[gameType]` (`icono`, `titulo`, `descripcion`, `pasos`). Un único modal `#modal-info` se llena desde `abrirInfo(gameType)` en `main.js`. Se abre con el `ⓘ` de cada tarjeta del selector (`.info-btn`, no selecciona la tarjeta) y con el botón flotante `#btn-info-juego`, visible dentro de la sala y que usa `state.gameType`. Al agregar un juego nuevo, agregar su entrada en `GAME_INFO` y su `.info-btn` en `index.html`.
 
 ---
 
