@@ -729,11 +729,15 @@ GameDAO.skipQuestion = async (roomCode, nextSelectorIndex) => {
   });
 };
 
-// Registra presencia: Firebase ejecuta el set(false) automáticamente al desconectarse.
+// Registra presencia: en cada (re)conexión (.info/connected) re-registra el
+// onDisconnect y vuelve a marcar connected=true.
 GameDAO.setupPresence = async (roomCode, playerId) => {
   const presenceRef = ref(db, `rooms/${roomCode}/players/${playerId}/connected`);
-  await onDisconnect(presenceRef).set(false);
-  await set(presenceRef, true);
+  onValue(ref(db, ".info/connected"), async (snap) => {
+    if (snap.val() !== true) return;
+    await onDisconnect(presenceRef).set(false);
+    await set(presenceRef, true);
+  });
 };
 
 // Migra el host solo si hostId sigue siendo currentHostId (evita doble migración).
@@ -956,8 +960,8 @@ function renderPlaying(s) {
 ## Comportamientos técnicos clave (juego.js)
 
 - **Dirty-check de renders**: `renderBoard` y `updateScorebar` comparan una key JSON del estado relevante antes de reconstruir el DOM. Solo re-renderizan si algo cambió. `renderQuestion` y `renderLightning` limpian `_lastBoardKey` para forzar re-render al volver al tablero.
-- **Presencia**: `GameDAO.setupPresence()` se llama al entrar a una sala. Firebase marca automáticamente `connected: false` cuando el cliente pierde conexión.
-- **Migración de host**: `checkHostMigration()` se ejecuta en cada ciclo de `render()`. Si detecta `players[hostId].connected === false`, todos los clientes intentan migrar el host via transacción. El guard `_hostMigrating` evita llamadas repetidas desde el mismo cliente.
+- **Presencia**: `GameDAO.setupPresence()` se llama al entrar a una sala (crear, unirse, rejoin y auto-reconexión al recargar). Escucha `.info/connected` y en **cada** (re)conexión vuelve a registrar `onDisconnect(...).set(false)` y a escribir `connected: true` (si el jugador sigue existiendo). `GameDAO.stopPresence()` corta el listener y cancela el onDisconnect al salir o ser expulsado.
+- **Migración de host**: `checkHostMigration()` se ejecuta en cada ciclo de `render()`. Si detecta `players[hostId].connected === false`, arranca un timer de gracia de `HOST_GRACE_MS` (20s); si el host sigue desconectado al vencer, los clientes intentan migrarlo via transacción. Si el host vuelve antes, se cancela. Evita que un corte breve (ej. salir a WhatsApp a compartir el código) le pase el host al primero que se une. El guard `_hostMigrating` evita llamadas repetidas desde el mismo cliente.
 - **Timers sincronizados**: `openedAt` se guarda con `serverTimestamp()` en lugar de `Date.now()` del cliente. Todos los clientes calculan el tiempo transcurrido contra el mismo origen.
 - **Rollback del buzzer**: si `pressBuzzer` gana la transacción pero falla el update de `questionPhase`, revierte el buzzer a `null` para que el juego pueda continuar.
 - **Error recovery en handlers**: todos los handlers de acción (`handleBuzzer`, `handleRevelar`, `handleCorrecto`, `handleIncorrecto`, `handleSiguiente`, `handleSkip`) tienen try/catch que re-habilita los botones si Firebase falla.

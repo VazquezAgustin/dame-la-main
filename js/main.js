@@ -55,6 +55,10 @@ let state     = null;
 let isHost    = false;
 let unsubscribe   = null;
 let _hostMigrating = false;
+let _hostMigrationTimer = null;
+// Tiempo que el host tiene que estar desconectado antes de migrarlo
+// (evita robarle el host por un corte breve, ej. salir a WhatsApp a compartir el código)
+const HOST_GRACE_MS = 20000;
 let _lastScorebarKey = null;
 
 // ── Contexto expuesto al módulo de juego ─────────────────────────
@@ -226,13 +230,28 @@ function updateScorebar(s) {
 // ════════════════════════════════════════════════════════════════
 function checkHostMigration(s) {
   if (!s.players || !s.playerOrder || !s.hostId) return;
-  const hostConnected = s.players[s.hostId]?.connected;
-  if (hostConnected !== false) { _hostMigrating = false; return; }
-  if (_hostMigrating) return;
-  const newHostId = s.playerOrder.find(pid => pid !== s.hostId && s.players[pid]?.connected !== false);
-  if (!newHostId) return;
-  _hostMigrating = true;
-  GameDAO.migrateHost(roomCode, s.hostId, newHostId).catch(() => { _hostMigrating = false; });
+  const hostConnected = s.players[s.hostId]?.connected !== false;
+  if (hostConnected) {
+    cancelHostMigration();
+    _hostMigrating = false;
+    return;
+  }
+  if (_hostMigrationTimer || _hostMigrating) return;
+  const hostAtStart = s.hostId;
+  _hostMigrationTimer = setTimeout(() => {
+    _hostMigrationTimer = null;
+    const cur = state; // estado más reciente
+    if (!cur || cur.hostId !== hostAtStart) return;
+    if (cur.players?.[hostAtStart]?.connected !== false) return;
+    const newHostId = cur.playerOrder?.find(pid => pid !== hostAtStart && cur.players[pid]?.connected !== false);
+    if (!newHostId) return;
+    _hostMigrating = true;
+    GameDAO.migrateHost(roomCode, hostAtStart, newHostId).catch(() => { _hostMigrating = false; });
+  }, HOST_GRACE_MS);
+}
+
+function cancelHostMigration() {
+  if (_hostMigrationTimer) { clearTimeout(_hostMigrationTimer); _hostMigrationTimer = null; }
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -245,6 +264,8 @@ function render(s) {
     localStorage.removeItem("roomCode");
     localStorage.removeItem("myName");
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    GameDAO.stopPresence();
+    cancelHostMigration();
     document.getElementById("kicked-overlay").style.display = "flex";
     return;
   }
@@ -395,6 +416,8 @@ function handleSalir() {
   localStorage.removeItem("roomCode");
   localStorage.removeItem("myName");
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  GameDAO.stopPresence();
+  cancelHostMigration();
   const game = getGame(state);
   game?.cleanup();
   try { window.history.replaceState(null, "", location.pathname); } catch (_) {}
@@ -562,6 +585,7 @@ if (firebaseConfigurado) {
     roomCode = savedRoom;
     if (savedName) myName = savedName;
     subscribeToRoom(roomCode);
+    GameDAO.setupPresence(roomCode, myPlayerId).catch(() => {});
   } else {
     const urlParams     = new URLSearchParams(window.location.search);
     const roomFromUrl   = (urlParams.get("room") || "").toUpperCase().replace(/[^A-Z0-9]/g, "");

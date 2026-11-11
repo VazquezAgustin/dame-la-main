@@ -41,6 +41,7 @@ export const GameDAO = {
   endEstimacionMode:          async () => {},
   kickPlayer:             async () => {},
   setupPresence:             async () => {},
+  stopPresence:              () => {},
   migrateHost:           async () => {},
   subscribe:             () => () => {},
 };
@@ -212,11 +213,36 @@ if (firebaseConfigurado) {
     await update(rRef(roomCode), updates);
   };
 
-  // Registra presencia del jugador: marca connected=false automáticamente al desconectarse.
+  // Registra presencia del jugador usando `.info/connected`: en CADA (re)conexión
+  // vuelve a registrar el onDisconnect y a marcar connected=true. Sin esto, un
+  // jugador que perdió la conexión (ej. pestaña en segundo plano en el celular)
+  // quedaba marcado connected=false para siempre aunque hubiera vuelto.
+  let _presenceUnsub = null;
+  let _presenceRef   = null;
   GameDAO.setupPresence = async (roomCode, playerId) => {
+    GameDAO.stopPresence();
     const presenceRef = ref(db, `rooms/${roomCode}/players/${playerId}/connected`);
-    await onDisconnect(presenceRef).set(false);
-    await set(presenceRef, true);
+    _presenceRef = presenceRef;
+    _presenceUnsub = onValue(ref(db, ".info/connected"), async (snap) => {
+      if (snap.val() !== true) return;
+      try {
+        // Primero el onDisconnect, después connected=true (patrón oficial de Firebase)
+        await onDisconnect(presenceRef).set(false);
+        // Si el jugador ya no existe (fue expulsado) no lo recreamos
+        const nameSnap = await get(ref(db, `rooms/${roomCode}/players/${playerId}/name`));
+        if (!nameSnap.exists()) return;
+        await set(presenceRef, true);
+      } catch (e) {
+        console.error("Error registrando presencia:", e);
+      }
+    });
+  };
+
+  // Deja de re-registrar presencia (al salir de la sala o ser expulsado) y cancela
+  // el onDisconnect pendiente para no recrear al jugador como {connected:false}.
+  GameDAO.stopPresence = () => {
+    if (_presenceUnsub) { _presenceUnsub(); _presenceUnsub = null; }
+    if (_presenceRef) { onDisconnect(_presenceRef).cancel().catch(() => {}); _presenceRef = null; }
   };
 
   // Migra el host a otro jugador usando transacción para evitar condición de carrera.
