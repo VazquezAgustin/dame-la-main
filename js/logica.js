@@ -77,3 +77,23 @@ export function rebalanceLengths(currentState, bounds, changedSlot, newValue) {
   if (delta !== 0) next[changedSlot] -= delta;
   return next;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// 🖐 ROBO DE RESPUESTA
+// ═══════════════════════════════════════════════════════════════
+
+// Tiempo (ms) desde que alguien toma el turno hasta que otro puede robarlo
+export const STEAL_AFTER_MS = 10000;
+
+// Puntos que pierde el robado: la mitad del valor (en bonus, la mitad de value*2)
+export function stealPenalty(value, bonus) {
+  return Math.round((bonus ? value * 2 : value) / 2);
+}
+
+// ¿Puede `playerId` robar el turno de respuesta en este momento?
+export function canSteal(buzzer, playerId, now) {
+  if (!buzzer || buzzer.revealed) return false;
+  if (buzzer.playerId === playerId) return false;
+  if ((buzzer.stolenFrom || []).includes(playerId)) return false;
+  return now - buzzer.timestamp >= STEAL_AFTER_MS;
+}

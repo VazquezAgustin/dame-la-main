@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createInMemoryDao } from "../helpers/inMemoryDao.js";
 import { isBoardComplete, countAnsweredCells } from "../../js/logica.js";
 import { CATEGORY_POOL } from "../../js/preguntas.js";
@@ -89,7 +89,7 @@ describe("Flujo completo de partida", () => {
     await dao.joinRoom(ROOM, P1, { name: "P1", score: 0, connected: true });
     await dao.selectQuestion(ROOM, CATS[0], 200);
     await dao.pressBuzzer(ROOM, P1);
-    await dao.revealAnswer(ROOM);
+    await dao.revealAnswer(ROOM, P1);
     expect(getState().questionPhase).toBe("answer_revealed");
   });
 
@@ -98,7 +98,7 @@ describe("Flujo completo de partida", () => {
     await dao.joinRoom(ROOM, P1, { name: "P1", score: 0, connected: true });
     await dao.selectQuestion(ROOM, CATS[0], 400);
     await dao.pressBuzzer(ROOM, P1);
-    await dao.revealAnswer(ROOM);
+    await dao.revealAnswer(ROOM, P1);
     await dao.judgeAnswer(ROOM, P1, true, 400, CATS[0], 400);
 
     const s = getState();
@@ -113,7 +113,7 @@ describe("Flujo completo de partida", () => {
     await dao.joinRoom(ROOM, P1, { name: "P1", score: 600, connected: true });
     await dao.selectQuestion(ROOM, CATS[0], 200);
     await dao.pressBuzzer(ROOM, P1);
-    await dao.revealAnswer(ROOM);
+    await dao.revealAnswer(ROOM, P1);
     await dao.judgeAnswer(ROOM, P1, false, -200, CATS[0], 200);
 
     const s = getState();
@@ -126,7 +126,7 @@ describe("Flujo completo de partida", () => {
     await dao.joinRoom(ROOM, P1, { name: "P1", score: 0, connected: true });
     await dao.selectQuestion(ROOM, CATS[0], 200);
     await dao.pressBuzzer(ROOM, P1);
-    await dao.revealAnswer(ROOM);
+    await dao.revealAnswer(ROOM, P1);
     await dao.judgeAnswer(ROOM, P1, true, 200, CATS[0], 200);
     await dao.nextTurn(ROOM, 1, false);
 
@@ -149,7 +149,7 @@ describe("Flujo completo de partida", () => {
       for (const val of values) {
         await dao.selectQuestion(ROOM, cat, val);
         await dao.pressBuzzer(ROOM, P1);
-        await dao.revealAnswer(ROOM);
+        await dao.revealAnswer(ROOM, P1);
         await dao.judgeAnswer(ROOM, P1, true, val, cat, val);
         const board = getState().board;
         const finished = isBoardComplete(board, CATS);
@@ -172,7 +172,7 @@ describe("Flujo completo de partida", () => {
     for (const val of [200, 400, 600, 800, 1000]) {
       await dao.selectQuestion(ROOM, CATS[0], val);
       await dao.pressBuzzer(ROOM, P1);
-      await dao.revealAnswer(ROOM);
+      await dao.revealAnswer(ROOM, P1);
       await dao.judgeAnswer(ROOM, P1, true, val, CATS[0], val);
       await dao.nextTurn(ROOM, 0, false);
     }
@@ -180,6 +180,68 @@ describe("Flujo completo de partida", () => {
     const s = getState();
     expect(countAnsweredCells(s.board, CATS)).toBe(5);
     expect(isBoardComplete(s.board, CATS)).toBe(false); // falta Cat B
+  });
+
+  describe("Robo de respuesta", () => {
+    afterEach(() => vi.useRealTimers());
+
+    it("12. Robo en cadena: penaliza al robado y el ladrón responde", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(1_000_000);
+      await dao.startGame(ROOM);
+      await dao.joinRoom(ROOM, P1, { name: "P1", score: 1000, connected: true });
+      await dao.joinRoom(ROOM, P2, { name: "P2", score: 0, connected: true });
+      await dao.selectQuestion(ROOM, CATS[0], 400);
+      await dao.pressBuzzer(ROOM, P1);
+
+      // Antes de 10s no se puede robar
+      expect(await dao.stealBuzzer(ROOM, P2, P1, 200)).toBe(false);
+
+      vi.setSystemTime(1_011_000);
+      expect(await dao.stealBuzzer(ROOM, P2, P1, 200)).toBe(true);
+      let s = getState();
+      expect(s.buzzer.playerId).toBe(P2);
+      expect(s.buzzer.stolenFrom).toContain(P1);
+      expect(s.players[P1].score).toBe(800);
+
+      // P1 ya perdió el turno: no puede robar de vuelta
+      vi.setSystemTime(1_022_000);
+      expect(await dao.stealBuzzer(ROOM, P1, P2, 200)).toBe(false);
+
+      // Tras 10s, el host (tercer jugador) le roba a P2
+      expect(await dao.stealBuzzer(ROOM, HOST, P2, 200)).toBe(true);
+      s = getState();
+      expect(s.buzzer.playerId).toBe(HOST);
+      expect(s.buzzer.stolenFrom).toEqual([P1, P2]);
+
+      await dao.revealAnswer(ROOM, HOST);
+      await dao.judgeAnswer(ROOM, HOST, true, 400, CATS[0], 400);
+      expect(getState().players[HOST].score).toBe(400);
+    });
+
+    it("13. Tras revelar la respuesta ya no se puede robar", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(1_000_000);
+      await dao.startGame(ROOM);
+      await dao.joinRoom(ROOM, P1, { name: "P1", score: 0, connected: true });
+      await dao.joinRoom(ROOM, P2, { name: "P2", score: 0, connected: true });
+      await dao.selectQuestion(ROOM, CATS[0], 200);
+      await dao.pressBuzzer(ROOM, P1);
+      expect(await dao.revealAnswer(ROOM, P1)).toBe(true);
+      vi.setSystemTime(1_020_000);
+      expect(await dao.stealBuzzer(ROOM, P2, P1, 100)).toBe(false);
+      expect(getState().players[P1].score).toBe(0);
+    });
+
+    it("14. revealAnswer solo lo puede hacer quien tiene el turno", async () => {
+      await dao.startGame(ROOM);
+      await dao.joinRoom(ROOM, P1, { name: "P1", score: 0, connected: true });
+      await dao.joinRoom(ROOM, P2, { name: "P2", score: 0, connected: true });
+      await dao.selectQuestion(ROOM, CATS[0], 200);
+      await dao.pressBuzzer(ROOM, P1);
+      expect(await dao.revealAnswer(ROOM, P2)).toBe(false);
+      expect(getState().questionPhase).toBe("waiting_answer");
+    });
   });
 
   it("11. skipQuestion marca celda sin modificar scores", async () => {

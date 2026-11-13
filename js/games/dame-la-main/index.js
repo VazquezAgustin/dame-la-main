@@ -4,7 +4,7 @@ import {
 } from "../../preguntas.js";
 import {
   generateRoomCode, isBoardComplete, countAnsweredCells, esc, getQuestion,
-  categoryHasUnplayed, availableCategories,
+  categoryHasUnplayed, availableCategories, STEAL_AFTER_MS, canSteal, stealPenalty,
 } from "../../logica.js";
 import {
   playBuzzer, playCorrect, playIncorrect, playEstimacion, playLightning,
@@ -21,10 +21,12 @@ const getState   = () => _ctx.getState();
 // ── Estado de timers (propiedad del módulo) ───────────────────────
 let _timerInterval = null;
 let _skipTimeout   = null;
+let _stealTimeout  = null;
 
 function _clearIntervals() {
   if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
   if (_skipTimeout)   { clearTimeout(_skipTimeout);    _skipTimeout   = null; }
+  if (_stealTimeout)  { clearTimeout(_stealTimeout);   _stealTimeout  = null; }
 }
 
 // ── Estado de dirty-checks ────────────────────────────────────────
@@ -830,17 +832,18 @@ function renderTimer(openedAt, phase, buzzer) {
 
   } else if (phase === "waiting_answer" && buzzer?.timestamp) {
     countEl.style.display = "block";
-    const ANSWER_TIMEOUT  = 30000;
+    // Ventana de 10s antes de que otro jugador pueda robar el turno
+    const ANSWER_TIMEOUT  = STEAL_AFTER_MS;
     let flashedOnExpiry   = false;
     const tick = () => {
-      const elapsed   = Date.now() - buzzer.timestamp;
+      const elapsed   = GameDAO.serverNow() - buzzer.timestamp;
       const remaining = Math.max(0, ANSWER_TIMEOUT - elapsed);
       const pct       = (remaining / ANSWER_TIMEOUT) * 100;
       const secs      = Math.ceil(remaining / 1000);
       bar.style.transition = "width 0.5s linear, background 0.5s";
       bar.style.width      = pct + "%";
       bar.style.background = secs <= 5 ? "var(--incorrecto)" : secs <= 10 ? "var(--acento)" : "var(--primario-glow)";
-      countEl.textContent  = secs > 0 ? secs : "0";
+      countEl.textContent  = secs > 0 ? secs : "¡ROBO!";
       countEl.style.color  = secs <= 5 ? "var(--incorrecto)" : secs <= 10 ? "var(--acento)" : "var(--texto)";
       if (remaining <= 0 && !flashedOnExpiry) {
         flashedOnExpiry = true;
@@ -861,10 +864,12 @@ function renderTimer(openedAt, phase, buzzer) {
 
 function renderBuzzerZone(s, phase, buzzer) {
   if (_skipTimeout) { clearTimeout(_skipTimeout); _skipTimeout = null; }
+  if (_stealTimeout) { clearTimeout(_stealTimeout); _stealTimeout = null; }
 
   const btnBuzzer    = document.getElementById("btn-buzzer");
   const buzzerEstado = document.getElementById("buzzer-estado");
   const btnRevelar   = document.getElementById("btn-revelar");
+  const btnRobar     = document.getElementById("btn-robar");
   const accionesHost = document.getElementById("acciones-host");
   const btnSiguiente = document.getElementById("btn-siguiente");
   const btnSkip      = document.getElementById("btn-skip");
@@ -872,6 +877,8 @@ function renderBuzzerZone(s, phase, buzzer) {
   btnBuzzer.style.display    = "none";
   btnRevelar.style.display   = "none";
   btnRevelar.disabled        = false;
+  btnRobar.style.display     = "none";
+  btnRobar.disabled          = false;
   accionesHost.style.display = "none";
   btnSiguiente.style.display = "none";
   btnSkip.style.display      = "none";
@@ -899,10 +906,36 @@ function renderBuzzerZone(s, phase, buzzer) {
     btnBuzzer.style.display = "none";
     if (buzzer) {
       const name = s.players?.[buzzer.playerId]?.name || "?";
-      buzzerEstado.innerHTML = `<span class="buzzer-ganador">🔔 ¡${name} buzzeó primero!</span>`;
-      if (buzzer.playerId === myPlayerId()) {
-        buzzerEstado.innerHTML += `<br><span style="font-size:0.88rem;color:var(--texto-secundario)">Decí tu respuesta en voz alto y tocá "Mostrar respuesta"</span>`;
+      const miId = myPlayerId();
+      const ls   = buzzer.lastSteal;
+      let html = "";
+      if (ls) {
+        const from = s.players?.[ls.from]?.name || "?";
+        const to   = s.players?.[ls.to]?.name   || "?";
+        html += `<span class="buzzer-ganador">🖐 ¡${to} le robó a ${from}! (${from} −${ls.penalty})</span><br>`;
+        if (ls.from === miId && buzzer.playerId !== miId) {
+          html += `<span style="font-size:0.88rem;color:var(--incorrecto)">😬 Te robaron la respuesta (−${ls.penalty})</span><br>`;
+        }
+      }
+      html += `<span class="buzzer-ganador">🔔 ¡${name} buzzeó primero!</span>`;
+      buzzerEstado.innerHTML = html;
+      if (buzzer.playerId === miId) {
+        buzzerEstado.innerHTML += `<br><span style="font-size:0.88rem;color:var(--texto-secundario)">Decí tu respuesta en voz alta y tocá "Mostrar respuesta"</span>`;
+        buzzerEstado.innerHTML += `<br><span style="font-size:0.8rem;color:var(--acento)">Tenés 10s antes de que te puedan robar</span>`;
         btnRevelar.style.display = "block";
+      } else if (!(buzzer.stolenFrom || []).includes(miId) && !buzzer.revealed) {
+        // Puedo robar: ahora si ya pasaron los 10s, o cuando se cumplan
+        const remaining = STEAL_AFTER_MS - (GameDAO.serverNow() - buzzer.timestamp);
+        if (remaining <= 0) {
+          btnRobar.style.display = "block";
+        } else {
+          _stealTimeout = setTimeout(() => {
+            const cur = getState();
+            if (canSteal(cur?.buzzer, myPlayerId(), GameDAO.serverNow() + 100)) {
+              document.getElementById("btn-robar").style.display = "block";
+            }
+          }, remaining);
+        }
       }
     }
   } else if (phase === "answer_revealed") {
@@ -999,11 +1032,27 @@ async function _handleBuzzer() {
   }
 }
 
+async function _handleRobar() {
+  const s = getState();
+  if (!s?.buzzer || !s?.currentQuestion) return;
+  if (!canSteal(s.buzzer, myPlayerId(), GameDAO.serverNow())) return;
+  const btn = document.getElementById("btn-robar");
+  btn.disabled = true;
+  try {
+    const { value, bonus } = s.currentQuestion;
+    // Si devuelve false (otro robó o reveló primero), el próximo render actualiza la UI
+    await GameDAO.stealBuzzer(roomCode(), myPlayerId(), s.buzzer.playerId, stealPenalty(value, bonus));
+  } catch (e) {
+    console.error("Error al robar:", e);
+    btn.disabled = false;
+  }
+}
+
 async function _handleRevelar() {
   const btn = document.getElementById("btn-revelar");
   btn.disabled = true;
   try {
-    await GameDAO.revealAnswer(roomCode());
+    await GameDAO.revealAnswer(roomCode(), myPlayerId());
   } catch (e) {
     console.error("Error al revelar:", e);
     btn.disabled = false;
@@ -1434,6 +1483,7 @@ export default {
 
     // Pregunta / buzzer
     document.getElementById("btn-buzzer")?.addEventListener("click", _handleBuzzer);
+    document.getElementById("btn-robar")?.addEventListener("click", _handleRobar);
     document.getElementById("btn-revelar")?.addEventListener("click", _handleRevelar);
     document.getElementById("btn-correcto")?.addEventListener("click", _handleCorrecto);
     document.getElementById("btn-incorrecto")?.addEventListener("click", _handleIncorrecto);

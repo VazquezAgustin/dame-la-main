@@ -3,6 +3,7 @@ import {
   getDatabase, ref, set, get, update, onValue, runTransaction, serverTimestamp, onDisconnect
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { firebaseConfig } from "./firebase.config.js";
+import { canSteal } from "./logica.js";
 
 export const firebaseConfigurado = firebaseConfig.apiKey !== "TU_API_KEY";
 
@@ -23,7 +24,9 @@ export const GameDAO = {
   startGame:             async () => {},
   selectQuestion:        async () => {},
   pressBuzzer:           async () => false,
-  revealAnswer:          async () => {},
+  revealAnswer:          async () => false,
+  stealBuzzer:           async () => false,
+  serverNow:             () => Date.now(),
   judgeAnswer:           async () => {},
   nextTurn:              async () => {},
   skipQuestion:          async () => {},
@@ -49,6 +52,11 @@ export const GameDAO = {
 // 🔥 IMPLEMENTACIÓN FIREBASE
 if (firebaseConfigurado) {
   const rRef = (code) => ref(db, `rooms/${code}`);
+
+  // Offset del reloj del servidor: permite que la ventana de robo sea justa entre celulares
+  let _serverOffset = 0;
+  onValue(ref(db, ".info/serverTimeOffset"), (snap) => { _serverOffset = snap.val() || 0; });
+  GameDAO.serverNow = () => Date.now() + _serverOffset;
 
   GameDAO.createRoom = async (roomCode, initialState) => {
     await set(rRef(roomCode), initialState);
@@ -96,7 +104,7 @@ if (firebaseConfigurado) {
     await runTransaction(ref(db, `rooms/${roomCode}/buzzer`), (current) => {
       if (current !== null) return;
       won = true;
-      return { playerId, timestamp: Date.now() };
+      return { playerId, timestamp: GameDAO.serverNow() };
     });
     if (won) {
       try {
@@ -110,8 +118,42 @@ if (firebaseConfigurado) {
     return won;
   };
 
-  GameDAO.revealAnswer = async (roomCode) => {
-    await update(rRef(roomCode), { questionPhase: "answer_revealed" });
+  // Transacción sobre el buzzer: "Mostrar respuesta" y "Robar" no pueden ganar los dos
+  GameDAO.revealAnswer = async (roomCode, playerId) => {
+    const res = await runTransaction(ref(db, `rooms/${roomCode}/buzzer`), (current) => {
+      if (!current || current.playerId !== playerId || current.revealed) return;
+      return { ...current, revealed: true };
+    });
+    if (res.committed) {
+      await update(rRef(roomCode), { questionPhase: "answer_revealed" });
+    }
+    return res.committed;
+  };
+
+  // El ladrón toma el turno; al robado se le resta la penalidad
+  GameDAO.stealBuzzer = async (roomCode, thiefId, expectedFromId, penalty) => {
+    const res = await runTransaction(ref(db, `rooms/${roomCode}/buzzer`), (current) => {
+      // 500ms de tolerancia por desfase de relojes
+      if (!current || current.playerId !== expectedFromId ||
+          !canSteal(current, thiefId, GameDAO.serverNow() + 500)) return;
+      return {
+        playerId: thiefId,
+        timestamp: GameDAO.serverNow(),
+        stolenFrom: [...(current.stolenFrom || []), expectedFromId],
+        lastSteal: { from: expectedFromId, to: thiefId, penalty },
+      };
+    });
+    if (res.committed) {
+      try {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${expectedFromId}/score`));
+        await update(rRef(roomCode), {
+          [`players/${expectedFromId}/score`]: (snap.val() || 0) - penalty,
+        });
+      } catch (e) {
+        console.error("No se pudo aplicar la penalidad del robo", e);
+      }
+    }
+    return res.committed;
   };
 
   GameDAO.judgeAnswer = async (roomCode, responderId, correct, pointsDelta, category, value) => {
