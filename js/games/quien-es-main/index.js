@@ -1,6 +1,7 @@
-import { pickFamosos } from "./famosos.js";
+import { pickFamosos, FAMOSOS } from "./famosos.js";
+import { acumularUsados } from "../../historial.js";
 import {
-  calcRoundScore, isGameOver, nextSelectorIndex, buildQuienInitialState,
+  calcRoundScore, isGameOver, nextSelectorIndex, buildQuienInitialState, shownFamosos,
 } from "./logica.js";
 import { db, GameDAO } from "../../firebase.js";
 import {
@@ -66,11 +67,12 @@ async function _daoTimeExpired(roomCode) {
   await update(_rRef(roomCode), { "currentRound/phase": "finished" });
 }
 
-async function _daoNextRound(roomCode, nextSelectorIndex, roundsCompleted, activePid, ptsToAdd, isGameOver) {
+async function _daoNextRound(roomCode, nextSelectorIndex, roundsCompleted, activePid, ptsToAdd, isGameOver, quienUsed) {
   const updates = {
     currentRound: null,
     selectorIndex: nextSelectorIndex,
     roundsCompleted,
+    quienUsed,
     status: isGameOver ? "finished" : "playing",
   };
   if (activePid && ptsToAdd > 0) {
@@ -310,6 +312,7 @@ async function _handleJugarNuevo() {
     selectorIndex:   0,
     roundsCompleted: 0,
     currentRound:    null,
+    quienUsed:       null,
     players,
     playerOrder:     s.playerOrder || [],
   });
@@ -447,7 +450,7 @@ async function _handleStartRound(s) {
     const selectorIdx= s.selectorIndex ?? 0;
     const activePid  = order[selectorIdx % order.length];
     const config     = s.quienConfig || {};
-    const famosos    = pickFamosos(config.famososPerRound || 8);
+    const famosos    = pickFamosos(config.famososPerRound || 8, s.quienUsed || []);
     await _daoStartRound(getRoomCode(), activePid, famosos, selectorIdx);
   } catch (e) {
     console.error(e);
@@ -479,8 +482,11 @@ async function _handleSiguiente(s) {
     const activePid = round?.activePlayerId;
     const pts       = calcRoundScore(round?.results);
 
+    // Acumula los famosos ya mostrados para no repetirlos en rondas siguientes
+    const used = acumularUsados(s.quienUsed || [], shownFamosos(round), FAMOSOS.length, config.famososPerRound || 8);
+
     const nextIdx = nextSelectorIndex(s.selectorIndex, order.length);
-    await _daoNextRound(getRoomCode(), nextIdx, doneNow, activePid, pts, gameOver);
+    await _daoNextRound(getRoomCode(), nextIdx, doneNow, activePid, pts, gameOver, used);
   } catch (e) {
     console.error(e);
     if (btn) btn.disabled = false;

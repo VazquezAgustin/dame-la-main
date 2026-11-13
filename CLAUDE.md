@@ -70,6 +70,12 @@ Juego alternativo (`gameType: "tipo-main"`), clon de `numero-main` con categorí
 
 ---
 
+## ¿Quién es Main? — no repetir famosos
+
+`quienUsed` (raíz de la sala) guarda los famosos ya mostrados en la partida. `_handleSiguiente` lo acumula con `acumularUsados` (+ `shownFamosos(round)`), `pickFamosos(count, exclude)` los evita al repartir y, cuando el pool se agota, se recicla. "Jugar de nuevo" lo borra. No requiere cambios en `database.rules.json`.
+
+---
+
 ## Firebase — configuración
 
 ### Setup inicial
