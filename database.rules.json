@@ -1,0 +1,42 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      "$roomCode": {
+        ".read": "auth != null",
+        ".write": "auth != null && $roomCode.matches(/^[A-HJ-NP-Z2-9]{6}$/) && (!data.exists() || !newData.exists() || now - data.child('createdAt').val() < 86400000)",
+        ".validate": "newData.hasChildren(['createdAt', 'hostId', 'status'])",
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() <= now"
+        },
+        "status": {
+          ".validate": "newData.isString() && newData.val().matches(/^(lobby|playing|finished)$/)"
+        },
+        "hostId": {
+          ".validate": "newData.isString() && newData.parent().child('players').child(newData.val()).exists()"
+        },
+        "selectorIndex": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "players": {
+          "$playerId": {
+            ".validate": "newData.hasChildren(['name'])",
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30"
+            },
+            "score": {
+              ".validate": "newData.isNumber() && newData.val() >= -1000000 && newData.val() <= 1000000"
+            },
+            "connected": {
+              ".validate": "newData.isBoolean()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

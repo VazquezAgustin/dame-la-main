@@ -1,3 +1,5 @@
+import { shuffle } from "../../shuffle.js";
+
 // Pool de famosos para ¿Quién es Main? — orientado a España y Argentina.
 // Mezcla de música, deporte, cine, streamers, personajes ficticios e históricos.
 
@@ -98,6 +100,6 @@ export const FAMOSOS = [
 
 // Devuelve un array aleatorio de `count` famosos sin repetir.
 export function pickFamosos(count = 10) {
-  const shuffled = [...FAMOSOS].sort(() => Math.random() - 0.5);
+  const shuffled = shuffle(FAMOSOS);
   return shuffled.slice(0, Math.min(count, FAMOSOS.length));
 }

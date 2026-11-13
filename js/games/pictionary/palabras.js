@@ -1,3 +1,5 @@
+import { shuffle } from "../../shuffle.js";
+
 // Banco de palabras para Pictionary — orientado a España y Argentina.
 // NOTA: la palabra secreta de cada ronda se guarda en claro en Firebase
 // (currentRound/word). Es aceptable para un juego de fiesta — mismo criterio
@@ -81,6 +83,6 @@ export function pickPalabras(count = 1, categoria = "mixto") {
   if (categoria === "simples")    pool = PALABRAS_SIMPLES;
   else if (categoria === "pelis") pool = PELICULAS_Y_SERIES;
   else                            pool = [...PALABRAS_SIMPLES, ...PELICULAS_Y_SERIES];
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  const shuffled = shuffle(pool);
   return shuffled.slice(0, Math.min(count, pool.length));
 }

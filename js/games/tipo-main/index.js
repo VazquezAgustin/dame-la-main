@@ -1,8 +1,9 @@
 import {
   assignPalabras, pointsForPosition, guessedCount, allGuessed, buildTipoInitialState,
 } from "./logica.js";
+import { poolForPack } from "./palabras.js";
 import { db, GameDAO } from "../../firebase.js";
-import { ref, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { ref, update, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { esc } from "../../logica.js";
 import { playTick } from "../../audio.js";
 
@@ -67,18 +68,19 @@ async function _daoNewRound(roomCode, words, roundNumber) {
   });
 }
 
-async function _daoMarkGuessed(roomCode, pid, position, points, currentScore) {
+// increment(): suma atómica en el servidor
+async function _daoMarkGuessed(roomCode, pid, position, points) {
   await update(_rRef(roomCode), {
     [`tipoRound/guessed/${pid}`]: { position, points },
-    [`players/${pid}/score`]: currentScore + points,
+    [`players/${pid}/score`]: increment(points),
   });
 }
 
 // Deshacer un toque por error. No recalcula las posiciones de los demás.
-async function _daoUnmarkGuessed(roomCode, pid, points, currentScore) {
+async function _daoUnmarkGuessed(roomCode, pid, points) {
   await update(_rRef(roomCode), {
     [`tipoRound/guessed/${pid}`]: null,
-    [`players/${pid}/score`]: Math.max(0, currentScore - points),
+    [`players/${pid}/score`]: increment(-points),
   });
 }
 
@@ -268,7 +270,7 @@ async function _handleRepartir() {
     const order    = s.playerOrder || [];
     // Evitar repetir las categorías de la ronda anterior
     const previas  = Object.values(s.tipoRound?.words || {});
-    const words    = assignPalabras(order, Math.random, undefined, previas);
+    const words    = assignPalabras(order, Math.random, poolForPack(s.tipoPack), previas);
     const roundNum = (s.tipoRoundNumber || 0) + 1;
     _sheetOpen = false;
     await _daoNewRound(getRoomCode(), words, roundNum);
@@ -297,8 +299,7 @@ async function _handleMarkGuessed(pid) {
   try {
     const position = guessedCount(guessed) + 1;
     const points   = pointsForPosition(position);
-    const current  = s.players?.[pid]?.score || 0;
-    await _daoMarkGuessed(getRoomCode(), pid, position, points, current);
+    await _daoMarkGuessed(getRoomCode(), pid, position, points);
     _ctx.triggerFlash("correcto");
   } catch (e) { console.error(e); }
 }
@@ -311,8 +312,7 @@ async function _handleUnmarkGuessed(pid) {
   const name = s.players?.[pid]?.name || "este jugador";
   if (!confirm(`¿Desmarcar a ${name}?`)) return;
   try {
-    const current = s.players?.[pid]?.score || 0;
-    await _daoUnmarkGuessed(getRoomCode(), pid, g.points || 0, current);
+    await _daoUnmarkGuessed(getRoomCode(), pid, g.points || 0);
   } catch (e) { console.error(e); }
 }
 
@@ -344,7 +344,7 @@ async function _handleJugarNuevo() {
       createdAt:   Date.now(),
       hostId:      myPlayerId(),
       status:      "lobby",
-      ...buildTipoInitialState(),
+      ...buildTipoInitialState(s.tipoPack),
       players,
       playerOrder: s.playerOrder || [],
     });
@@ -374,6 +374,14 @@ export default {
     });
     on("btn-tipo-ocultar", () => { _clearCountdown(); _revealedRound = -1; _rerender(); });
 
+    // Selector de tono (form de crear sala)
+    document.querySelectorAll("#tipo-pack-selector .numero-range-option").forEach(opt => {
+      opt.addEventListener("click", () => {
+        document.querySelectorAll("#tipo-pack-selector .numero-range-option").forEach(o => o.classList.remove("active"));
+        opt.classList.add("active");
+      });
+    });
+
     // Lista del sheet: delegación (se re-renderiza)
     document.getElementById("tipo-sheet-list")?.addEventListener("click", (e) => {
       if (!_esActivo()) return;
@@ -390,8 +398,8 @@ export default {
     });
   },
 
-  buildInitialState() {
-    return buildTipoInitialState();
+  buildInitialState(config = {}) {
+    return buildTipoInitialState(config.tipoPack);
   },
 
   render(s) {

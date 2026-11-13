@@ -11,6 +11,7 @@
 import { ACTIVE_THEME } from "./theme.config.js";
 import * as classic from "./preguntas.classic.js";
 import * as mundial from "./preguntas.mundial.js";
+import { shuffle } from "./shuffle.js";
 
 const active = ACTIVE_THEME === "mundial" ? mundial : classic;
 
@@ -23,5 +24,5 @@ export const ESTIMATION_QUESTIONS = active.ESTIMATION_QUESTIONS;
 export function pickRandomCategories(pool, count = 6, exclude = []) {
   const available = pool.filter((cat) => !exclude.includes(cat));
   const source = available.length >= count ? available : pool;
-  return [...source].sort(() => Math.random() - 0.5).slice(0, count);
+  return shuffle(source).slice(0, count);
 }

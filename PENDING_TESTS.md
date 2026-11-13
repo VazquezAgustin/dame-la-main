@@ -80,3 +80,49 @@ IDs diferentes).
 - [ ] Si se cierra la pestaña del host, el nuevo host ve la barra de controles.
 - [ ] "Terminar" → podio → "Jugar de nuevo" vuelve al lobby con el mismo juego.
 
+
+---
+
+## 🔥 Firebase — cambios de la capa de datos
+
+Lo siguiente está cubierto con tests y con una pasada en navegador contra el DAO
+en memoria, pero **no se probó contra Firebase real**.
+
+### Login anónimo y reglas (`database.rules.json`)
+- [ ] Con el proveedor **Anónimo** habilitado, la consola del navegador no muestra el warning "Login anónimo no disponible".
+- [ ] Con las reglas nuevas publicadas: crear sala, unirse desde otro dispositivo, jugar una pregunta completa y "Jugar de nuevo" funcionan.
+- [ ] Recargar la página en medio de la partida reconecta (la suscripción espera al login).
+- [ ] Expulsar a un jugador y pasar el host siguen funcionando con las reglas nuevas.
+- [ ] Los otros modos (¿Quién es Main?, Pictionary, ¿Qué número soy?, ¿Qué tipo soy?) pasan una ronda completa con las reglas nuevas.
+
+### Puntajes atómicos y unión a la sala
+- [ ] Dos jugadores escanean el QR casi a la vez: los dos aparecen en el lobby y en el orden de turnos.
+- [ ] Robo + juicio del host en la misma pregunta: los dos cambios de puntaje se reflejan.
+- [ ] Marcar y desmarcar "adivinó" en ¿Qué número soy? / ¿Qué tipo soy? deja el puntaje como estaba.
+
+---
+
+## 📋 Trivia — reglas extra (multi-dispositivo)
+
+### ↩️ Rebote
+- [ ] Mientras el host juzga, los demás **no** ven la respuesta ("El host está verificando...").
+- [ ] Tras un "Incorrecto", todos ven "¡Rebote! X falló"; el que falló y el host no tienen pulsador.
+- [ ] Otro jugador pulsa, responde bien y suma; recién ahí todos ven la respuesta.
+- [ ] Con host + 1 jugador no hay rebote (va directo al resultado).
+
+### 🎲 Ronda final
+- [ ] Al terminar el tablero aparece "RONDA FINAL" en todos los dispositivos (no el podio).
+- [ ] Cada uno apuesta sin ver la apuesta de los demás; el máximo es su puntaje (o 500).
+- [ ] El teclado del celular no tapa el campo de respuesta.
+- [ ] La respuesta correcta aparece recién cuando el host revela; el host marca ✓/✗ y los demás ven los íconos en vivo.
+- [ ] Los puntajes del marcador cambian al "Aplicar resultados" y el podio muestra los premios.
+
+### 🗂️ No repetir entre partidas
+- [ ] Crear dos salas seguidas desde el mismo dispositivo: las 6 categorías de la segunda son distintas.
+
+---
+
+## 📦 Service worker
+- [ ] Tras abrir la app una vez con conexión, se puede abrir en modo avión (carga la pantalla de inicio).
+- [ ] Después de un deploy, recargar con conexión trae la versión nueva (no queda pegada la vieja).
+- [ ] En Android, "Agregar a pantalla de inicio" instala la app.

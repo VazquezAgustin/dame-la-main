@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { assignPalabras, buildTipoInitialState, pointsForPosition } from "../../js/games/tipo-main/logica.js";
-import { PALABRAS_TIPO } from "../../js/games/tipo-main/palabras.js";
+import {
+  PALABRAS_TIPO, PALABRAS_SUAVES, PALABRAS_PICANTES, poolForPack,
+} from "../../js/games/tipo-main/palabras.js";
 
 describe("¿Qué tipo soy? — banco de categorías", () => {
   it("tiene al menos 60 categorías y ninguna repetida", () => {
@@ -67,11 +69,45 @@ describe("¿Qué tipo soy? — assignPalabras", () => {
 describe("¿Qué tipo soy? — estado inicial y puntos", () => {
   it("buildTipoInitialState", () => {
     expect(buildTipoInitialState()).toEqual({
-      gameType: "tipo-main", selectorIndex: 0, tipoRoundNumber: 0, tipoRound: null,
+      gameType: "tipo-main", tipoPack: "mixto", selectorIndex: 0, tipoRoundNumber: 0, tipoRound: null,
     });
   });
 
   it("puntos 300/200/100 por orden de acierto", () => {
     expect([1, 2, 3, 4].map(pointsForPosition)).toEqual([300, 200, 100, 100]);
+  });
+});
+
+describe("¿Qué tipo soy? — packs de tono", () => {
+  it("suaves y picantes no se pisan y juntos forman el banco completo", () => {
+    const picantes = new Set(PALABRAS_PICANTES);
+    PALABRAS_SUAVES.forEach(p => expect(picantes.has(p)).toBe(false));
+    expect(PALABRAS_SUAVES.length + PALABRAS_PICANTES.length).toBe(PALABRAS_TIPO.length);
+  });
+
+  it("cada pack alcanza para una mesa grande", () => {
+    expect(PALABRAS_SUAVES.length).toBeGreaterThanOrEqual(30);
+    expect(PALABRAS_PICANTES.length).toBeGreaterThanOrEqual(30);
+  });
+
+  it("poolForPack devuelve el pool de cada tono; desconocido o ausente → mixto", () => {
+    expect(poolForPack("suave")).toBe(PALABRAS_SUAVES);
+    expect(poolForPack("picante")).toBe(PALABRAS_PICANTES);
+    expect(poolForPack("mixto")).toBe(PALABRAS_TIPO);
+    expect(poolForPack(undefined)).toBe(PALABRAS_TIPO);
+  });
+
+  it("el pack suave no reparte categorías picantes", () => {
+    const picantes = new Set(PALABRAS_PICANTES);
+    for (let k = 0; k < 30; k++) {
+      const r = assignPalabras(["a", "b", "c", "d", "e", "f"], Math.random, poolForPack("suave"));
+      Object.values(r).forEach(p => expect(picantes.has(p)).toBe(false));
+    }
+  });
+
+  it("buildTipoInitialState guarda el pack y cae en mixto si es inválido", () => {
+    expect(buildTipoInitialState("suave").tipoPack).toBe("suave");
+    expect(buildTipoInitialState().tipoPack).toBe("mixto");
+    expect(buildTipoInitialState("cualquiera").tipoPack).toBe("mixto");
   });
 });

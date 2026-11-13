@@ -5,6 +5,7 @@ import PictionaryGame    from "./games/pictionary/index.js";
 import NumeroMainGame    from "./games/numero-main/index.js";
 import TipoMainGame      from "./games/tipo-main/index.js";
 import { GAME_INFO }     from "./games/info.js";
+import { generateRoomCode } from "./logica.js";
 import { ACTIVE_THEME }  from "./theme.config.js";
 
 // ── Temática (colores + microcopys) ───────────────────────────────
@@ -305,13 +306,6 @@ function render(s) {
 // ════════════════════════════════════════════════════════════════
 // 🚀 HANDLERS DE INICIO / LOBBY
 // ════════════════════════════════════════════════════════════════
-function generateRoomCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
-
 async function handleCreateRoom() {
   if (!firebaseConfigurado) { setError("Falta configurar Firebase. Ver README."); return; }
   const name = document.getElementById("input-nombre-crear").value.trim();
@@ -336,12 +330,19 @@ async function handleCreateRoom() {
       rows.forEach(row => {
         buildConfig.gameLength[row.dataset.slot] = parseInt(row.querySelector(".length-slider-input").value, 10);
       });
+      // Reglas extra (rebote, elige el que acierta, ronda final)
+      buildConfig.rules = {};
+      document.querySelectorAll("#rule-selector .rule-option").forEach(opt => {
+        buildConfig.rules[opt.dataset.rule] = opt.classList.contains("active");
+      });
     } else if (selectedGameType === "quien-es-main") {
       buildConfig.roundsPerPlayer = parseInt(document.getElementById("quien-rounds-slider")?.value || "2", 10);
       buildConfig.famososPerRound = parseInt(document.getElementById("quien-famosos-slider")?.value || "8", 10);
       buildConfig.roundDuration   = parseInt(document.getElementById("quien-duration-slider")?.value || "60", 10);
     } else if (selectedGameType === "numero-main") {
       buildConfig.numeroRange = document.querySelector("#numero-range-selector .numero-range-option.active")?.dataset.range || "chico";
+    } else if (selectedGameType === "tipo-main") {
+      buildConfig.tipoPack = document.querySelector("#tipo-pack-selector .numero-range-option.active")?.dataset.pack || "mixto";
     } else if (selectedGameType === "pictionary") {
       buildConfig.roundsPerPlayer = parseInt(document.getElementById("picto-rounds-slider")?.value || "2", 10);
       buildConfig.drawSeconds     = parseInt(document.getElementById("picto-duration-slider")?.value || "80", 10);
@@ -350,6 +351,7 @@ async function handleCreateRoom() {
 
     const gameState   = game.buildInitialState(buildConfig);
 
+    await GameDAO.ready();
     await GameDAO.createRoom(roomCode, {
       createdAt: Date.now(),
       hostId:    myPlayerId,
@@ -382,6 +384,7 @@ async function handleJoinRoom() {
   const btn = document.getElementById("btn-unirse");
   btn.disabled = true; btn.textContent = "Uniéndose...";
   try {
+    await GameDAO.ready();
     const exists = await GameDAO.roomExists(code);
     if (!exists) {
       const rejoin = await GameDAO.canRejoin(code, myPlayerId);
@@ -584,8 +587,11 @@ if (firebaseConfigurado) {
   if (savedRoom) {
     roomCode = savedRoom;
     if (savedName) myName = savedName;
-    subscribeToRoom(roomCode);
-    GameDAO.setupPresence(roomCode, myPlayerId).catch(() => {});
+    // Esperar el login anónimo: si las reglas exigen auth, suscribirse antes falla
+    GameDAO.ready().then(() => {
+      subscribeToRoom(roomCode);
+      GameDAO.setupPresence(roomCode, myPlayerId).catch(() => {});
+    });
   } else {
     const urlParams     = new URLSearchParams(window.location.search);
     const roomFromUrl   = (urlParams.get("room") || "").toUpperCase().replace(/[^A-Z0-9]/g, "");

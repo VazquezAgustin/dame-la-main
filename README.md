@@ -14,6 +14,16 @@ Réplica web del concurso "Dame la Main" de Ibai Llanos. Juego de trivia multiju
 6. El que pulsa dice su respuesta en voz alta y toca "Mostrar respuesta"
 7. El host decide si fue correcto o no
 
+### Reglas extra de la trivia
+
+Al crear la sala se pueden prender o apagar:
+
+- **↩️ Rebote** — si alguien responde mal, la pregunta se reabre para los demás. Mientras el host juzga, solo él ve la respuesta (por eso en el rebote el host no puede pulsar).
+- **👑 Elige el que acierta** — quien responde bien elige la próxima pregunta; si nadie acierta, sigue la rotación.
+- **🎲 Ronda final con apuesta** — al terminar, una última pregunta: cada uno apuesta en secreto hasta su puntaje y escribe su respuesta en el celular. Acertar suma lo apostado; fallar lo resta.
+
+Al final, el podio reparte premios: dedo más rápido, mejor racha, el ladrón y el que más perdió.
+
 ### 🔢 ¿Qué número soy?
 
 Al crear la sala se puede elegir este juego en lugar del tablero.
@@ -69,25 +79,21 @@ export const firebaseConfig = {
 
 `firebase.config.js` está en `.gitignore` para no exponer las credenciales.
 
-### 5. Configurar reglas de seguridad
+### 5. Habilitar el login anónimo
 
-En Firebase Console → **Realtime Database → Reglas**, pegá esto:
+En Firebase Console → **Build → Authentication → Comenzar → Sign-in method**, habilitá el proveedor **Anónimo**.
 
-```json
-{
-  "rules": {
-    "rooms": {
-      "$roomCode": {
-        ".read": true,
-        ".write": true,
-        ".validate": "now - data.child('createdAt').val() < 86400000"
-      }
-    }
-  }
-}
-```
+El juego inicia sesión anónima solo (nadie tiene que registrarse). Si este paso falta, el juego sigue andando con reglas abiertas, pero las reglas del paso siguiente lo bloquean.
 
-Click en **Publicar**.
+### 6. Configurar reglas de seguridad
+
+En Firebase Console → **Realtime Database → Reglas**, pegá el contenido de [`database.rules.json`](database.rules.json) y hacé click en **Publicar**.
+
+Qué hacen: solo usuarios autenticados (el login anónimo del paso 5) pueden leer o escribir salas, las salas vencen a las 24h, y se valida la forma de los datos (estado, host, jugadores).
+
+Qué **no** hacen: no impiden que un jugador con el código de la sala se cambie el puntaje desde la consola del navegador. Para una juntada entre amigos alcanza; para un torneo abierto, no.
+
+> Publicá las reglas **después** de habilitar el login anónimo y probá una partida corta. Si algo falla, volvé a las reglas anteriores desde el historial de la consola.
 
 ---
 

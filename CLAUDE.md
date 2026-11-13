@@ -21,11 +21,16 @@ Réplica web del concurso "Dame la Pasta" de Ibai Llanos. Juego de trivia multij
 dame-la-pasta/
 ├── index.html                    ← estructura HTML y pantallas
 ├── styles.css                    ← estilos globales
+├── sw.js                         ← service worker (caché del shell de la app)
+├── database.rules.json           ← reglas de Firebase para pegar en la consola
 ├── js/
 │   ├── firebase.config.example.js  ← plantilla de credenciales (versionada)
 │   ├── firebase.config.js          ← credenciales reales (en .gitignore)
 │   ├── firebase.js                 ← DAO + implementación Firebase
-│   ├── juego.js                    ← lógica del juego, render y handlers
+│   ├── logica.js                   ← funciones puras (reglas, rebote, ronda final, premios)
+│   ├── shuffle.js                  ← única mezcla del proyecto (Fisher-Yates)
+│   ├── historial.js                ← qué ya se jugó en este dispositivo (localStorage)
+│   ├── games/dame-la-main/index.js ← trivia: render y handlers
 │   ├── games/info.js               ← textos del INFO (cómo se juega) de cada juego
 │   └── preguntas.js                ← pool de categorías y banco de preguntas
 └── README.md
@@ -56,10 +61,11 @@ Juego alternativo seleccionable al crear la sala (`gameType: "numero-main"`). C�
 
 Juego alternativo (`gameType: "tipo-main"`), clon de `numero-main` con categorías de persona en lugar de números. Código en `js/games/tipo-main/` (`palabras.js` con el banco `PALABRAS_TIPO`, `logica.js` puro, `index.js` con render, handlers y DAO inline).
 
+- **Tono** (`tipoPack: "suave" | "mixto" | "picante"`, se elige al crear la sala; salas sin el campo = `mixto`). `palabras.js` separa el banco en `PALABRAS_SUAVES` (para cualquier mesa) y `PALABRAS_PICANTES` (sexo, drogas, físico, religión…); `PALABRAS_TIPO` es la unión y `poolForPack(pack)` devuelve el pool a repartir. Al agregar una categoría, ponerla en la lista que corresponda.
 - Cada jugador recibe una categoría distinta ("Falopero", "Infieles", "Hincha de Boca"…) que muestra a los demás sin mirarla (misma cobertura + cuenta regresiva de 3s + Wake Lock que `numero-main`). Pregunta en voz alta: "¿Maradona entra en mi categoría?".
 - `assignPalabras` evita repetir las categorías de la ronda anterior.
 - El host marca quién adivinó (300/200/100 por orden, reutiliza `pointsForPosition` de `numero-main`). "Nueva ronda" reparte categorías nuevas; "Terminar" va al podio.
-- Datos: `tipoRoundNumber` y `tipoRound: { words: {pid: categoría}, guessed: {pid: {position, points}} }`.
+- Datos: `tipoPack`, `tipoRoundNumber` y `tipoRound: { words: {pid: categoría}, guessed: {pid: {position, points}} }`.
 - Reutiliza las clases CSS `numero-*`; solo agrega `.tipo-palabra` y `.tipo-sheet-word`.
 
 ---
@@ -89,21 +95,60 @@ export const firebaseConfig = {
 };
 ```
 
-### Reglas de seguridad
+### Auth anónima y reglas de seguridad
+
+`firebase.js` hace `signInAnonymously()` al cargar y expone `GameDAO.ready()` (se resuelve cuando el login terminó, bien o mal, o a los 4s). `main.js` lo espera antes de la primera operación (crear, unirse, auto-reconexión). Si el proveedor anónimo no está habilitado en la consola, el login falla con un warning y el juego sigue funcionando con reglas abiertas.
+
+Las reglas viven en `database.rules.json` (se pegan a mano en la consola; requieren **Authentication → Sign-in method → Anónimo** habilitado):
 
 ```json
 {
   "rules": {
+    ".read": false,
+    ".write": false,
     "rooms": {
       "$roomCode": {
-        ".read": true,
-        ".write": true,
-        ".validate": "now - data.child('createdAt').val() < 86400000"
+        ".read": "auth != null",
+        ".write": "auth != null && $roomCode.matches(/^[A-HJ-NP-Z2-9]{6}$/) && (!data.exists() || !newData.exists() || now - data.child('createdAt').val() < 86400000)",
+        ".validate": "newData.hasChildren(['createdAt', 'hostId', 'status'])",
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() <= now"
+        },
+        "status": {
+          ".validate": "newData.isString() && newData.val().matches(/^(lobby|playing|finished)$/)"
+        },
+        "hostId": {
+          ".validate": "newData.isString() && newData.parent().child('players').child(newData.val()).exists()"
+        },
+        "selectorIndex": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "players": {
+          "$playerId": {
+            ".validate": "newData.hasChildren(['name'])",
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30"
+            },
+            "score": {
+              ".validate": "newData.isNumber() && newData.val() >= -1000000 && newData.val() <= 1000000"
+            },
+            "connected": {
+              ".validate": "newData.isBoolean()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
       }
     }
   }
 }
 ```
+
+- Exigen `auth != null`, código de sala con formato válido y sala de menos de 24h (`createdAt` lo pone `GameDAO.createRoom` con `serverTimestamp()`).
+- Validan forma y tipos: `status`, `hostId` (tiene que ser un jugador existente), y que cada jugador solo tenga `name`, `score` y `connected`. **Si se agrega un campo nuevo a `players/{pid}`, hay que agregarlo a las reglas.**
+- **No** impiden que un jugador autenticado se cambie el puntaje: varios modos escriben puntajes desde clientes que no son el host (el ladrón aplica la penalidad del robo; en Pictionary cada jugador suma su acierto). Restringirlo al host requiere mover esos puntos al host o a Cloud Functions.
 
 ### Import del SDK
 
@@ -120,10 +165,12 @@ import {
   runTransaction,
   serverTimestamp,
   onDisconnect,
+  increment,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 ```
 
-`serverTimestamp()` se usa en todos los campos `openedAt` para sincronizar los timers con el reloj del servidor en lugar del reloj local del cliente. `onDisconnect` se usa para marcar automáticamente `connected: false` cuando un jugador pierde la conexión.
+`increment()` se usa para **todos los cambios de puntaje** (suma atómica en el servidor): nunca leer el score y escribir la suma, porque dos escrituras simultáneas (ej. un robo mientras el host juzga) se pisan. `serverTimestamp()` se usa en todos los campos `openedAt` para sincronizar los timers con el reloj del servidor en lugar del reloj local del cliente. `onDisconnect` se usa para marcar automáticamente `connected: false` cuando un jugador pierde la conexión.
 
 ---
 
@@ -408,6 +455,25 @@ Si nadie buzzea en **45 segundos** (calculado desde `currentQuestion.openedAt`):
 - Alternativamente, el cliente del host auto-detecta el timeout y puede avanzar
 - La pregunta se marca como jugada (`board[cat][val] = true`) pero nadie gana puntos
 
+### 5b. Reglas extra (opcionales, se eligen al crear la sala)
+
+Viven en `rules: { rebote, ganadorElige, finalApuesta }` y se leen con `getRules(s)` (`logica.js`). Las salas sin el campo se comportan como siempre (todo apagado). "Jugar de nuevo" las conserva.
+
+- **↩️ Rebote** (`rebote`): si el host marca incorrecto y queda alguien que pueda responder (`reboundCandidates`), en vez de `judgeAnswer` se llama `GameDAO.reboundQuestion`: el que falló pierde los puntos, se limpia el `buzzer`, la fase vuelve a `waiting_buzz` con `openedAt` nuevo, y la celda **no** se marca. En `currentQuestion` quedan `failed` (quiénes fallaron), `sawAnswer` (quiénes vieron la respuesta) y `lastFail`. `canAttempt(question, pid)` bloquea pulsar y robar a los de ambas listas.
+  - Para que el rebote tenga sentido, con esta regla **solo el host ve la respuesta** en `answer_revealed` (el botón del respondedor dice "✋ Ya respondí"); todos la ven recién en `judged`. Por eso el host que juzgó queda en `sawAnswer` y no puede pulsar en el rebote. Con host + 1 jugador no hay rebote posible.
+  - En un rebote el host ve "Nadie respondió — siguiente" de inmediato (no espera los 45s).
+- **👑 Elige el que acierta** (`ganadorElige`): `nextSelectorIndex(s)` devuelve el índice del que respondió bien (`questionResult.correct`); si nadie acertó, rotación normal. Lo usan `_handleSiguiente` y `_handleSkip`.
+- **🎲 Ronda final con apuesta** (`finalApuesta`): cada punto donde la partida terminaría pasa por `_resolveGameOver(s, isGameOver)`; si corresponde, arranca la ronda final (`GameDAO.startFinalRound`) y devuelve `false`. La partida se cierra al terminar la ronda (`endFinalRound` → `status: "finished"`).
+  - Pregunta: `pickFinalQuestion` elige la celda sin jugar de mayor valor del tablero; si el tablero se completó, la de 1000 de una categoría del pool que no estaba en juego.
+  - Fases (`finalRound.phase`): `announcing` → `betting` (cada uno apuesta de 0 a `maxWager(score)` = su puntaje, o 500 si tiene menos) → `answering` (cada uno escribe su respuesta; barra de 60s solo visual) → `judging` (se revela la respuesta correcta y el host marca ✓/✗ a cada una) → `results`.
+  - `finalDeltas` da ±apuesta por jugador; el que apostó y no respondió o no fue corregido, pierde. El host avanza cada fase y puede forzarla si falta alguien (los que no apostaron juegan con 0).
+  - Datos: `finalRound: { active, phase, category, value, openedAt, wagers: {pid: n}, answers: {pid: texto}, verdicts: {pid: bool}, deltas: {pid: ±n} }`. Las apuestas están en Firebase pero la UI no las muestra hasta `results`.
+  - Overlay `#final-overlay` (reutiliza las clases `estimacion-*`); `render()` le da prioridad sobre relámpago, estimación y pregunta.
+
+### 5c. Premios del podio
+
+Durante la trivia se acumula `stats/{pid}: { buzzes, correct, wrong, streak, bestStreak, steals, stolen, lost }` (lo escriben `pressBuzzer`, `stealBuzzer`, `judgeAnswer`, `reboundQuestion` y `applyFinalResults`, con `increment()`). `computeAwards(stats, playerOrder)` arma los premios que se muestran en `#podio-premios`: ⚡ dedo más rápido, 🔥 mejor racha (mínimo 2), 🖐 el ladrón, 💸 el que más perdió. En empate se listan todos. `createRoom` (y por lo tanto "Jugar de nuevo") borra los stats.
+
 ### 6. Avanzar al siguiente turno
 
 Solo el host puede tocar **"Siguiente"** después de que se muestra el resultado. Esto:
@@ -573,13 +639,18 @@ Todo acceso a la base de datos pasa por un objeto `GameDAO`. La lógica del jueg
 const GameDAO = {
   // ── Sala ──────────────────────────────────────────────────────────
 
-  // Crea una sala nueva. Devuelve el roomCode.
+  // Se resuelve cuando terminó el login anónimo (nunca rechaza). Esperarlo antes
+  // de la primera operación contra la base.
+  ready: async () => {},
+
+  // Crea una sala nueva. Devuelve el roomCode. Pisa createdAt con la hora del servidor.
   createRoom: async (roomCode, initialState) => {},
 
   // Valida que una sala existe y está en lobby. Devuelve true/false.
   roomExists: async (roomCode) => {},
 
-  // Agrega un jugador a una sala existente.
+  // Agrega un jugador a una sala existente. Transacción sobre playerOrder:
+  // dos jugadores que se unen a la vez no se pisan.
   joinRoom: async (roomCode, playerId, playerData) => {},
 
   // ── Lobby ─────────────────────────────────────────────────────────
@@ -608,13 +679,27 @@ const GameDAO = {
 
   // El host juzga la respuesta.
   // category y value se pasan desde el estado local para evitar un get() extra.
-  judgeAnswer: async (roomCode, responderId, correct, pointsDelta, category, value) => {},
+  // bestStreak (opcional): mejor racha del jugador contando este acierto (para los premios).
+  judgeAnswer: async (roomCode, responderId, correct, pointsDelta, category, value, bestStreak) => {},
 
   // El host avanza al siguiente turno.
   nextTurn: async (roomCode, nextSelectorIndex, isGameOver) => {},
 
   // El host saltea una pregunta sin respuesta.
   skipQuestion: async (roomCode, nextSelectorIndex) => {},
+
+  // Rebote: el respondedor falló; pierde los puntos y la pregunta se reabre.
+  // failed / sawAnswer son las listas completas ya actualizadas.
+  reboundQuestion: async (roomCode, responderId, pointsDelta, failed, sawAnswer) => {},
+
+  // Ronda final con apuesta.
+  startFinalRound: async (roomCode, finalData) => {},
+  setFinalPhase: async (roomCode, phase) => {},
+  submitFinalWager: async (roomCode, playerId, wager) => {},
+  submitFinalAnswer: async (roomCode, playerId, text) => {},
+  setFinalVerdict: async (roomCode, playerId, correct) => {},
+  applyFinalResults: async (roomCode, deltas) => {},   // suma ±apuesta y pasa a "results"
+  endFinalRound: async (roomCode) => {},               // status: "finished"
 
   // ── Presencia y host ──────────────────────────────────────────────
 
@@ -972,7 +1057,10 @@ function renderPlaying(s) {
 - **Responsivo mobile-first**: el botón de buzzer tiene al menos 80px de alto para ser fácil de tocar
 - El tablero en mobile usa `overflow-x: auto` con las 6 columnas mostrándose en scroll horizontal
 - Si Firebase no está configurado, mostrar error claro: `"Falta configurar Firebase. Ver README."`
-- `localStorage` solo para `playerId`, `roomCode` y `myName` — `playerId` persiste entre sesiones para permitir reconexión tras cerrar el browser; `roomCode` y `myName` se limpian al salir de la sala (botón "Salir") o cuando la sala expira
+- `localStorage` solo para `playerId`, `roomCode`, `myName` e `historial.<temática>` — `playerId` persiste entre sesiones para permitir reconexión tras cerrar el browser; `roomCode` y `myName` se limpian al salir de la sala (botón "Salir") o cuando la sala expira
+- **No repetir entre partidas**: `js/historial.js` guarda en el dispositivo del host las categorías y los índices de preguntas relámpago/estimación ya jugados (`historial.<temática>`). `buildInitialState` los excluye al crear una sala nueva y los siembra en `usedCategories` / `lightningUsedIndices` / `estimacionUsedIndices`; `acumularUsados` reinicia la lista cuando ya no queda una tanda completa sin usar
+- **Mezclas**: usar siempre `shuffle()` de `js/shuffle.js` (Fisher-Yates). `sort(() => Math.random() - 0.5)` no mezcla parejo
+- **Service worker** (`sw.js`, registrado desde `index.html`): red primero con caché de respaldo (3s) para los archivos propios, caché primero para los CDN versionados; Firebase no pasa por el SW. Al agregar un archivo a la app, sumarlo a `PRECACHE` (lo verifica `tests/unit/sw.test.js`)
 - Las categorías del pool deben tener preguntas bien redactadas con respuestas cortas y verificables para facilitar el juicio del host
 - **No duplicar preguntas** entre `QUESTIONS` y `LIGHTNING_QUESTIONS` — ambas pueden aparecer en la misma partida
 

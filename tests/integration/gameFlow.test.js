@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createInMemoryDao } from "../helpers/inMemoryDao.js";
-import { isBoardComplete, countAnsweredCells } from "../../js/logica.js";
+import {
+  isBoardComplete, countAnsweredCells, canAttempt, reboundCandidates, nextBestStreak,
+  computeAwards, pickFinalQuestion, finalDeltas,
+} from "../../js/logica.js";
 import { CATEGORY_POOL } from "../../js/preguntas.js";
 
 const ROOM   = "FLOW01";
@@ -241,6 +244,111 @@ describe("Flujo completo de partida", () => {
       await dao.pressBuzzer(ROOM, P1);
       expect(await dao.revealAnswer(ROOM, P2)).toBe(false);
       expect(getState().questionPhase).toBe("waiting_answer");
+    });
+  });
+
+  describe("Rebote", () => {
+    it("15. Si alguien falla, la pregunta se reabre y otro puede responder", async () => {
+      await dao.joinRoom(ROOM, P1, { name: "P1", score: 0, connected: true });
+      await dao.joinRoom(ROOM, P2, { name: "P2", score: 0, connected: true });
+      await dao.startGame(ROOM);
+      await dao.selectQuestion(ROOM, CATS[0], 400);
+
+      // P1 pulsa y falla → rebote
+      await dao.pressBuzzer(ROOM, P1);
+      await dao.revealAnswer(ROOM, P1);
+      let s = getState();
+      expect(reboundCandidates(s, P1, HOST)).toEqual([P2]);
+      await dao.reboundQuestion(ROOM, P1, -400, [P1], [HOST]);
+
+      s = getState();
+      expect(s.questionPhase).toBe("waiting_buzz");
+      expect(s.buzzer).toBeUndefined();
+      expect(s.players[P1].score).toBe(-400);
+      expect(s.board[CATS[0]]?.["400"]).not.toBe(true); // la celda sigue abierta
+      expect(canAttempt(s.currentQuestion, P1)).toBe(false);   // ya falló
+      expect(canAttempt(s.currentQuestion, HOST)).toBe(false); // vio la respuesta
+      expect(canAttempt(s.currentQuestion, P2)).toBe(true);
+
+      // P2 toma el rebote y acierta
+      expect(await dao.pressBuzzer(ROOM, P2)).toBe(true);
+      await dao.revealAnswer(ROOM, P2);
+      await dao.judgeAnswer(ROOM, P2, true, 400, CATS[0], 400, 1);
+      s = getState();
+      expect(s.questionPhase).toBe("judged");
+      expect(s.players[P2].score).toBe(400);
+      expect(s.board[CATS[0]]["400"]).toBe(true);
+      // Sin más candidatos, un segundo fallo ya no rebotaría
+      expect(reboundCandidates(s, P2, HOST)).toEqual([]);
+    });
+  });
+
+  describe("Stats para los premios del podio", () => {
+    it("16. Pulsadas, rachas, robos y puntos perdidos quedan registrados", async () => {
+      await dao.joinRoom(ROOM, P1, { name: "P1", score: 0, connected: true });
+      await dao.startGame(ROOM);
+
+      // P1 acierta dos seguidas
+      for (const value of [200, 400]) {
+        await dao.selectQuestion(ROOM, CATS[0], value);
+        await dao.pressBuzzer(ROOM, P1);
+        await dao.revealAnswer(ROOM, P1);
+        await dao.judgeAnswer(ROOM, P1, true, value, CATS[0], value, nextBestStreak(getState().stats, P1));
+        await dao.nextTurn(ROOM, 0, false);
+      }
+      // Después falla una: corta la racha pero conserva la mejor
+      await dao.selectQuestion(ROOM, CATS[0], 600);
+      await dao.pressBuzzer(ROOM, P1);
+      await dao.revealAnswer(ROOM, P1);
+      await dao.judgeAnswer(ROOM, P1, false, -600, CATS[0], 600);
+
+      const s = getState();
+      expect(s.stats[P1]).toMatchObject({ buzzes: 3, correct: 2, wrong: 1, streak: 0, bestStreak: 2, lost: 600 });
+      const titulos = computeAwards(s.stats, s.playerOrder).map(a => a.titulo);
+      expect(titulos).toEqual(["Dedo más rápido", "Mejor racha", "El que más perdió"]);
+    });
+  });
+
+  describe("Ronda final con apuesta", () => {
+    it("17. Apuestas, respuestas, corrección y cierre de la partida", async () => {
+      await dao.joinRoom(ROOM, P1, { name: "P1", score: 0, connected: true });
+      await dao.joinRoom(ROOM, P2, { name: "P2", score: 0, connected: true });
+      await dao.startGame(ROOM);
+
+      const q = pickFinalQuestion({}, CATS, CATEGORY_POOL);
+      await dao.startFinalRound(ROOM, { active: true, phase: "announcing", category: q.category, value: q.value, openedAt: null });
+      expect(getState().status).toBe("playing");
+      expect(getState().finalRound.phase).toBe("announcing");
+
+      await dao.setFinalPhase(ROOM, "betting");
+      await dao.submitFinalWager(ROOM, HOST, 500);
+      await dao.submitFinalWager(ROOM, P1, 300);
+      // P2 no apuesta → juega con 0
+
+      await dao.setFinalPhase(ROOM, "answering");
+      await dao.submitFinalAnswer(ROOM, HOST, "respuesta del host");
+      await dao.submitFinalAnswer(ROOM, P1, "respuesta de p1");
+
+      await dao.setFinalPhase(ROOM, "judging");
+      await dao.setFinalVerdict(ROOM, HOST, true);
+      await dao.setFinalVerdict(ROOM, P1, false);
+
+      let s = getState();
+      const deltas = finalDeltas(s.playerOrder, s.finalRound.wagers, s.finalRound.verdicts);
+      expect(deltas).toEqual({ [HOST]: 500, [P1]: -300 });
+      await dao.applyFinalResults(ROOM, deltas);
+
+      s = getState();
+      expect(s.finalRound.phase).toBe("results");
+      expect(s.players[HOST].score).toBe(500);
+      expect(s.players[P1].score).toBe(-300);
+      expect(s.players[P2].score).toBe(0);
+      expect(s.stats[P1].lost).toBe(300); // la apuesta perdida cuenta para el podio
+
+      await dao.endFinalRound(ROOM);
+      s = getState();
+      expect(s.status).toBe("finished");
+      expect(s.finalRound.active).toBe(false);
     });
   });
 
