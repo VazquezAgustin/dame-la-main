@@ -99,7 +99,13 @@ export const FAMOSOS = [
 ];
 
 // Devuelve un array aleatorio de `count` famosos sin repetir.
-export function pickFamosos(count = 10) {
-  const shuffled = shuffle(FAMOSOS);
-  return shuffled.slice(0, Math.min(count, FAMOSOS.length));
+// `exclude`: famosos ya mostrados en la partida; se evitan y solo se usan
+// (al final) si no quedan suficientes disponibles.
+export function pickFamosos(count = 10, exclude = []) {
+  const excl = new Set(exclude);
+  const total = Math.min(count, FAMOSOS.length);
+  const disponibles = shuffle(FAMOSOS.filter(f => !excl.has(f)));
+  if (disponibles.length >= total) return disponibles.slice(0, total);
+  const reciclados = shuffle(FAMOSOS.filter(f => excl.has(f)));
+  return [...disponibles, ...reciclados].slice(0, total);
 }

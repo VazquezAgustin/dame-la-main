@@ -5,6 +5,7 @@ import {
   isGameOver,
   nextSelectorIndex,
   buildQuienInitialState,
+  shownFamosos,
 } from "../../js/games/quien-es-main/logica.js";
 
 describe("POINTS_PER_CORRECT", () => {
@@ -121,5 +122,27 @@ describe("buildQuienInitialState", () => {
     const b = buildQuienInitialState();
     a.quienConfig.roundsPerPlayer = 99;
     expect(b.quienConfig.roundsPerPlayer).toBe(2);
+  });
+});
+
+describe("shownFamosos", () => {
+  const famosos = ["A", "B", "C", "D"];
+  it("currentIndex 0 → solo el que está en pantalla", () => {
+    expect(shownFamosos({ famosos, currentIndex: 0 })).toEqual(["A"]);
+  });
+  it("currentIndex a mitad → respondidos + el actual", () => {
+    expect(shownFamosos({ famosos, currentIndex: 2 })).toEqual(["A", "B", "C"]);
+  });
+  it("todos respondidos → todos", () => {
+    expect(shownFamosos({ famosos, currentIndex: 4 })).toEqual(famosos);
+  });
+  it("ronda null → []", () => {
+    expect(shownFamosos(null)).toEqual([]);
+  });
+});
+
+describe("buildQuienInitialState quienUsed", () => {
+  it("arranca con quienUsed vacío", () => {
+    expect(buildQuienInitialState().quienUsed).toEqual([]);
   });
 });

@@ -53,3 +53,27 @@ describe("pickFamosos", () => {
     }
   });
 });
+
+describe("pickFamosos con exclude", () => {
+  it("no devuelve excluidos si hay suficientes disponibles", () => {
+    const exclude = FAMOSOS.slice(0, 30);
+    const r = pickFamosos(10, exclude);
+    expect(r).toHaveLength(10);
+    r.forEach(f => expect(exclude).not.toContain(f));
+  });
+
+  it("si no alcanzan, incluye los no excluidos y completa sin duplicados", () => {
+    const libres = FAMOSOS.slice(0, 3);
+    const exclude = FAMOSOS.slice(3);
+    const r = pickFamosos(8, exclude);
+    expect(r).toHaveLength(8);
+    expect(new Set(r).size).toBe(8);
+    libres.forEach(f => expect(r).toContain(f));
+  });
+
+  it("exclude vacío u omitido mantiene el comportamiento", () => {
+    expect(pickFamosos(5)).toHaveLength(5);
+    expect(pickFamosos(5, [])).toHaveLength(5);
+    expect(new Set(pickFamosos(5, [])).size).toBe(5);
+  });
+});
