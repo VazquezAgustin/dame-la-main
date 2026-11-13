@@ -1,7 +1,6 @@
 import {
   assignPalabras, pointsForPosition, guessedCount, allGuessed, buildTipoInitialState,
 } from "./logica.js";
-import { poolForPack } from "./palabras.js";
 import { db, GameDAO } from "../../firebase.js";
 import { ref, update, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { esc } from "../../logica.js";
@@ -270,7 +269,7 @@ async function _handleRepartir() {
     const order    = s.playerOrder || [];
     // Evitar repetir las categorías de la ronda anterior
     const previas  = Object.values(s.tipoRound?.words || {});
-    const words    = assignPalabras(order, Math.random, poolForPack(s.tipoPack), previas);
+    const words    = assignPalabras(order, Math.random, undefined, previas);
     const roundNum = (s.tipoRoundNumber || 0) + 1;
     _sheetOpen = false;
     await _daoNewRound(getRoomCode(), words, roundNum);
@@ -344,7 +343,7 @@ async function _handleJugarNuevo() {
       createdAt:   Date.now(),
       hostId:      myPlayerId(),
       status:      "lobby",
-      ...buildTipoInitialState(s.tipoPack),
+      ...buildTipoInitialState(),
       players,
       playerOrder: s.playerOrder || [],
     });
@@ -374,14 +373,6 @@ export default {
     });
     on("btn-tipo-ocultar", () => { _clearCountdown(); _revealedRound = -1; _rerender(); });
 
-    // Selector de tono (form de crear sala)
-    document.querySelectorAll("#tipo-pack-selector .numero-range-option").forEach(opt => {
-      opt.addEventListener("click", () => {
-        document.querySelectorAll("#tipo-pack-selector .numero-range-option").forEach(o => o.classList.remove("active"));
-        opt.classList.add("active");
-      });
-    });
-
     // Lista del sheet: delegación (se re-renderiza)
     document.getElementById("tipo-sheet-list")?.addEventListener("click", (e) => {
       if (!_esActivo()) return;
@@ -398,8 +389,8 @@ export default {
     });
   },
 
-  buildInitialState(config = {}) {
-    return buildTipoInitialState(config.tipoPack);
+  buildInitialState() {
+    return buildTipoInitialState();
   },
 
   render(s) {
