@@ -50,7 +50,22 @@ export function createInMemoryDao() {
     notify(roomCode);
   }
 
+  // Equivalentes en memoria de increment() sobre stats/<pid>/<campo>
+  const stat = (room, pid, campo) => room?.stats?.[pid]?.[campo] || 0;
+  const judgeStats = (room, pid, correct, pointsDelta, bestStreak) => correct
+    ? {
+        [`stats/${pid}/correct`]: stat(room, pid, "correct") + 1,
+        [`stats/${pid}/streak`]:  stat(room, pid, "streak") + 1,
+        ...(bestStreak ? { [`stats/${pid}/bestStreak`]: bestStreak } : {}),
+      }
+    : {
+        [`stats/${pid}/wrong`]:  stat(room, pid, "wrong") + 1,
+        [`stats/${pid}/lost`]:   stat(room, pid, "lost") + Math.abs(pointsDelta),
+        [`stats/${pid}/streak`]: 0,
+      };
+
   const dao = {
+    ready: async () => {},
     createRoom: async (roomCode, initialState) => {
       rooms.set(roomCode, structuredClone(initialState));
       notify(roomCode);
@@ -100,6 +115,7 @@ export function createInMemoryDao() {
       deepUpdate(roomCode, {
         buzzer: { playerId, timestamp: Date.now() },
         questionPhase: "waiting_answer",
+        [`stats/${playerId}/buzzes`]: stat(room, playerId, "buzzes") + 1,
       });
       return true;
     },
@@ -126,11 +142,14 @@ export function createInMemoryDao() {
           lastSteal: { from: expectedFromId, to: thiefId, penalty },
         },
         [`players/${expectedFromId}/score`]: score - penalty,
+        [`stats/${expectedFromId}/stolen`]: stat(room, expectedFromId, "stolen") + 1,
+        [`stats/${expectedFromId}/lost`]:   stat(room, expectedFromId, "lost") + penalty,
+        [`stats/${thiefId}/steals`]:        stat(room, thiefId, "steals") + 1,
       });
       return true;
     },
 
-    judgeAnswer: async (roomCode, responderId, correct, pointsDelta, category, value) => {
+    judgeAnswer: async (roomCode, responderId, correct, pointsDelta, category, value, bestStreak = null) => {
       const room = rooms.get(roomCode);
       const currentScore = room?.players?.[responderId]?.score || 0;
       deepUpdate(roomCode, {
@@ -138,7 +157,58 @@ export function createInMemoryDao() {
         [`board/${category}/${value}`]: true,
         questionResult: { responderId, correct, pointsDelta },
         questionPhase: "judged",
+        ...judgeStats(room, responderId, correct, pointsDelta, bestStreak),
       });
+    },
+
+    reboundQuestion: async (roomCode, responderId, pointsDelta, failed, sawAnswer) => {
+      const room = rooms.get(roomCode);
+      const currentScore = room?.players?.[responderId]?.score || 0;
+      deepUpdate(roomCode, {
+        [`players/${responderId}/score`]: currentScore + pointsDelta,
+        buzzer: null,
+        questionPhase: "waiting_buzz",
+        questionResult: null,
+        "currentQuestion/openedAt":  Date.now(),
+        "currentQuestion/failed":    failed,
+        "currentQuestion/sawAnswer": sawAnswer,
+        "currentQuestion/lastFail":  { responderId, pointsDelta },
+        ...judgeStats(room, responderId, false, pointsDelta, null),
+      });
+    },
+
+    startFinalRound: async (roomCode, finalData) => {
+      deepUpdate(roomCode, { finalRound: finalData });
+    },
+
+    setFinalPhase: async (roomCode, phase) => {
+      deepUpdate(roomCode, { "finalRound/phase": phase, "finalRound/openedAt": Date.now() });
+    },
+
+    submitFinalWager: async (roomCode, playerId, wager) => {
+      deepUpdate(roomCode, { [`finalRound/wagers/${playerId}`]: wager });
+    },
+
+    submitFinalAnswer: async (roomCode, playerId, text) => {
+      deepUpdate(roomCode, { [`finalRound/answers/${playerId}`]: text });
+    },
+
+    setFinalVerdict: async (roomCode, playerId, correct) => {
+      deepUpdate(roomCode, { [`finalRound/verdicts/${playerId}`]: correct });
+    },
+
+    applyFinalResults: async (roomCode, deltas) => {
+      const room = rooms.get(roomCode);
+      const updates = { "finalRound/phase": "results", "finalRound/deltas": deltas };
+      for (const [playerId, delta] of Object.entries(deltas)) {
+        updates[`players/${playerId}/score`] = (room?.players?.[playerId]?.score || 0) + delta;
+        if (delta < 0) updates[`stats/${playerId}/lost`] = stat(room, playerId, "lost") - delta;
+      }
+      deepUpdate(roomCode, updates);
+    },
+
+    endFinalRound: async (roomCode) => {
+      deepUpdate(roomCode, { "finalRound/active": false, status: "finished" });
     },
 
     nextTurn: async (roomCode, nextSelectorIndex, isGameOver) => {
@@ -223,7 +293,8 @@ export function createInMemoryDao() {
       });
     },
 
-    lightningJudge: async (roomCode, playerId, correct, currentScore) => {
+    lightningJudge: async (roomCode, playerId, correct) => {
+      const currentScore = rooms.get(roomCode)?.players?.[playerId]?.score || 0;
       const updates = {
         "lightningMode/phase": "judged",
         "lightningMode/questionResult": { correct, pointsDelta: correct ? 200 : 0 },

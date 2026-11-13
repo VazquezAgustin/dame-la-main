@@ -1,5 +1,5 @@
 // Lógica pura de ¿Qué tipo soy? — sin dependencias de Firebase ni DOM.
-import { PALABRAS_TIPO } from "./palabras.js";
+import { PALABRAS_TIPO, TIPO_PACKS } from "./palabras.js";
 
 // Mismo sistema de puntos que ¿Qué número soy?: 300/200/100 por orden de acierto.
 export { POINTS_BY_POSITION, pointsForPosition, guessedCount, allGuessed } from "../numero-main/logica.js";
@@ -27,9 +27,11 @@ export function assignPalabras(playerIds = [], rng = Math.random, pool = PALABRA
   return result;
 }
 
-export function buildTipoInitialState() {
+// tipoPack: tono de las categorías ("suave" | "mixto" | "picante").
+export function buildTipoInitialState(tipoPack = "mixto") {
   return {
     gameType:        "tipo-main",
+    tipoPack:        TIPO_PACKS.includes(tipoPack) ? tipoPack : "mixto",
     selectorIndex:   0,
     tipoRoundNumber: 0,
     tipoRound:       null,

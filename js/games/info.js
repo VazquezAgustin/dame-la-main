@@ -15,7 +15,10 @@ export const GAME_INFO = {
       "Si el que pulsó no responde en 10s, cualquiera puede tocar 🖐 ROBAR: el robado pierde la mitad de los puntos y el ladrón responde (si falla, también pierde).",
       "Toca «Mostrar respuesta» y el host dice si fue correcta.",
       "Correcta suma los puntos; incorrecta los resta.",
-      "Gana quien tenga más puntos al terminar el tablero.",
+      "↩️ Rebote (opcional): si alguien falla, la pregunta se reabre para los demás. Solo el host ve la respuesta mientras juzga, así que en el rebote el host no pulsa.",
+      "👑 Elige el que acierta (opcional): quien responde bien elige la próxima; si nadie acierta, sigue la rotación.",
+      "🎲 Ronda final (opcional): una última pregunta donde cada uno apuesta en secreto hasta su puntaje y escribe su respuesta. Acertar suma lo apostado; fallar lo resta.",
+      "Gana quien tenga más puntos al terminar. En el podio se reparten premios: dedo más rápido, mejor racha, el ladrón y el que más perdió.",
     ],
   },
   "quien-es-main": {
@@ -57,7 +60,8 @@ export const GAME_INFO = {
     titulo: "¿Qué tipo soy?",
     descripcion: "Todos ven tu categoría de persona menos vos: adivinala preguntando.",
     pasos: [
-      "Cada uno recibe una categoría (ej: «Falopero», «Hincha de Boca»). Mostrala sin mirarla.",
+      "Al crear la sala se elige el tono: 😇 Suave (para cualquier mesa), 🌶️ Picante o 🎲 Mixto.",
+      "Cada uno recibe una categoría (ej: «Tacaño», «Hincha de Boca»). Mostrala sin mirarla.",
       "Preguntá en voz alta: «¿Maradona entra en mi categoría?».",
       "Los demás responden sí o no.",
       "El host marca quién adivinó: 300, 200 y 100 pts según el orden.",

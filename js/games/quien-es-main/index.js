@@ -4,7 +4,7 @@ import {
 } from "./logica.js";
 import { db, GameDAO } from "../../firebase.js";
 import {
-  ref, update, serverTimestamp,
+  ref, update, serverTimestamp, increment,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { lockOrientation, unlockOrientation } from "../../motion.js";
 import { playCorrect, playIncorrect, playTick } from "../../audio.js";
@@ -74,9 +74,7 @@ async function _daoNextRound(roomCode, nextSelectorIndex, roundsCompleted, activ
     status: isGameOver ? "finished" : "playing",
   };
   if (activePid && ptsToAdd > 0) {
-    const s = _ctx.getState();
-    const currentScore = s.players?.[activePid]?.score || 0;
-    updates[`players/${activePid}/score`] = currentScore + ptsToAdd;
+    updates[`players/${activePid}/score`] = increment(ptsToAdd);
   }
   await update(_rRef(roomCode), updates);
 }

@@ -3,7 +3,7 @@ import {
   normalizeRange, formatNumero,
 } from "./logica.js";
 import { db, GameDAO } from "../../firebase.js";
-import { ref, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { ref, update, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { esc } from "../../logica.js";
 import { playTick } from "../../audio.js";
 
@@ -74,18 +74,19 @@ async function _daoSetRange(roomCode, range) {
   await update(_rRef(roomCode), { numeroRange: range });
 }
 
-async function _daoMarkGuessed(roomCode, pid, position, points, currentScore) {
+// increment(): suma atómica en el servidor
+async function _daoMarkGuessed(roomCode, pid, position, points) {
   await update(_rRef(roomCode), {
     [`numeroRound/guessed/${pid}`]: { position, points },
-    [`players/${pid}/score`]: currentScore + points,
+    [`players/${pid}/score`]: increment(points),
   });
 }
 
 // Deshacer un toque por error. No recalcula las posiciones de los demás.
-async function _daoUnmarkGuessed(roomCode, pid, points, currentScore) {
+async function _daoUnmarkGuessed(roomCode, pid, points) {
   await update(_rRef(roomCode), {
     [`numeroRound/guessed/${pid}`]: null,
-    [`players/${pid}/score`]: Math.max(0, currentScore - points),
+    [`players/${pid}/score`]: increment(-points),
   });
 }
 
@@ -326,8 +327,7 @@ async function _handleMarkGuessed(pid) {
   try {
     const position = guessedCount(guessed) + 1;
     const points   = pointsForPosition(position);
-    const current  = s.players?.[pid]?.score || 0;
-    await _daoMarkGuessed(getRoomCode(), pid, position, points, current);
+    await _daoMarkGuessed(getRoomCode(), pid, position, points);
     _ctx.triggerFlash("correcto");
   } catch (e) { console.error(e); }
 }
@@ -340,8 +340,7 @@ async function _handleUnmarkGuessed(pid) {
   const name = s.players?.[pid]?.name || "este jugador";
   if (!confirm(`¿Desmarcar a ${name}?`)) return;
   try {
-    const current = s.players?.[pid]?.score || 0;
-    await _daoUnmarkGuessed(getRoomCode(), pid, g.points || 0, current);
+    await _daoUnmarkGuessed(getRoomCode(), pid, g.points || 0);
   } catch (e) { console.error(e); }
 }
 

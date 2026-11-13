@@ -6,7 +6,7 @@ import {
 } from "./logica.js";
 import { db, GameDAO } from "../../firebase.js";
 import {
-  ref, update, serverTimestamp, runTransaction,
+  ref, update, serverTimestamp, runTransaction, increment,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { playCorrect, playIncorrect, playTick } from "../../audio.js";
 import { lockOrientation, unlockOrientation } from "../../motion.js";
@@ -126,9 +126,8 @@ async function _daoRecordCorrectGuess(code, pid, order, pts) {
     return { order, points: pts, ts: Date.now() };
   });
   if (!won) return;
-  const cur = _ctx.getState()?.players?.[pid]?.score || 0;
   await update(_rRef(code), {
-    [`players/${pid}/score`]: cur + pts,
+    [`players/${pid}/score`]: increment(pts),
     // entrada de chat SIN texto: nunca se revela la palabra
     [`currentRound/chat/${_chatKey(pid)}`]: { playerId: pid, correct: true, ts: Date.now() },
   });
@@ -143,6 +142,8 @@ async function _daoAppendChat(code, pid, text) {
 async function _daoFinishRound(code, drawerId, drawerPts) {
   const updates = { "currentRound/phase": "finished" };
   if (drawerPts > 0) {
+    // Valor absoluto a propósito: el puntaje del dibujante solo cambia acá, y así
+    // el cierre es idempotente si dibujante y host lo escriben a la vez.
     const cur = _ctx.getState()?.players?.[drawerId]?.score || 0;
     updates[`players/${drawerId}/score`] = cur + drawerPts;
   }

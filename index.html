@@ -115,6 +115,23 @@
           </div>
           <span id="length-total-hint" class="length-total-hint"></span>
         </div>
+        <div class="form-group">
+          <label>Reglas extra</label>
+          <div class="rule-selector" id="rule-selector">
+            <button type="button" class="rule-option active" data-rule="rebote" aria-pressed="true">
+              <span class="rule-name">↩️ Rebote</span>
+              <span class="rule-desc">Si alguien falla, otro puede responder</span>
+            </button>
+            <button type="button" class="rule-option active" data-rule="ganadorElige" aria-pressed="true">
+              <span class="rule-name">👑 Elige el que acierta</span>
+              <span class="rule-desc">El que responde bien elige la próxima</span>
+            </button>
+            <button type="button" class="rule-option active" data-rule="finalApuesta" aria-pressed="true">
+              <span class="rule-name">🎲 Ronda final con apuesta</span>
+              <span class="rule-desc">Última pregunta: apostás tus puntos en secreto</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div id="quien-es-main-options" style="display:none">
@@ -153,6 +170,14 @@
       </div>
 
       <div id="tipo-main-options" style="display:none">
+        <div class="form-group">
+          <label>Tono de las categorías</label>
+          <div class="game-selector" id="tipo-pack-selector">
+            <button type="button" class="numero-range-option" data-pack="suave">😇 Suave</button>
+            <button type="button" class="numero-range-option active" data-pack="mixto">🎲 Mixto</button>
+            <button type="button" class="numero-range-option" data-pack="picante">🌶️ Picante</button>
+          </div>
+        </div>
         <p class="length-total-hint">Cada jugador recibe un tipo de persona (ej: «Falopero», «Infieles») que solo ven los demás. Adivinalo preguntando: «¿Maradona entra en mi categoría?».</p>
       </div>
 
@@ -554,6 +579,7 @@
   <div class="confetti-container" id="confetti-container"></div>
   <div class="finished-titulo">¡Fin del juego!</div>
   <div class="podio" id="podio"></div>
+  <div class="podio-premios" id="podio-premios" style="display:none"></div>
   <button class="btn btn-primario" id="btn-jugar-nuevo" style="display:none;margin-top:8px">
     🔄 Jugar de nuevo
   </button>
@@ -588,6 +614,13 @@
   <div id="estimacion-actions" class="estimacion-actions"></div>
 </div>
 
+<!-- Ronda final con apuesta -->
+<div class="estimacion-overlay final-overlay" id="final-overlay">
+  <div class="estimacion-header-badge final-header-badge">🎲 RONDA FINAL 🎲</div>
+  <div id="final-content" class="estimacion-content"></div>
+  <div id="final-actions" class="estimacion-actions"></div>
+</div>
+
 <!-- Flash de resultado -->
 <div class="flash-overlay" id="flash-overlay"></div>
 
@@ -614,5 +647,14 @@
 </div>
 
 <script type="module" src="js/main.js"></script>
+<!-- Service worker: cachea la app para que abra rápido (o sin señal) la próxima vez.
+     Va aparte de main.js para registrarse aunque falle la carga de algún módulo. -->
+<script>
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function (e) { console.warn("Service worker no registrado:", e); });
+    });
+  }
+</script>
 </body>
 </html>

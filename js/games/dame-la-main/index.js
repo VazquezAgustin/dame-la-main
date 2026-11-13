@@ -5,7 +5,11 @@ import {
 import {
   generateRoomCode, isBoardComplete, countAnsweredCells, esc, getQuestion,
   categoryHasUnplayed, availableCategories, STEAL_AFTER_MS, canSteal, stealPenalty,
+  getRules, nextSelectorIndex, canAttempt, reboundCandidates, nextBestStreak,
+  pickFinalQuestion, maxWager, clampWager, finalDeltas, computeAwards,
 } from "../../logica.js";
+import { shuffle } from "../../shuffle.js";
+import { getHistorial, setHistorial, acumularUsados } from "../../historial.js";
 import {
   playBuzzer, playCorrect, playIncorrect, playEstimacion, playLightning,
   playTick, playWindupSweep, playBonusFanfare,
@@ -36,12 +40,16 @@ let _lastEstimacionKey = null;
 let _estimacionInput   = "";
 let _lastRuletaKey     = null;
 let _ruletaRotation    = 0;
+let _lastFinalKey      = null;
+let _finalInput        = "";
 
 // ── Estado de sonidos ─────────────────────────────────────────────
 let _lastBuzzerTs       = null;
 let _lastPhase          = null;
 let _lastLightningPhase = null;
 let _lastEstimacionPhase= null;
+let _lastFinalPhase     = null;
+let _lastFailedCount    = 0;
 
 // ── Estado de ruleta ──────────────────────────────────────────────
 const RULETA_COLORS           = ["#7c3aed", "#a855f7", "#ec4899", "#f59e0b", "#06b6d4", "#10b981"];
@@ -60,6 +68,10 @@ let _ruletaFinishTimer  = null;
 // ── Estado de flags de modos ──────────────────────────────────────
 let _lightningTriggered  = false;
 let _estimacionTriggered = false;
+let _finalTriggered      = false;
+
+// Segundos (solo visuales) para escribir la respuesta de la ronda final
+const FINAL_ANSWER_MS = 60000;
 
 // ── Sliders de longitud ───────────────────────────────────────────
 // Cada slider es independiente (sin rebalanceo). Lightning se mide en
@@ -116,8 +128,18 @@ function checkSoundTriggers(s) {
     if (s.questionResult?.correct) playCorrect();
     else                           playIncorrect();
   }
+  // Rebote: alguien falló y la pregunta se reabrió (no pasa por "judged")
+  const failedCount = s.currentQuestion?.failed?.length || 0;
+  if (failedCount > _lastFailedCount) playIncorrect();
+  _lastFailedCount = failedCount;
+
   if (!s.currentQuestion) { _lastBuzzerTs = null; _lastPhase = null; }
   else                    { _lastPhase = phase; }
+
+  const fPhase = s.finalRound?.active ? s.finalRound.phase : null;
+  if (fPhase === "announcing" && _lastFinalPhase !== "announcing") playEstimacion();
+  if (fPhase === "results"    && _lastFinalPhase !== "results")    playCorrect();
+  _lastFinalPhase = fPhase;
 
   const lPhase = s.lightningMode?.phase;
   if (lPhase === "announcing" && _lastLightningPhase !== "announcing") playLightning();
@@ -780,8 +802,11 @@ function renderQuestion(s) {
   }
   document.getElementById("preg-texto").textContent = qData?.question || "Pregunta no encontrada";
 
+  // Con rebote, mientras el host juzga solo él ve la respuesta: si falla,
+  // la pregunta se reabre y nadie más tiene que haberla visto.
   const respBox = document.getElementById("respuesta-box");
-  if (phase === "answer_revealed" || phase === "judged") {
+  const soloHostVe = getRules(s).rebote && phase === "answer_revealed" && !isHost();
+  if ((phase === "answer_revealed" || phase === "judged") && !soloHostVe) {
     respBox.classList.add("visible");
     document.getElementById("respuesta-texto").textContent = qData?.answer || "---";
   } else {
@@ -888,13 +913,33 @@ function renderBuzzerZone(s, phase, buzzer) {
   btnSiguiente.disabled = false;
   btnSkip.disabled      = false;
 
-  const host = isHost();
+  const host   = isHost();
+  const rebote = getRules(s).rebote;
+  const q      = s.currentQuestion;
+  btnRevelar.textContent = rebote ? "✋ Ya respondí" : "👁 Mostrar respuesta";
   if (phase === "waiting_buzz") {
-    btnBuzzer.style.display = "block";
+    const miId     = myPlayerId();
+    const puedo    = canAttempt(q, miId);
+    btnBuzzer.style.display = puedo ? "block" : "none";
     btnBuzzer.disabled      = false;
+    const enRebote = (q.failed || []).length > 0;
+    if (enRebote) {
+      const lf    = q.lastFail;
+      const fallo = esc(s.players?.[lf?.responderId]?.name || "?");
+      let html = `<span class="buzzer-ganador">↩️ ¡Rebote! ${fallo} falló (${lf?.pointsDelta ?? 0})</span>`;
+      if (!puedo) {
+        html += (q.failed || []).includes(miId)
+          ? `<br><span style="font-size:0.88rem;color:var(--incorrecto)">Ya fallaste esta pregunta</span>`
+          : `<br><span style="font-size:0.88rem;color:var(--texto-secundario)">Viste la respuesta: en el rebote no podés pulsar</span>`;
+      } else {
+        html += `<br><span style="font-size:0.88rem;color:var(--acento)">¿La sabés? ¡Pulsá!</span>`;
+      }
+      buzzerEstado.innerHTML = html;
+    }
     if (host) {
       const remaining = 45000 - (Date.now() - s.currentQuestion.openedAt);
-      if (remaining <= 0) {
+      // En un rebote el host puede cerrar la pregunta sin esperar los 45s
+      if (remaining <= 0 || enRebote) {
         btnSkip.style.display = "block";
       } else {
         _skipTimeout = setTimeout(() => {
@@ -920,10 +965,10 @@ function renderBuzzerZone(s, phase, buzzer) {
       html += `<span class="buzzer-ganador">🔔 ¡${name} buzzeó primero!</span>`;
       buzzerEstado.innerHTML = html;
       if (buzzer.playerId === miId) {
-        buzzerEstado.innerHTML += `<br><span style="font-size:0.88rem;color:var(--texto-secundario)">Decí tu respuesta en voz alta y tocá "Mostrar respuesta"</span>`;
+        buzzerEstado.innerHTML += `<br><span style="font-size:0.88rem;color:var(--texto-secundario)">Decí tu respuesta en voz alta y tocá "${rebote ? "Ya respondí" : "Mostrar respuesta"}"</span>`;
         buzzerEstado.innerHTML += `<br><span style="font-size:0.8rem;color:var(--acento)">Tenés 10s antes de que te puedan robar</span>`;
         btnRevelar.style.display = "block";
-      } else if (!(buzzer.stolenFrom || []).includes(miId) && !buzzer.revealed) {
+      } else if (!(buzzer.stolenFrom || []).includes(miId) && !buzzer.revealed && canAttempt(q, miId)) {
         // Puedo robar: ahora si ya pasaron los 10s, o cuando se cumplan
         const remaining = STEAL_AFTER_MS - (GameDAO.serverNow() - buzzer.timestamp);
         if (remaining <= 0) {
@@ -946,8 +991,9 @@ function renderBuzzerZone(s, phase, buzzer) {
     }
     if (host) {
       accionesHost.style.display = "block";
+      if (rebote) buzzerEstado.innerHTML += `<br><span style="color:var(--texto-secundario);font-size:0.85rem">Solo vos ves la respuesta</span>`;
     } else {
-      buzzerEstado.innerHTML += `<br><span style="color:var(--texto-secundario);font-size:0.85rem">Esperando que el host decida...</span>`;
+      buzzerEstado.innerHTML += `<br><span style="color:var(--texto-secundario);font-size:0.85rem">${rebote ? "El host está verificando la respuesta..." : "Esperando que el host decida..."}</span>`;
     }
   } else if (phase === "judged") {
     btnBuzzer.style.display = "none";
@@ -957,6 +1003,199 @@ function renderBuzzerZone(s, phase, buzzer) {
       buzzerEstado.innerHTML = `<span style="color:var(--texto-secundario)">Esperando al host...</span>`;
     }
   }
+}
+
+// ════════════════════════════════════════════════════════════════
+// 🎲 RENDER — RONDA FINAL CON APUESTA
+// ════════════════════════════════════════════════════════════════
+// Fases: announcing → betting → answering → judging → results.
+// Apuestas y respuestas se escriben en el celular de cada uno; la respuesta
+// correcta recién aparece en "judging", cuando ya nadie puede cambiar la suya.
+function renderFinal(s) {
+  const fr       = s.finalRound;
+  const order    = s.playerOrder || [];
+  const players  = s.players || {};
+  const me       = myPlayerId();
+  const host     = isHost();
+  const wagers   = fr.wagers   || {};
+  const answers  = fr.answers  || {};
+  const verdicts = fr.verdicts || {};
+
+  const key = JSON.stringify({
+    phase: fr.phase, host, order,
+    w: Object.keys(wagers).sort(), a: Object.keys(answers).sort(),
+    verdicts, deltas: fr.deltas || null, mio: [wagers[me] ?? null, answers[me] ?? null],
+  });
+  if (key === _lastFinalKey) return;
+  _lastFinalKey      = key;
+  _lastBoardKey      = null;
+  _lastLightningKey  = null;
+  _lastEstimacionKey = null;
+  _clearIntervals();
+
+  document.getElementById("final-overlay").classList.add("visible");
+  const contentEl = document.getElementById("final-content");
+  const actionsEl = document.getElementById("final-actions");
+  contentEl.onclick = null;
+
+  const qData    = getQuestion(fr.category, fr.value) || { question: "...", answer: "..." };
+  const catBadge = `<div class="estimacion-value-badge">Categoría: ${esc(fr.category)}</div>`;
+  const espera   = (txt) => `<p style="color:var(--texto-secundario);text-align:center">${txt}</p>`;
+  const hostBtn  = (id, txt) => `<button class="btn btn-primario" id="${id}" style="width:min(340px,92vw);margin-top:8px">${txt}</button>`;
+  const nombre   = (pid) => esc(players[pid]?.name || "?");
+  // Lista de jugadores con "ya envió / pensando" según el mapa `hechos`
+  const listaEstado = (hechos, listo) => `<div class="estimacion-players-list">${order.map(pid => `
+    <div class="estimacion-player-row${pid === me ? " yo" : ""}">
+      <span class="pname">${nombre(pid)}${pid === me ? " <span style='font-size:0.75rem;color:var(--texto-secundario)'>(tú)</span>" : ""}</span>
+      <span class="pstatus${hechos[pid] !== undefined ? " enviado" : ""}">${hechos[pid] !== undefined ? listo : "⏳ pensando..."}</span>
+    </div>`).join("")}</div>`;
+  const cuantos = (mapa) => order.filter(pid => mapa[pid] !== undefined).length;
+
+  if (fr.phase === "announcing") {
+    contentEl.innerHTML = `
+      <div class="estimacion-announcing">
+        <div class="estimacion-big-title">🎲<br>RONDA<br>FINAL</div>
+        ${catBadge}
+        <p class="estimacion-desc">
+          Una última pregunta para todos.<br>
+          Cada uno <strong>apuesta en secreto</strong> hasta su puntaje (o hasta ${maxWager(0)} si tiene menos).<br>
+          Si acertás <strong>ganás</strong> lo apostado; si no, lo <strong>perdés</strong>.
+        </p>
+      </div>`;
+    actionsEl.innerHTML = host ? hostBtn("btn-final-avanzar", "🎲 ¡A apostar!") : espera("Esperando que el host inicie...");
+    if (host) document.getElementById("btn-final-avanzar").addEventListener("click", () => _handleFinalAvanzar("betting"));
+
+  } else if (fr.phase === "betting") {
+    const miScore = players[me]?.score || 0;
+    const tope    = maxWager(miScore);
+    contentEl.innerHTML = `
+      ${catBadge}
+      <div class="estimacion-question-text">¿Cuánto apostás?</div>
+      <div class="estimacion-count">Tenés ${miScore} pts · podés apostar hasta <strong>${tope}</strong></div>
+      <div class="estimacion-count">${cuantos(wagers)}/${order.length} apostaron</div>
+      ${listaEstado(wagers, "✓ Apostó")}`;
+    if (wagers[me] !== undefined) {
+      actionsEl.innerHTML = `<div class="estimacion-enviado-msg">✓ Apostaste: <strong>${wagers[me]}</strong></div>`;
+    } else {
+      actionsEl.innerHTML = `
+        <div class="estimacion-input-wrap">
+          <input class="estimacion-input" type="number" inputmode="numeric" min="0" max="${tope}" id="final-input" placeholder="0 a ${tope}" autocomplete="off">
+          <button class="btn-estimacion-enviar" id="btn-final-enviar">Apostar</button>
+        </div>`;
+      _bindFinalInput(_handleFinalApostar);
+    }
+    if (host) {
+      const n = cuantos(wagers);
+      actionsEl.insertAdjacentHTML("beforeend", hostBtn("btn-final-avanzar",
+        n >= order.length ? "Mostrar la pregunta ▶" : `Mostrar la pregunta (${n}/${order.length} apostaron) ▶`));
+      document.getElementById("btn-final-avanzar").addEventListener("click", () => {
+        if (n < order.length && !confirm("Todavía faltan apuestas. Los que no apostaron juegan con 0. ¿Seguir?")) return;
+        _handleFinalAvanzar("answering");
+      });
+    }
+
+  } else if (fr.phase === "answering") {
+    contentEl.innerHTML = `
+      ${catBadge}
+      <div class="estimacion-question-text">${esc(qData.question)}</div>
+      <div class="estimacion-timer-bar-wrap"><div class="estimacion-timer-bar" id="final-timer-bar"></div></div>
+      <div class="estimacion-count">Apostaste <strong>${wagers[me] ?? 0}</strong> · ${cuantos(answers)}/${order.length} respondieron</div>
+      ${listaEstado(answers, "✓ Respondió")}`;
+    if (answers[me] !== undefined) {
+      actionsEl.innerHTML = `<div class="estimacion-enviado-msg">✓ Tu respuesta: <strong>${esc(answers[me])}</strong></div>`;
+    } else {
+      actionsEl.innerHTML = `
+        <div class="estimacion-input-wrap">
+          <input class="estimacion-input final-input-texto" type="text" maxlength="60" id="final-input" placeholder="Tu respuesta..." autocomplete="off">
+          <button class="btn-estimacion-enviar" id="btn-final-enviar">Enviar</button>
+        </div>`;
+      _bindFinalInput(_handleFinalResponder);
+    }
+    if (host) {
+      const n = cuantos(answers);
+      actionsEl.insertAdjacentHTML("beforeend", hostBtn("btn-final-avanzar",
+        n >= order.length ? "👁 Revelar respuestas" : `👁 Revelar (${n}/${order.length} respondieron)`));
+      document.getElementById("btn-final-avanzar").addEventListener("click", () => {
+        if (n < order.length && !confirm("Todavía faltan respuestas. Los que no respondieron pierden su apuesta. ¿Revelar?")) return;
+        _handleFinalAvanzar("judging");
+      });
+    }
+    _renderFinalTimer(fr.openedAt);
+
+  } else if (fr.phase === "judging") {
+    const rows = order.map(pid => {
+      const resp = answers[pid];
+      const v    = verdicts[pid];
+      const botones = host && resp !== undefined
+        ? `<button class="final-verdict ok${v === true ? " active" : ""}" data-pid="${pid}" data-v="1" aria-label="Correcta">✓</button>
+           <button class="final-verdict mal${v === false ? " active" : ""}" data-pid="${pid}" data-v="0" aria-label="Incorrecta">✗</button>`
+        : `<span class="final-icono">${v === true ? "✅" : v === false ? "❌" : resp === undefined ? "" : "⏳"}</span>`;
+      return `<div class="estimacion-result-row final-row${v === true ? " ganador" : ""}">
+        <span class="rname">${nombre(pid)}</span>
+        ${resp !== undefined ? `<span class="final-resp">${esc(resp)}</span>` : `<span class="rsin">Sin respuesta</span>`}
+        ${botones}
+      </div>`;
+    }).join("");
+    contentEl.innerHTML = `
+      ${catBadge}
+      <div class="estimacion-question-text">${esc(qData.question)}</div>
+      <div class="estimacion-answer-reveal">Respuesta correcta<strong>${esc(qData.answer)}</strong></div>
+      <div class="estimacion-results">${rows}</div>`;
+    if (host) {
+      contentEl.onclick = (e) => {
+        const b = e.target.closest(".final-verdict");
+        if (b) _handleFinalVeredicto(b.dataset.pid, b.dataset.v === "1");
+      };
+      actionsEl.innerHTML = hostBtn("btn-final-avanzar", "Aplicar resultados ▶");
+      document.getElementById("btn-final-avanzar").addEventListener("click", _handleFinalAplicar);
+    } else {
+      actionsEl.innerHTML = espera("El host está corrigiendo las respuestas...");
+    }
+
+  } else if (fr.phase === "results") {
+    const deltas = fr.deltas || {};
+    const rows = [...order]
+      .sort((a, b) => (deltas[b] || 0) - (deltas[a] || 0))
+      .map((pid, i) => {
+        const d = deltas[pid] || 0;
+        const color = d > 0 ? "var(--correcto)" : d < 0 ? "var(--incorrecto)" : "var(--texto-secundario)";
+        return `<div class="estimacion-result-row final-row${d > 0 ? " ganador" : ""}" style="animation-delay:${i * 0.08}s">
+          <span class="rname">${nombre(pid)}</span>
+          ${answers[pid] !== undefined ? `<span class="final-resp">${esc(answers[pid])}</span>` : `<span class="rsin">Sin respuesta</span>`}
+          <span class="rpts" style="color:${color}">${d > 0 ? "+" : d < 0 ? "−" : ""}${Math.abs(d)}</span>
+        </div>`;
+      }).join("");
+    contentEl.innerHTML = `
+      ${catBadge}
+      <div class="estimacion-question-text">${esc(qData.question)}</div>
+      <div class="estimacion-answer-reveal">Respuesta correcta<strong>${esc(qData.answer)}</strong></div>
+      <div class="estimacion-results">${rows}</div>`;
+    actionsEl.innerHTML = host ? hostBtn("btn-final-avanzar", "🏆 Ver el podio") : espera("Esperando al host...");
+    if (host) document.getElementById("btn-final-avanzar").addEventListener("click", _handleFinalTerminar);
+  }
+}
+
+// Input de la ronda final: conserva lo tipeado entre re-renders y envía con Enter
+function _bindFinalInput(onSubmit) {
+  const inputEl = document.getElementById("final-input");
+  if (_finalInput) inputEl.value = _finalInput;
+  inputEl.focus();
+  inputEl.addEventListener("input", e => { _finalInput = e.target.value; });
+  inputEl.addEventListener("keydown", e => { if (e.key === "Enter") onSubmit(); });
+  document.getElementById("btn-final-enviar").addEventListener("click", onSubmit);
+}
+
+function _renderFinalTimer(openedAt) {
+  const tick = () => {
+    const barEl = document.getElementById("final-timer-bar");
+    if (!barEl || !openedAt) { _clearIntervals(); return; }
+    const pct = Math.max(0, 100 - ((GameDAO.serverNow() - openedAt) / FINAL_ANSWER_MS) * 100);
+    barEl.style.width      = pct + "%";
+    barEl.style.background = pct < 20 ? "var(--incorrecto)" : pct < 50 ? "var(--acento)" : "#06b6d4";
+    if (pct <= 0) _clearIntervals();
+  };
+  tick();
+  _timerInterval = setInterval(tick, 500);
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -983,6 +1222,21 @@ function renderFinished(s) {
     `;
     podio.appendChild(div);
   });
+
+  // Premios del podio (stats de la partida)
+  const premiosEl = document.getElementById("podio-premios");
+  if (premiosEl) {
+    const premios = computeAwards(s.stats, order);
+    premiosEl.innerHTML = premios.map(a => {
+      const nombres = a.ganadores.map(pid => esc(players[pid]?.name || "?")).join(", ");
+      return `<div class="premio-item">
+        <span class="premio-icono">${a.icono}</span>
+        <span class="premio-texto"><span class="premio-titulo">${a.titulo}</span><span class="premio-nombre">${nombres}</span></span>
+        <span class="premio-detalle">${a.detalle}</span>
+      </div>`;
+    }).join("");
+    premiosEl.style.display = premios.length ? "flex" : "none";
+  }
 
   document.getElementById("btn-jugar-nuevo").style.display = isHost() ? "block" : "none";
   _launchConfetti();
@@ -1023,6 +1277,7 @@ async function _handleSelectQuestion(category, value) {
 
 async function _handleBuzzer() {
   const btn = document.getElementById("btn-buzzer");
+  if (!canAttempt(getState()?.currentQuestion, myPlayerId())) return;
   btn.disabled = true;
   try {
     await GameDAO.pressBuzzer(roomCode(), myPlayerId());
@@ -1036,6 +1291,7 @@ async function _handleRobar() {
   const s = getState();
   if (!s?.buzzer || !s?.currentQuestion) return;
   if (!canSteal(s.buzzer, myPlayerId(), GameDAO.serverNow())) return;
+  if (!canAttempt(s.currentQuestion, myPlayerId())) return;
   const btn = document.getElementById("btn-robar");
   btn.disabled = true;
   try {
@@ -1070,7 +1326,8 @@ async function _handleCorrecto() {
   const pointsDelta  = bonus ? value * 2 : value;
   _ctx.triggerFlash("correcto");
   try {
-    await GameDAO.judgeAnswer(roomCode(), responderId, true, pointsDelta, category, value);
+    await GameDAO.judgeAnswer(roomCode(), responderId, true, pointsDelta, category, value,
+      nextBestStreak(s.stats, responderId));
   } catch (e) {
     console.error("Error al juzgar correcto:", e);
     btnC.disabled = false; btnI.disabled = false;
@@ -1088,6 +1345,14 @@ async function _handleIncorrecto() {
   const pointsDelta  = bonus ? -value * 2 : -value;
   _ctx.triggerFlash("incorrecto");
   try {
+    // Rebote: si queda alguien que pueda responder, la pregunta se reabre
+    if (getRules(s).rebote && reboundCandidates(s, responderId, myPlayerId()).length > 0) {
+      const q         = s.currentQuestion;
+      const failed    = [...new Set([...(q.failed || []), responderId])];
+      const sawAnswer = [...new Set([...(q.sawAnswer || []), myPlayerId()])];
+      await GameDAO.reboundQuestion(roomCode(), responderId, pointsDelta, failed, sawAnswer);
+      return;
+    }
     await GameDAO.judgeAnswer(roomCode(), responderId, false, pointsDelta, category, value);
   } catch (e) {
     console.error("Error al juzgar incorrecto:", e);
@@ -1099,8 +1364,8 @@ async function _handleSiguiente() {
   const s   = getState();
   const btn = document.getElementById("btn-siguiente");
   btn.disabled = true;
-  const order     = s.playerOrder || [];
-  const nextIndex = (s.selectorIndex + 1) % order.length;
+  // Rotación, o el que acertó si la sala tiene "elige el que acierta"
+  const nextIndex = nextSelectorIndex(s);
   const answered  = countAnsweredCells(s.board, s.categories);
   const len       = s.gameLength || null;
 
@@ -1118,7 +1383,7 @@ async function _handleSiguiente() {
           await _triggerLightningMode(nextIndex);
           return;
         }
-        await GameDAO.nextTurn(roomCode(), nextIndex, true);
+        await GameDAO.nextTurn(roomCode(), nextIndex, await _resolveGameOver(s, true));
         return;
       }
       await GameDAO.nextTurn(roomCode(), nextIndex, false);
@@ -1139,12 +1404,13 @@ async function _handleSiguiente() {
         return;
       }
     }
-    await GameDAO.nextTurn(roomCode(), nextIndex, isGameOver);
+    await GameDAO.nextTurn(roomCode(), nextIndex, await _resolveGameOver(s, isGameOver));
   } catch (e) {
     console.error("Error al avanzar turno:", e);
     btn.disabled = false;
     _lightningTriggered  = false;
     _estimacionTriggered = false;
+    _finalTriggered      = false;
   }
 }
 
@@ -1152,8 +1418,7 @@ async function _handleSkip() {
   const s   = getState();
   const btn = document.getElementById("btn-skip");
   btn.disabled = true;
-  const order     = s.playerOrder || [];
-  const nextIndex = (s.selectorIndex + 1) % order.length;
+  const nextIndex = nextSelectorIndex(s); // nadie acertó → rotación
 
   try {
     const answered = countAnsweredCells(s.board, s.categories) + 1;
@@ -1248,7 +1513,6 @@ async function _handleLightningJudge(correct) {
   const order     = s.playerOrder || [];
   const playerIdx = lm.currentSlot % order.length;
   const currentPId= order[playerIdx];
-  const currentScore = s.players?.[currentPId]?.score || 0;
 
   const btnC = document.getElementById("btn-lightning-correcto");
   const btnI = document.getElementById("btn-lightning-incorrecto");
@@ -1258,7 +1522,7 @@ async function _handleLightningJudge(correct) {
   if (correct) _ctx.triggerFlash("correcto");
   else         _ctx.triggerFlash("incorrecto");
 
-  await GameDAO.lightningJudge(roomCode(), currentPId, correct, currentScore);
+  await GameDAO.lightningJudge(roomCode(), currentPId, correct);
 }
 
 async function _handleLightningSiguiente() {
@@ -1275,7 +1539,14 @@ async function _handleLightningSiguiente() {
       isGameOver = answered >= len.base;
     }
   }
-  await GameDAO.lightningAdvance(roomCode(), nextSlot, lm.totalSlots, isGameOver);
+  try {
+    isGameOver = await _resolveGameOver(s, isGameOver);
+    await GameDAO.lightningAdvance(roomCode(), nextSlot, lm.totalSlots, isGameOver);
+  } catch (e) {
+    console.error("Error al avanzar relámpago:", e);
+    if (btn) btn.disabled = false;
+    _finalTriggered = false;
+  }
 }
 
 async function _handleEstimacionComenzar() {
@@ -1351,13 +1622,114 @@ async function _handleEstimacionSiguiente() {
         _lightningTriggered = true;
         await _triggerLightningMode(em.nextSelectorIndex);
       } else {
-        await GameDAO.endEstimacionMode(roomCode(), em.nextSelectorIndex, baseDone);
+        await GameDAO.endEstimacionMode(roomCode(), em.nextSelectorIndex, await _resolveGameOver(s, baseDone));
       }
     } else {
       await GameDAO.advanceEstimacionQuestion(roomCode(), nextSlot);
     }
   } catch (e) {
     console.error("Error al avanzar estimación:", e);
+    if (btn) btn.disabled = false;
+    _finalTriggered = false;
+  }
+}
+
+// ── Ronda final con apuesta ──────────────────────────────────────
+
+// Recibe si la partida terminaría ahora y devuelve el isGameOver que hay que
+// escribir. Si la sala juega ronda final y todavía no se jugó, la arranca y
+// devuelve false (la partida se cierra recién al terminar la ronda final).
+async function _resolveGameOver(s, isGameOver) {
+  if (!isGameOver) return false;
+  if (!getRules(s).finalApuesta || s.finalRound) return true;
+  if (_finalTriggered) return false;
+  const q = pickFinalQuestion(s.board, s.categories, CATEGORY_POOL);
+  if (!q) return true;
+  _finalTriggered = true;
+  await GameDAO.startFinalRound(roomCode(), {
+    active: true, phase: "announcing", category: q.category, value: q.value, openedAt: null,
+  });
+  return false;
+}
+
+async function _handleFinalAvanzar(phase) {
+  const btn = document.getElementById("btn-final-avanzar");
+  if (btn) btn.disabled = true;
+  _finalInput = "";
+  try {
+    await GameDAO.setFinalPhase(roomCode(), phase);
+  } catch (e) {
+    console.error("Error al avanzar la ronda final:", e);
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function _handleFinalApostar() {
+  const inputEl = document.getElementById("final-input");
+  const btn     = document.getElementById("btn-final-enviar");
+  if (!inputEl) return;
+  if (inputEl.value.trim() === "" || isNaN(Number(inputEl.value))) { inputEl.focus(); return; }
+  const s = getState();
+  const wager = clampWager(inputEl.value, s.players?.[myPlayerId()]?.score || 0);
+  if (btn) btn.disabled = true;
+  _finalInput = "";
+  try {
+    await GameDAO.submitFinalWager(roomCode(), myPlayerId(), wager);
+  } catch (e) {
+    console.error("Error al apostar:", e);
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function _handleFinalResponder() {
+  const inputEl = document.getElementById("final-input");
+  const btn     = document.getElementById("btn-final-enviar");
+  if (!inputEl) return;
+  const text = inputEl.value.trim().slice(0, 60);
+  if (!text) { inputEl.focus(); return; }
+  if (btn) btn.disabled = true;
+  _finalInput = "";
+  try {
+    await GameDAO.submitFinalAnswer(roomCode(), myPlayerId(), text);
+  } catch (e) {
+    console.error("Error al enviar la respuesta final:", e);
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function _handleFinalVeredicto(pid, correct) {
+  if (!isHost()) return;
+  try {
+    await GameDAO.setFinalVerdict(roomCode(), pid, correct);
+  } catch (e) { console.error("Error al corregir:", e); }
+}
+
+async function _handleFinalAplicar() {
+  if (!isHost()) return;
+  const s  = getState();
+  const fr = s.finalRound;
+  if (!fr || fr.phase !== "judging") return;
+  const order    = s.playerOrder || [];
+  const sinJuzgar = order.filter(pid => fr.answers?.[pid] !== undefined && fr.verdicts?.[pid] === undefined).length;
+  if (sinJuzgar && !confirm(`Falta corregir ${sinJuzgar} ${sinJuzgar === 1 ? "respuesta" : "respuestas"}: van a contar como incorrectas. ¿Aplicar?`)) return;
+  const btn = document.getElementById("btn-final-avanzar");
+  if (btn) btn.disabled = true;
+  _ctx.triggerFlash("correcto");
+  try {
+    await GameDAO.applyFinalResults(roomCode(), finalDeltas(order, fr.wagers, fr.verdicts));
+  } catch (e) {
+    console.error("Error al aplicar la ronda final:", e);
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function _handleFinalTerminar() {
+  const btn = document.getElementById("btn-final-avanzar");
+  if (btn) btn.disabled = true;
+  try {
+    await GameDAO.endFinalRound(roomCode());
+  } catch (e) {
+    console.error("Error al cerrar la partida:", e);
     if (btn) btn.disabled = false;
   }
 }
@@ -1373,11 +1745,11 @@ async function _triggerLightningMode(selectorIndexOnEntry, skipCell = null) {
   const fullPool    = LIGHTNING_QUESTIONS.map((_, i) => i);
   const available   = fullPool.filter(i => !usedIndices.includes(i));
   const source      = available.length >= totalSlots ? available : fullPool;
-  const shuffled    = [...source].sort(() => Math.random() - 0.5);
-  const questionIndices  = shuffled.slice(0, totalSlots);
+  const questionIndices  = shuffle(source).slice(0, totalSlots);
   const nextUsedIndices  = source === fullPool
     ? questionIndices
     : [...new Set([...usedIndices, ...questionIndices])];
+  setHistorial("lightning", nextUsedIndices); // no repetirlas en la próxima sala
 
   await GameDAO.startLightningMode(roomCode(), {
     active: true, currentSlot: 0, totalSlots, perPlayer, phase: "announcing",
@@ -1393,11 +1765,11 @@ async function _triggerEstimacionMode(nextSelectorIndex, skipCell = null) {
   const fullPool    = ESTIMATION_QUESTIONS.map((_, i) => i);
   const available   = fullPool.filter(i => !usedIndices.includes(i));
   const source      = available.length >= TOTAL_SLOTS ? available : fullPool;
-  const shuffled    = [...source].sort(() => Math.random() - 0.5);
-  const questionIndices  = shuffled.slice(0, TOTAL_SLOTS);
+  const questionIndices  = shuffle(source).slice(0, TOTAL_SLOTS);
   const nextUsedIndices  = source === fullPool
     ? questionIndices
     : [...new Set([...usedIndices, ...questionIndices])];
+  setHistorial("estimacion", nextUsedIndices); // no repetirlas en la próxima sala
   const values = Array.from({ length: TOTAL_SLOTS }, () =>
     valuePool[Math.floor(Math.random() * valuePool.length)]
   );
@@ -1413,11 +1785,13 @@ async function _handleJugarNuevo() {
   if (!isHost()) return;
   _lightningTriggered  = false;
   _estimacionTriggered = false;
+  _finalTriggered      = false;
   const s          = getState();
   const prevUsed   = s.usedCategories || [];
   const alreadyUsed= [...new Set([...prevUsed, ...(s.categories || [])])];
   const categories = pickRandomCategories(CATEGORY_POOL, 6, alreadyUsed);
-  const nextUsed   = alreadyUsed.length + 6 > CATEGORY_POOL.length ? categories : alreadyUsed;
+  const nextUsed   = acumularUsados(alreadyUsed, categories, CATEGORY_POOL.length, 6);
+  setHistorial("categories", nextUsed);
   const board = {};
   categories.forEach(cat => {
     board[cat] = { "200": false, "400": false, "600": false, "800": false, "1000": false };
@@ -1434,6 +1808,7 @@ async function _handleJugarNuevo() {
     gameType: "dame-la-main",
     gameMode: s.gameMode || "tablero",
     gameLength: s.gameLength || null,
+    rules: s.rules || null,
     categories,
     usedCategories: nextUsed,
     lightningUsedIndices:  s.lightningUsedIndices  || [],
@@ -1478,6 +1853,14 @@ export default {
       });
     });
 
+    // Reglas extra: cada una se prende/apaga por separado
+    document.querySelectorAll(".rule-option").forEach(opt => {
+      opt.addEventListener("click", () => {
+        const on = opt.classList.toggle("active");
+        opt.setAttribute("aria-pressed", String(on));
+      });
+    });
+
     // Ruleta spin
     document.getElementById("btn-ruleta-spin")?.addEventListener("click", _handleRouletteSpin);
 
@@ -1495,8 +1878,13 @@ export default {
   },
 
   buildInitialState(config) {
-    const { name, playerId, gameMode, gameLength } = config;
-    const categories = pickRandomCategories(CATEGORY_POOL);
+    const { gameMode, gameLength, rules } = config;
+    // Historial del dispositivo: no repetir categorías ni preguntas de las
+    // partidas anteriores, aunque sea una sala nueva.
+    const previas    = getHistorial("categories").filter(cat => CATEGORY_POOL.includes(cat));
+    const categories = pickRandomCategories(CATEGORY_POOL, 6, previas);
+    const usedCategories = acumularUsados(previas, categories, CATEGORY_POOL.length, 6);
+    setHistorial("categories", usedCategories);
     const board = {};
     categories.forEach(cat => {
       board[cat] = { "200": false, "400": false, "600": false, "800": false, "1000": false };
@@ -1505,7 +1893,11 @@ export default {
       gameType: "dame-la-main",
       gameMode: gameMode || "tablero",
       gameLength: gameLength || null,
+      rules: rules || null,
       categories,
+      usedCategories,
+      lightningUsedIndices:  getHistorial("lightning").filter(i => i < LIGHTNING_QUESTIONS.length),
+      estimacionUsedIndices: getHistorial("estimacion").filter(i => i < ESTIMATION_QUESTIONS.length),
       board,
       currentQuestion: null,
       buzzer: null,
@@ -1517,7 +1909,16 @@ export default {
   render(s) {
     checkSoundTriggers(s);
     if (s.status === "playing") {
-      if (s.lightningMode?.active) {
+      if (!s.finalRound?.active) {
+        document.getElementById("final-overlay")?.classList.remove("visible");
+        _lastFinalKey = null;
+      }
+      if (s.finalRound?.active) {
+        document.getElementById("lightning-overlay").classList.remove("visible");
+        document.getElementById("estimacion-overlay").classList.remove("visible");
+        document.getElementById("pregunta-overlay").classList.remove("visible");
+        renderFinal(s);
+      } else if (s.lightningMode?.active) {
         document.getElementById("estimacion-overlay").classList.remove("visible");
         document.getElementById("vista-ruleta").style.display  = "none";
         document.getElementById("vista-tablero").style.display = "block";
@@ -1545,6 +1946,7 @@ export default {
         }
       }
     } else if (s.status === "finished") {
+      document.getElementById("final-overlay")?.classList.remove("visible");
       document.getElementById("lightning-overlay").classList.remove("visible");
       document.getElementById("estimacion-overlay").classList.remove("visible");
       document.getElementById("vista-tablero").style.display = "none";
@@ -1560,6 +1962,10 @@ export default {
     if (_ruletaFinishTimer) { clearTimeout(_ruletaFinishTimer);     _ruletaFinishTimer = null; }
     _lightningTriggered  = false;
     _estimacionTriggered = false;
+    _finalTriggered      = false;
+    _lastFinalKey        = null;
+    _lastFinalPhase      = null;
+    _lastFailedCount     = 0;
     _lastBoardKey        = null;
     _lastLightningKey    = null;
     _lastEstimacionKey   = null;

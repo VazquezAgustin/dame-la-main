@@ -5,6 +5,7 @@ vi.mock("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js", () =>
   ref: () => ({}),
   update: vi.fn(async () => {}),
   serverTimestamp: () => 0,
+  increment: (n) => ({ ".inc": n }),
 }));
 vi.mock("../../js/firebase.js", () => ({ db: {}, GameDAO: {}, firebaseConfigurado: false }));
 vi.mock("../../js/audio.js", () => ({ playTick: vi.fn() }));
@@ -213,6 +214,6 @@ describe("¿Qué tipo soy? — hoja '¿Quién adivinó?'", () => {
     await Promise.resolve();
     const payload = update.mock.calls[0][1];
     expect(payload[`tipoRound/guessed/${OTRO}`]).toEqual({ position: 1, points: 300 });
-    expect(payload[`players/${OTRO}/score`]).toBe(300);
+    expect(payload[`players/${OTRO}/score`]).toEqual({ ".inc": 300 });
   });
 });

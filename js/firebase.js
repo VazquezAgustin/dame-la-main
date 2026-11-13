@@ -1,22 +1,34 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
-  getDatabase, ref, set, get, update, onValue, runTransaction, serverTimestamp, onDisconnect
+  getDatabase, ref, set, get, update, onValue, runTransaction, serverTimestamp, onDisconnect, increment
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { firebaseConfig } from "./firebase.config.js";
 import { canSteal } from "./logica.js";
 
 export const firebaseConfigurado = firebaseConfig.apiKey !== "TU_API_KEY";
 
 let db;
+// Se resuelve cuando terminó (bien o mal) el login anónimo. Nunca rechaza ni
+// bloquea más de 4s: con las reglas abiertas el juego funciona igual sin auth;
+// con database.rules.json publicado, las reglas exigen `auth != null`.
+let _authReady = Promise.resolve();
 if (firebaseConfigurado) {
   const fbApp = initializeApp(firebaseConfig);
   db = getDatabase(fbApp);
+  _authReady = Promise.race([
+    signInAnonymously(getAuth(fbApp)).catch((e) => {
+      console.warn("Login anónimo no disponible (¿falta habilitarlo en Firebase Auth?):", e?.code || e);
+    }),
+    new Promise((resolve) => setTimeout(resolve, 4000)),
+  ]);
 }
 
 // ═══════════════════════════════════════════════════════════════
 // 🗄️ DAO — Capa de abstracción de datos
 // ═══════════════════════════════════════════════════════════════
 export const GameDAO = {
+  ready:                 async () => {},
   createRoom:            async () => {},
   roomExists:            async () => false,
   canRejoin:             async () => false,
@@ -30,6 +42,14 @@ export const GameDAO = {
   judgeAnswer:           async () => {},
   nextTurn:              async () => {},
   skipQuestion:          async () => {},
+  reboundQuestion:       async () => {},
+  startFinalRound:       async () => {},
+  setFinalPhase:         async () => {},
+  submitFinalWager:      async () => {},
+  submitFinalAnswer:     async () => {},
+  setFinalVerdict:       async () => {},
+  applyFinalResults:     async () => {},
+  endFinalRound:         async () => {},
   startLightningMode:        async () => {},
   lightningBeginQuestion:    async () => {},
   lightningJudge:            async () => {},
@@ -58,8 +78,11 @@ if (firebaseConfigurado) {
   onValue(ref(db, ".info/serverTimeOffset"), (snap) => { _serverOffset = snap.val() || 0; });
   GameDAO.serverNow = () => Date.now() + _serverOffset;
 
+  GameDAO.ready = () => _authReady;
+
+  // createdAt siempre con la hora del servidor: las reglas lo usan para vencer la sala
   GameDAO.createRoom = async (roomCode, initialState) => {
-    await set(rRef(roomCode), initialState);
+    await set(rRef(roomCode), { ...initialState, createdAt: serverTimestamp() });
     return roomCode;
   };
 
@@ -76,14 +99,16 @@ if (firebaseConfigurado) {
            val.playerOrder?.includes(playerId);
   };
 
+  // Transacción sobre playerOrder: si dos jugadores se unen a la vez, ninguno
+  // pisa al otro (antes se leía la lista y se reescribía entera).
   GameDAO.joinRoom = async (roomCode, playerId, playerData) => {
-    const snap = await get(ref(db, `rooms/${roomCode}/playerOrder`));
-    const order = snap.val() || [];
-    if (order.includes(playerId)) return;
-    await update(rRef(roomCode), {
-      [`players/${playerId}`]: playerData,
-      playerOrder: [...order, playerId],
+    const res = await runTransaction(ref(db, `rooms/${roomCode}/playerOrder`), (order) => {
+      const list = order || [];
+      if (list.includes(playerId)) return; // ya estaba en la sala
+      return [...list, playerId];
     });
+    if (!res.committed) return;
+    await update(rRef(roomCode), { [`players/${playerId}`]: playerData });
   };
 
   GameDAO.startGame = async (roomCode) => {
@@ -108,7 +133,10 @@ if (firebaseConfigurado) {
     });
     if (won) {
       try {
-        await update(rRef(roomCode), { questionPhase: "waiting_answer" });
+        await update(rRef(roomCode), {
+          questionPhase: "waiting_answer",
+          [`stats/${playerId}/buzzes`]: increment(1),
+        });
       } catch (e) {
         // La fase no se actualizó — revertir el buzzer para no dejar el juego trabado
         try { await set(ref(db, `rooms/${roomCode}/buzzer`), null); } catch (_) {}
@@ -145,9 +173,12 @@ if (firebaseConfigurado) {
     });
     if (res.committed) {
       try {
-        const snap = await get(ref(db, `rooms/${roomCode}/players/${expectedFromId}/score`));
+        // increment(): atómico en el servidor, no pisa otra suma simultánea
         await update(rRef(roomCode), {
-          [`players/${expectedFromId}/score`]: (snap.val() || 0) - penalty,
+          [`players/${expectedFromId}/score`]: increment(-penalty),
+          [`stats/${expectedFromId}/stolen`]:  increment(1),
+          [`stats/${expectedFromId}/lost`]:    increment(penalty),
+          [`stats/${thiefId}/steals`]:         increment(1),
         });
       } catch (e) {
         console.error("No se pudo aplicar la penalidad del robo", e);
@@ -156,14 +187,44 @@ if (firebaseConfigurado) {
     return res.committed;
   };
 
-  GameDAO.judgeAnswer = async (roomCode, responderId, correct, pointsDelta, category, value) => {
-    const scoreSnap = await get(ref(db, `rooms/${roomCode}/players/${responderId}/score`));
-    const currentScore = scoreSnap.val() || 0;
+  // Stats del podio que acompañan a un juicio (solo las escribe el host).
+  const judgeStats = (responderId, correct, pointsDelta, bestStreak) => correct
+    ? {
+        [`stats/${responderId}/correct`]:    increment(1),
+        [`stats/${responderId}/streak`]:     increment(1),
+        ...(bestStreak ? { [`stats/${responderId}/bestStreak`]: bestStreak } : {}),
+      }
+    : {
+        [`stats/${responderId}/wrong`]:  increment(1),
+        [`stats/${responderId}/lost`]:   increment(Math.abs(pointsDelta)),
+        [`stats/${responderId}/streak`]: 0,
+      };
+
+  // bestStreak (opcional): mejor racha del jugador contando este acierto.
+  GameDAO.judgeAnswer = async (roomCode, responderId, correct, pointsDelta, category, value, bestStreak = null) => {
     await update(rRef(roomCode), {
-      [`players/${responderId}/score`]: currentScore + pointsDelta,
+      [`players/${responderId}/score`]: increment(pointsDelta),
       [`board/${category}/${value}`]: true,
       questionResult: { responderId, correct, pointsDelta },
       questionPhase: "judged",
+      ...judgeStats(responderId, correct, pointsDelta, bestStreak),
+    });
+  };
+
+  // Rebote: el respondedor falló, pierde los puntos y la pregunta se reabre
+  // para los que todavía pueden responder. `failed` y `sawAnswer` son las
+  // listas completas ya actualizadas (quién falló / quién vio la respuesta).
+  GameDAO.reboundQuestion = async (roomCode, responderId, pointsDelta, failed, sawAnswer) => {
+    await update(rRef(roomCode), {
+      [`players/${responderId}/score`]: increment(pointsDelta),
+      buzzer: null,
+      questionPhase: "waiting_buzz",
+      questionResult: null,
+      "currentQuestion/openedAt":  serverTimestamp(),
+      "currentQuestion/failed":    failed,
+      "currentQuestion/sawAnswer": sawAnswer,
+      "currentQuestion/lastFail":  { responderId, pointsDelta },
+      ...judgeStats(responderId, false, pointsDelta, null),
     });
   };
 
@@ -297,13 +358,13 @@ if (firebaseConfigurado) {
   };
 
   // El host juzga la respuesta de un jugador en modo relámpago.
-  GameDAO.lightningJudge = async (roomCode, playerId, correct, currentScore) => {
+  GameDAO.lightningJudge = async (roomCode, playerId, correct) => {
     const updates = {
       "lightningMode/phase": "judged",
       "lightningMode/questionResult": { correct, pointsDelta: correct ? 200 : 0 },
     };
     if (correct) {
-      updates[`players/${playerId}/score`] = currentScore + 200;
+      updates[`players/${playerId}/score`] = increment(200);
     }
     await update(rRef(roomCode), updates);
   };
@@ -394,9 +455,7 @@ if (firebaseConfigurado) {
     };
     for (const { playerId, points } of podium) {
       if (!playerId || !points) continue;
-      const scoreSnap = await get(ref(db, `rooms/${roomCode}/players/${playerId}/score`));
-      const currentScore = scoreSnap.val() || 0;
-      updates[`players/${playerId}/score`] = currentScore + points;
+      updates[`players/${playerId}/score`] = increment(points);
     }
     await update(rRef(roomCode), updates);
   };
@@ -420,6 +479,48 @@ if (firebaseConfigurado) {
       selectorIndex: nextSelectorIndex,
       status: isGameOver ? "finished" : "playing",
     });
+  };
+
+  // ── Ronda final con apuesta ───────────────────────────────────
+  // finalRound: { active, phase, category, value, openedAt, wagers, answers, verdicts, deltas }
+  // Fases: announcing → betting → answering → judging → results.
+
+  GameDAO.startFinalRound = async (roomCode, finalData) => {
+    await update(rRef(roomCode), { finalRound: finalData });
+  };
+
+  GameDAO.setFinalPhase = async (roomCode, phase) => {
+    await update(rRef(roomCode), {
+      "finalRound/phase": phase,
+      "finalRound/openedAt": serverTimestamp(),
+    });
+  };
+
+  GameDAO.submitFinalWager = async (roomCode, playerId, wager) => {
+    await update(rRef(roomCode), { [`finalRound/wagers/${playerId}`]: wager });
+  };
+
+  GameDAO.submitFinalAnswer = async (roomCode, playerId, text) => {
+    await update(rRef(roomCode), { [`finalRound/answers/${playerId}`]: text });
+  };
+
+  GameDAO.setFinalVerdict = async (roomCode, playerId, correct) => {
+    await update(rRef(roomCode), { [`finalRound/verdicts/${playerId}`]: correct });
+  };
+
+  // deltas: { playerId: ±apuesta }. Suma los puntos y pasa a "results".
+  GameDAO.applyFinalResults = async (roomCode, deltas) => {
+    const updates = { "finalRound/phase": "results", "finalRound/deltas": deltas };
+    for (const [playerId, delta] of Object.entries(deltas)) {
+      updates[`players/${playerId}/score`] = increment(delta);
+      // Lo perdido en la apuesta también cuenta para "el que más perdió"
+      if (delta < 0) updates[`stats/${playerId}/lost`] = increment(-delta);
+    }
+    await update(rRef(roomCode), updates);
+  };
+
+  GameDAO.endFinalRound = async (roomCode) => {
+    await update(rRef(roomCode), { "finalRound/active": false, status: "finished" });
   };
 }
 

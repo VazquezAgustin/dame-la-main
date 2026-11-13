@@ -6,6 +6,7 @@ vi.mock("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js", () =>
   ref: () => ({}),
   update: vi.fn(async () => {}),
   serverTimestamp: () => 0,
+  increment: (n) => ({ ".inc": n }),
   runTransaction: vi.fn(async () => {}),
 }));
 
