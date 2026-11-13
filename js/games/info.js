@@ -60,7 +60,6 @@ export const GAME_INFO = {
     titulo: "¿Qué tipo soy?",
     descripcion: "Todos ven tu categoría de persona menos vos: adivinala preguntando.",
     pasos: [
-      "Al crear la sala se elige el tono: 😇 Suave (para cualquier mesa), 🌶️ Picante o 🎲 Mixto.",
       "Cada uno recibe una categoría (ej: «Tacaño», «Hincha de Boca»). Mostrala sin mirarla.",
       "Preguntá en voz alta: «¿Maradona entra en mi categoría?».",
       "Los demás responden sí o no.",

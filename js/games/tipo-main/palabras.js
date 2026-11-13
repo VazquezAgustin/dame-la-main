@@ -1,6 +1,6 @@
 // Banco de categorías de ¿Qué tipo soy? — se muestran tal cual en pantalla.
 // Son categorías para clasificar famosos ("¿Maradona entra en mi categoría?").
-// Dos tonos, para poder jugar con familia o con amigos:
+// Separadas en dos listas solo para ordenarlas (se reparten todas juntas):
 //   PALABRAS_SUAVES   → aptas para cualquier mesa
 //   PALABRAS_PICANTES → sexo, drogas, físico, religión, plata sucia…
 /* 📝 EDITA AQUÍ LAS CATEGORÍAS */
@@ -55,14 +55,5 @@ export const PALABRAS_PICANTES = [
   "Muerto", "Religioso",
 ];
 
-// Banco completo (pack "mixto")
+// Banco completo: es el que se reparte
 export const PALABRAS_TIPO = [...PALABRAS_SUAVES, ...PALABRAS_PICANTES];
-
-// Packs elegibles al crear la sala. Las salas sin el campo usan "mixto".
-export const TIPO_PACKS = ["suave", "mixto", "picante"];
-
-export function poolForPack(pack) {
-  if (pack === "suave")   return PALABRAS_SUAVES;
-  if (pack === "picante") return PALABRAS_PICANTES;
-  return PALABRAS_TIPO;
-}

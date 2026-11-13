@@ -341,8 +341,6 @@ async function handleCreateRoom() {
       buildConfig.roundDuration   = parseInt(document.getElementById("quien-duration-slider")?.value || "60", 10);
     } else if (selectedGameType === "numero-main") {
       buildConfig.numeroRange = document.querySelector("#numero-range-selector .numero-range-option.active")?.dataset.range || "chico";
-    } else if (selectedGameType === "tipo-main") {
-      buildConfig.tipoPack = document.querySelector("#tipo-pack-selector .numero-range-option.active")?.dataset.pack || "mixto";
     } else if (selectedGameType === "pictionary") {
       buildConfig.roundsPerPlayer = parseInt(document.getElementById("picto-rounds-slider")?.value || "2", 10);
       buildConfig.drawSeconds     = parseInt(document.getElementById("picto-duration-slider")?.value || "80", 10);

@@ -61,11 +61,11 @@ Juego alternativo seleccionable al crear la sala (`gameType: "numero-main"`). C�
 
 Juego alternativo (`gameType: "tipo-main"`), clon de `numero-main` con categorías de persona en lugar de números. Código en `js/games/tipo-main/` (`palabras.js` con el banco `PALABRAS_TIPO`, `logica.js` puro, `index.js` con render, handlers y DAO inline).
 
-- **Tono** (`tipoPack: "suave" | "mixto" | "picante"`, se elige al crear la sala; salas sin el campo = `mixto`). `palabras.js` separa el banco en `PALABRAS_SUAVES` (para cualquier mesa) y `PALABRAS_PICANTES` (sexo, drogas, físico, religión…); `PALABRAS_TIPO` es la unión y `poolForPack(pack)` devuelve el pool a repartir. Al agregar una categoría, ponerla en la lista que corresponda.
+- `palabras.js` ordena el banco en `PALABRAS_SUAVES` y `PALABRAS_PICANTES` (sexo, drogas, físico, religión…); siempre se reparte la unión, `PALABRAS_TIPO`. No hay selector de tono.
 - Cada jugador recibe una categoría distinta ("Falopero", "Infieles", "Hincha de Boca"…) que muestra a los demás sin mirarla (misma cobertura + cuenta regresiva de 3s + Wake Lock que `numero-main`). Pregunta en voz alta: "¿Maradona entra en mi categoría?".
 - `assignPalabras` evita repetir las categorías de la ronda anterior.
 - El host marca quién adivinó (300/200/100 por orden, reutiliza `pointsForPosition` de `numero-main`). "Nueva ronda" reparte categorías nuevas; "Terminar" va al podio.
-- Datos: `tipoPack`, `tipoRoundNumber` y `tipoRound: { words: {pid: categoría}, guessed: {pid: {position, points}} }`.
+- Datos: `tipoRoundNumber` y `tipoRound: { words: {pid: categoría}, guessed: {pid: {position, points}} }`.
 - Reutiliza las clases CSS `numero-*`; solo agrega `.tipo-palabra` y `.tipo-sheet-word`.
 
 ---
