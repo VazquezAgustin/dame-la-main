@@ -1,6 +1,8 @@
 // Mock DAO in-memory que cumple el mismo contrato que GameDAO en firebase.js.
 // Se usa en tests de integración para evitar Firebase/emulador.
 
+import { canSteal } from "../../js/logica.js";
+
 export function createInMemoryDao() {
   const rooms = new Map();
   const listeners = new Map(); // roomCode -> Set<callback>
@@ -102,8 +104,30 @@ export function createInMemoryDao() {
       return true;
     },
 
-    revealAnswer: async (roomCode) => {
-      deepUpdate(roomCode, { questionPhase: "answer_revealed" });
+    serverNow: () => Date.now(),
+
+    revealAnswer: async (roomCode, playerId) => {
+      const b = rooms.get(roomCode)?.buzzer;
+      if (!b || b.playerId !== playerId || b.revealed) return false;
+      deepUpdate(roomCode, { buzzer: { ...b, revealed: true }, questionPhase: "answer_revealed" });
+      return true;
+    },
+
+    stealBuzzer: async (roomCode, thiefId, expectedFromId, penalty) => {
+      const room = rooms.get(roomCode);
+      const b = room?.buzzer;
+      if (!b || b.playerId !== expectedFromId || !canSteal(b, thiefId, Date.now() + 500)) return false;
+      const score = room.players?.[expectedFromId]?.score || 0;
+      deepUpdate(roomCode, {
+        buzzer: {
+          playerId: thiefId,
+          timestamp: Date.now(),
+          stolenFrom: [...(b.stolenFrom || []), expectedFromId],
+          lastSteal: { from: expectedFromId, to: thiefId, penalty },
+        },
+        [`players/${expectedFromId}/score`]: score - penalty,
+      });
+      return true;
     },
 
     judgeAnswer: async (roomCode, responderId, correct, pointsDelta, category, value) => {

@@ -314,7 +314,10 @@ España y Argentina. Las preguntas deben mencionar: La Liga y Liga Argentina, se
       // Buzzer: quién tocó primero (null = nadie todavía)
       "buzzer": {
         "playerId": "p_abc123",
-        "timestamp": 1712000031500
+        "timestamp": 1712000031500,   // hora (servidor) en que tomó el turno → arranca su ventana de 10s
+        "revealed": true,             // opcional: lo setea revealAnswer; bloquea robos
+        "stolenFrom": ["p_old"],      // opcional: quienes ya perdieron el turno en esta pregunta
+        "lastSteal": { "from": "p_old", "to": "p_abc123", "penalty": 200 } // opcional: último robo
       },
 
       // Estado de la respuesta
@@ -380,6 +383,14 @@ async function pressBuzzer() {
 - Solo el jugador que buzzeó (`buzzer.playerId`) ve el botón **"👁 Mostrar respuesta"**
 - Al tocarlo: se actualiza `questionPhase: "answer_revealed"` → todos los dispositivos muestran la respuesta correcta
 - No hay timer estricto para esta fase (el jugador ya dijo su respuesta en voz alta)
+
+### 3b. Robo de respuesta
+
+- Pasados **10s** (`STEAL_AFTER_MS`) desde que alguien tomó el turno (`buzzer.timestamp`, hora del servidor vía `GameDAO.serverNow()`), cualquier otro jugador ve **"🖐 ¡ROBAR!"** y puede tomar el turno de respuesta.
+- Al **robado** se le resta la mitad del valor de la pregunta (en bonus x2, la mitad de `value*2`) — `stealPenalty`.
+- El **ladrón** queda como respondedor normal (el juicio del host no cambia) y tiene sus propios 10s: el robo puede encadenarse.
+- Quien ya perdió el turno en esa pregunta (`buzzer.stolenFrom`) no puede volver a robar; el que tiene el turno no puede robarse a sí mismo (`canSteal`).
+- Solo se puede robar en `questionPhase === "waiting_answer"` y mientras `buzzer.revealed` no esté seteado. `revealAnswer` y `stealBuzzer` son transacciones sobre el nodo `buzzer`, así que solo una de las dos gana.
 
 ### 4. El host juzga
 
@@ -584,8 +595,16 @@ const GameDAO = {
   // Un jugador toca el pulsador. Devuelve true si ganó la carrera, false si ya había alguien.
   pressBuzzer: async (roomCode, playerId) => {},
 
-  // El respondedor revela la respuesta (todos la ven).
-  revealAnswer: async (roomCode) => {},
+  // El respondedor revela la respuesta (todos la ven). Transacción sobre el buzzer:
+  // devuelve false si ya no tiene el turno (le robaron) o ya se reveló.
+  revealAnswer: async (roomCode, playerId) => {},
+
+  // Un jugador roba el turno de respuesta a expectedFromId y a este se le resta `penalty`.
+  // Devuelve true si el robo se concretó.
+  stealBuzzer: async (roomCode, thiefId, expectedFromId, penalty) => {},
+
+  // Hora actual estimada del servidor (Date.now() + .info/serverTimeOffset).
+  serverNow: () => Date.now(),
 
   // El host juzga la respuesta.
   // category y value se pasan desde el estado local para evitar un get() extra.

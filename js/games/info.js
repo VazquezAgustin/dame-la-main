@@ -12,6 +12,7 @@ export const GAME_INFO = {
     pasos: [
       "Por turnos, un jugador elige una categoría y un valor del tablero.",
       "Todos pueden pulsar el botón: el primero en tocar responde en voz alta.",
+      "Si el que pulsó no responde en 10s, cualquiera puede tocar 🖐 ROBAR: el robado pierde la mitad de los puntos y el ladrón responde (si falla, también pierde).",
       "Toca «Mostrar respuesta» y el host dice si fue correcta.",
       "Correcta suma los puntos; incorrecta los resta.",
       "Gana quien tenga más puntos al terminar el tablero.",

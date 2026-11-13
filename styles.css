@@ -902,6 +902,14 @@ input[type="text"]:focus { border-color: var(--primario-glow); }
   background: var(--buzzer-active);
   transform: scale(0.97);
 }
+/* Botón de robo: mismo formato que el pulsador pero dorado */
+.btn-robar {
+  background: var(--acento);
+  color: #1a1a1a;
+}
+.btn-robar:active:not(:disabled) {
+  background: #d97706;
+}
 .buzzer-estado {
   text-align: center;
   font-size: 1rem;

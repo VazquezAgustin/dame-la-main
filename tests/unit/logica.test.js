@@ -7,6 +7,9 @@ import {
   categoryHasUnplayed,
   availableCategories,
   rebalanceLengths,
+  STEAL_AFTER_MS,
+  stealPenalty,
+  canSteal,
 } from "../../js/logica.js";
 
 const VALID_CHARS = new Set("ABCDEFGHJKLMNPQRSTUVWXYZ23456789");
@@ -250,5 +253,38 @@ describe("rebalanceLengths", () => {
     const next = rebalanceLengths(state, BOUNDS, "base", 30);
     expect(sumOf(next)).toBe(TOTAL);
     expect(next.base).toBeLessThanOrEqual(BOUNDS.base.max);
+  });
+});
+
+describe("stealPenalty", () => {
+  it("es la mitad del valor", () => {
+    expect(stealPenalty(200, false)).toBe(100);
+    expect(stealPenalty(1000, false)).toBe(500);
+  });
+  it("en bonus es la mitad de value*2", () => {
+    expect(stealPenalty(400, true)).toBe(400);
+  });
+});
+
+describe("canSteal", () => {
+  const now = 100000;
+  const base = { playerId: "A", timestamp: now - STEAL_AFTER_MS - 1 };
+  it("false antes de 10s", () => {
+    expect(canSteal({ playerId: "A", timestamp: now - 5000 }, "B", now)).toBe(false);
+  });
+  it("true pasados 10s", () => {
+    expect(canSteal(base, "B", now)).toBe(true);
+  });
+  it("false si ya se reveló la respuesta", () => {
+    expect(canSteal({ ...base, revealed: true }, "B", now)).toBe(false);
+  });
+  it("false para el que tiene el turno", () => {
+    expect(canSteal(base, "A", now)).toBe(false);
+  });
+  it("false para quien ya fue robado", () => {
+    expect(canSteal({ ...base, stolenFrom: ["B"] }, "B", now)).toBe(false);
+  });
+  it("false sin buzzer", () => {
+    expect(canSteal(null, "B", now)).toBe(false);
   });
 });
